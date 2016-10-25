@@ -1,0 +1,3 @@
+[submodule "mruby"]
+	path = components/mruby_component/mruby
+	url = https://github.com/mruby/mruby.git
