@@ -10,11 +10,6 @@
 
 #include "simplest_mrb.h"
 
-void _exit(int z) {
-  while (1) { 
-  }
-}
-
 void mruby_task(void *pvParameter)
 {
   mrb_state *mrb = mrb_open();
