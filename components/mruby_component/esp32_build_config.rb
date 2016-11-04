@@ -54,4 +54,6 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.disable_cxx_exception
 
   conf.gem :core => "mruby-print"
+  conf.gem :path => "../mruby-esp32-system"
+  conf.gem :path => "../mruby-esp32-wifi"
 end
