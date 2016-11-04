@@ -26,13 +26,28 @@ can do something like the following and see the example running:
 
 ```
 make menuconfig
-make
-make flash
+make MRUBY_EXAMPLE=simplest_mrb.rb
+make MRUBY_EXAMPLE=simplest_mrb.rb flash
 screen /dev/tty.SLAB_USBtoUART 115200
 ```
+
+The flag `MRUBY_EXAMPLE` can be replaced with one of the following:
+
+  * simplest_mrb.rb - Simply prints two strings
+  * wifi_example_mrb.rb - An example of connecting to WiFi, you will need to
+    modify this file to include your SSID and password
 
 The clean command will clean both the ESP32 build and the mruby build:
 
 ```
 make clean
 ```
+
+There are multiple GEMS that can be turned on and off via the mruby
+configuration file found in
+`components/mruby_component/esp32_build_config.rb`:
+
+* mruby-esp32-system - ESP32 system calls
+* mruby-esp32-wifi - ESP32 WiFi
+
+
