@@ -36,6 +36,7 @@ The flag `MRUBY_EXAMPLE` can be replaced with one of the following:
   * simplest_mrb.rb - Simply prints two strings
   * wifi_example_mrb.rb - An example of connecting to WiFi, you will need to
     modify this file to include your SSID and password
+  * system_mrb.rb - Examples of most of the system APIs
 
 The clean command will clean both the ESP32 build and the mruby build:
 
