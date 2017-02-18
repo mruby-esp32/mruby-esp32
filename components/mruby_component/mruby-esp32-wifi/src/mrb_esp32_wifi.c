@@ -4,6 +4,7 @@
 #include <mruby/string.h>
 
 #include <stdio.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -114,6 +115,7 @@ mrb_esp32_wifi_connect(mrb_state *mrb, mrb_value self) {
 	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
 
 	wifi_config_t wifi_config;
+  memset((void *)&wifi_config, 0, sizeof(wifi_config_t));
   snprintf(wifi_config.sta.ssid, sizeof(wifi_config.sta.ssid), "%s", ssid);
   snprintf(wifi_config.sta.password, sizeof(wifi_config.sta.password), "%s", password);
 
