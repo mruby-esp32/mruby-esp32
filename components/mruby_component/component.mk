@@ -4,7 +4,7 @@ COMPONENT_OWNCLEANTARGET := true
 
 COMPONENT_ADD_INCLUDEDIRS := mruby/include/
 
-CFLAGS += -Wno-char-subscripts
+CFLAGS += -Wno-char-subscripts -Wno-pointer-sign
 
 build: 
 	cd $(COMPONENT_PATH)/mruby && MRUBY_CONFIG=../esp32_build_config.rb $(MAKE)
