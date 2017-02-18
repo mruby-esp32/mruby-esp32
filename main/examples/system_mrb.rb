@@ -1,15 +1,6 @@
 ver = ESP32::System.sdk_version
 puts "SDK Version: #{ver}"
 
-time = ESP32::System.time
-puts "Time: #{time}"
-
-rtc_time = ESP32::System.rtc_time
-puts "RTC Time: #{rtc_time}"
-
-mac = ESP32::System.mac
-puts "MAC address: #{mac}"
-
 mem = ESP32::System.available_memory / 1000
 puts "Memory free: #{mem}K"
 
