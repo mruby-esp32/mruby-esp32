@@ -27,8 +27,7 @@ can do something like the following and see the example running:
 ```
 make menuconfig
 make MRUBY_EXAMPLE=simplest_mrb.rb
-make MRUBY_EXAMPLE=simplest_mrb.rb flash
-screen /dev/tty.SLAB_USBtoUART 115200
+make MRUBY_EXAMPLE=simplest_mrb.rb flash monitor
 ```
 
 The flag `MRUBY_EXAMPLE` can be replaced with one of the following:
