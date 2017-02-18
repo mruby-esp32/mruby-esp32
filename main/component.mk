@@ -1,6 +1,4 @@
 
-include $(IDF_PATH)/make/component_common.mk
-
 COMPONENT_EXTRA_CLEAN := example_mrb.h
 
 mruby_main.o: example_mrb.h
