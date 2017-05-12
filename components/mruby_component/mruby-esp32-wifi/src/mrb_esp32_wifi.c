@@ -34,6 +34,7 @@ static const struct mrb_data_type mrb_eh_ctx_t = {
 
 static EventGroupHandle_t wifi_event_group;
 typedef struct eh_ctx_t {
+  TaskHandle_t task;
   mrb_state *mrb;
   mrb_value on_connected_blk;
   mrb_value on_disconnected_blk;
@@ -51,6 +52,7 @@ event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_STA_GOT_IP:
       xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
       if (ehc != NULL) {
+        vTaskSuspend(ehc->task);
         int arena_index = mrb_gc_arena_save(ehc->mrb);
 
         mrb_value mrb_ip_str = mrb_str_buf_new(ehc->mrb, 13);
@@ -64,6 +66,7 @@ event_handler(void *ctx, system_event_t *event)
         }
 
         mrb_gc_arena_restore(ehc->mrb, arena_index);
+        vTaskResume(ehc->task);
       }
       break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -71,6 +74,7 @@ event_handler(void *ctx, system_event_t *event)
       esp_wifi_connect();
       xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
       if (ehc != NULL) {
+        vTaskSuspend(ehc->task);
         int arena_index = mrb_gc_arena_save(ehc->mrb);
 
         if (!mrb_nil_p(ehc->on_disconnected_blk)) {
@@ -79,6 +83,7 @@ event_handler(void *ctx, system_event_t *event)
         }
 
         mrb_gc_arena_restore(ehc->mrb, arena_index);
+        vTaskResume(ehc->task);
       }
       break;
     default:
@@ -90,6 +95,7 @@ event_handler(void *ctx, system_event_t *event)
 static mrb_value
 mrb_esp32_wifi_init(mrb_state *mrb, mrb_value self) {
   eh_ctx_t *ehc = mrb_malloc(mrb, sizeof(eh_ctx_t));
+  ehc->task = xTaskGetCurrentTaskHandle();
   ehc->mrb = mrb;
   ehc->on_connected_blk = mrb_nil_value();
   ehc->on_disconnected_blk = mrb_nil_value();
