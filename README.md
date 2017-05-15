@@ -11,7 +11,7 @@ You will need to recursively clone this project with the recursive flag
 because it includes mruby as a submodule:
 
 ```
-git clone --recursive https://github.com/carsonmcdonald/mruby-esp32.git
+git clone --recursive https://github.com/mruby-esp32/mruby-esp32.git
 ```
 
 The main ruby program can be found in the `main/simplest_mrb.rb` file. The
