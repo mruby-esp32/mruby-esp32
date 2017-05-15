@@ -31,6 +31,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.cc do |cc|
     cc.include_paths << ENV["COMPONENT_INCLUDES"].split(' ')
 
+    cc.flags << '-Wno-maybe-uninitialized'
     cc.flags.collect! { |x| x.gsub('-MP', '') }
 
     cc.defines << %w(MRB_HEAP_PAGE_SIZE=64)
@@ -38,7 +39,8 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cc.defines << %w(KHASH_DEFAULT_SIZE=8)
     cc.defines << %w(MRB_STR_BUF_MIN_SIZE=20)
     cc.defines << %w(MRB_GC_STRESS)
-    cc.defines << %w(MRB_USE_FLOAT)
+
+    cc.option_define = '-D_ESP32'
   end
 
   conf.cxx do |cxx|
@@ -47,6 +49,8 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cxx.flags.collect! { |x| x.gsub('-MP', '') }
 
     cxx.defines = conf.cc.defines.dup
+
+    cxx.option_define = '-D_ESP32'
   end
 
   conf.bins = []
