@@ -1,3 +1,4 @@
+COMPONENT_DEPENDS = mruby_component
 
 COMPONENT_EXTRA_CLEAN := example_mrb.h
 
