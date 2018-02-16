@@ -59,7 +59,8 @@ make menuconfig
 Component config ---> ESP32-specific ---> Event loop task stack size
 ```
 
-References: Issue [11](#11) and
+References: Issue [#11](https://github.com/mruby-esp32/mruby-esp32/issues/11)
+and
 [mruby-esp32\/mruby-socket](https://github.com/mruby-esp32/mruby-socket)
 
 ---
