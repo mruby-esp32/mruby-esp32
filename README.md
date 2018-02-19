@@ -15,13 +15,13 @@ git clone --recursive https://github.com/mruby-esp32/mruby-esp32.git
 ```
 
 The main ruby program can be found in the `main/simplest_mrb.rb` file. The
-makefile configuration in `main/component.mk` and the main entry point source 
+makefile configuration in `main/component.mk` and the main entry point source
 file `mruby_main.c` will also be of interest if you want to change the name of
-the ruby script. This is a very simple script that only prints to the ESP32's
-debug console.
+the ruby script. The examples included are very simple scripts that only print
+to the ESP32's debug console.
 
 I'm assuming you have followed all the steps in the install documentation and
-are at least somewhat familure with the building steps. With that in mind you
+are at least somewhat familiar with the building steps. With that in mind you
 can do something like the following and see the example running:
 
 ```
@@ -36,6 +36,34 @@ The flag `MRUBY_EXAMPLE` can be replaced with one of the following:
   * _wifi_example_mrb.rb_ - An example of connecting to WiFi, you will need to
     modify this file to include your SSID and password
   * _system_mrb.rb_ - Examples of most of the system APIs
+
+## wifi\_example\_mrb.rb stack overflow
+
+If you experience a stack overflow during execution of the WiFi example, please
+adjust the stack size on file `main/mruby_main.c` from 8192 to 32768.
+
+```
+void app_main()
+{
+  nvs_flash_init();
+  xTaskCreate(&mruby_task, "mruby_task", 32768, NULL, 5, NULL);
+}
+
+```
+
+Also adjust the configured stack size using `make menuconfig` from the default
+one (which may be either 2048 or 4096) to 32768.
+
+```
+make menuconfig
+Component config ---> ESP32-specific ---> Event loop task stack size
+```
+
+References: Issue [#11](https://github.com/mruby-esp32/mruby-esp32/issues/11)
+and
+[mruby-esp32\/mruby-socket](https://github.com/mruby-esp32/mruby-socket)
+
+---
 
 The clean command will clean both the ESP32 build and the mruby build:
 
