@@ -4,8 +4,9 @@ Before you get started you will need to follow the setup documentation from
 the [esp-idf](https://github.com/espressif/esp-idf/tree/master/docs) project
 for your specific operating system.
 
-I have only tested this on macOS and using the most recent version of
+I have only tested this on macOS and using a certain version of
 [esp-idf](https://github.com/espressif/esp-idf/tree/abecab7525e7edb1fde16ab5d8cf7b368b1d332c).
+You should try to use [more recent version](https://github.com/espressif/esp-idf#setting-up-esp-idf) if you have failed.
 
 You will need to recursively clone this project with the recursive flag
 because it includes mruby as a submodule:
