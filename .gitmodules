@@ -1,3 +1,6 @@
 [submodule "mruby"]
 	path = components/mruby_component/mruby
 	url = https://github.com/mruby/mruby.git
+[submodule "components/FabGL_component"]
+	path = components/FabGL_component
+	url = https://github.com/kishima/FabGL_component.git
