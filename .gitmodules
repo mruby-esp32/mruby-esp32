@@ -4,3 +4,6 @@
 [submodule "components/FabGL_component"]
 	path = components/FabGL_component
 	url = https://github.com/kishima/FabGL_component.git
+[submodule "components/arduino"]
+	path = components/arduino
+	url = https://github.com/espressif/arduino-esp32.git
