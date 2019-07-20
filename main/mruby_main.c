@@ -1,3 +1,4 @@
+#if 0
 #include <stdio.h>
 
 #include "freertos/FreeRTOS.h"
@@ -44,3 +45,5 @@ void app_main()
   nvs_flash_init();
   xTaskCreate(&mruby_task, "mruby_task", 8192, NULL, 5, NULL);
 }
+
+#endif
