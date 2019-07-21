@@ -30,7 +30,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.cc do |cc|
     cc.include_paths << ENV["COMPONENT_INCLUDES"].split(' ')
-
+    cc.include_paths << ENV["COMPONENT_EXTRA_INCLUDES"]&.split(' ')
     cc.flags << '-Wno-maybe-uninitialized'
     cc.flags.collect! { |x| x.gsub('-MP', '') }
 
@@ -53,9 +53,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.bins = []
   conf.build_mrbtest_lib_only
-  #conf.disable_cxx_exception
   conf.enable_cxx_exception
-  #conf.enable_cxx_abi
   
   conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
