@@ -8,7 +8,7 @@ MRuby::Build.new do |conf|
 
   [conf.cxx].each do |cxx|
     cxx.command = 'g++'
-    cxx.flags = [%w(-g -O3 -Wall -Werror-implicit-function-declaration)]
+    cxx.flags = [%w(-g -O3 -Wall -Werror-implicit-function-declaration -std=gnu++11 -fno-rtti)]
   end
 
   conf.linker do |linker|
@@ -53,10 +53,13 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.bins = []
   conf.build_mrbtest_lib_only
-  conf.disable_cxx_exception
-
+  #conf.disable_cxx_exception
+  conf.enable_cxx_exception
+  #conf.enable_cxx_abi
+  
   conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
   conf.gem :github => "mruby-esp32/mruby-esp32-system"
   conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
+  conf.gem :github => "kishima/mruby-esp32-narya"
 end

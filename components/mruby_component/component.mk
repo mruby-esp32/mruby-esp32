@@ -2,6 +2,8 @@
 COMPONENT_OWNBUILDTARGET := true
 COMPONENT_OWNCLEANTARGET := true
 
+COMPONENT_EXTRA_INCLUDES := $(COMPONENT_PATH)/../FabGL_component/src
+
 COMPONENT_ADD_INCLUDEDIRS := mruby/include/
 
 CFLAGS += -Wno-char-subscripts -Wno-pointer-sign
