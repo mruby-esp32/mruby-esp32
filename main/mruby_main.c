@@ -37,6 +37,7 @@ void mruby_task(void *pvParameter)
   // This task should never end, even if the
   // script ends.
   while (1) {
+	  vTaskDelay(1);
   }
 }
 
@@ -44,6 +45,9 @@ void app_main()
 {
   nvs_flash_init();
   xTaskCreate(&mruby_task, "mruby_task", 8192, NULL, 5, NULL);
+  while(1){
+	  vTaskDelay(1);
+  }
 }
 
 #endif
