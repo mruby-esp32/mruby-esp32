@@ -1,3 +1,4 @@
+#if 1
 #include <stdio.h>
 
 #include "freertos/FreeRTOS.h"
@@ -16,13 +17,27 @@
 
 #define TAG "mruby_task"
 
+void*
+mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
+{
+  if (size == 0) {
+    free(p);
+    return NULL;
+  }
+  else {
+    return heap_caps_realloc(p, size, MALLOC_CAP_SPIRAM);
+  }
+}
+
+
 void mruby_task(void *pvParameter)
 {
-  mrb_state *mrb = mrb_open();
-  mrbc_context *context = mrbc_context_new(mrb);
+  //mrb_state *mrb = mrb_open();
+  mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
+  //mrbc_context *context = mrbc_context_new(mrb);
   int ai = mrb_gc_arena_save(mrb);
   ESP_LOGI(TAG, "%s", "Loading binary...");
-  mrb_load_irep_cxt(mrb, entry_mrb, context);
+  mrb_load_irep(mrb, entry_mrb);
   if (mrb->exc) {
     ESP_LOGE(TAG, "Exception occurred: %s", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
     mrb->exc = 0;
@@ -30,9 +45,10 @@ void mruby_task(void *pvParameter)
     ESP_LOGI(TAG, "%s", "Success");
   }
   mrb_gc_arena_restore(mrb, ai);
-  mrbc_context_free(mrb, context);
+  //mrbc_context_free(mrb, context);
   mrb_close(mrb);
 
+  ESP_LOGI(TAG, "%s", "End of mruby task");
   while (1) {
 	  vTaskDelay(1);
   }
@@ -49,3 +65,5 @@ void loop(){
 	  vTaskDelay(1);
   }
 }
+
+#endif
