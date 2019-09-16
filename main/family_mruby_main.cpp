@@ -13,9 +13,12 @@
 #include "mruby/error.h"
 #include "mruby/string.h"
 
+#include "fmruby_fabgl.h"
+
 #include "entry_mrb.h"
 
 #define TAG "mruby_task"
+
 
 void*
 mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
@@ -32,9 +35,7 @@ mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
 
 void mruby_task(void *pvParameter)
 {
-  //mrb_state *mrb = mrb_open();
   mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
-  //mrbc_context *context = mrbc_context_new(mrb);
   int ai = mrb_gc_arena_save(mrb);
   ESP_LOGI(TAG, "%s", "Loading binary...");
   mrb_load_irep(mrb, entry_mrb);
@@ -45,7 +46,6 @@ void mruby_task(void *pvParameter)
     ESP_LOGI(TAG, "%s", "Success");
   }
   mrb_gc_arena_restore(mrb, ai);
-  //mrbc_context_free(mrb, context);
   mrb_close(mrb);
 
   ESP_LOGI(TAG, "%s", "End of mruby task");
@@ -60,6 +60,8 @@ void setup(){
 
 void loop(){
   nvs_flash_init();
+  fabgl_init();
+  
   xTaskCreate(&mruby_task, "mruby_task", 8192, NULL, 5, NULL);
   while(1){
 	  vTaskDelay(1);
