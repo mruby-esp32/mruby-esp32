@@ -38,7 +38,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cc.defines << %w(MRB_USE_IV_SEGLIST)
     cc.defines << %w(KHASH_DEFAULT_SIZE=8)
     cc.defines << %w(MRB_STR_BUF_MIN_SIZE=20)
-    cc.defines << %w(MRB_GC_STRESS)
+    #cc.defines << %w(MRB_GC_STRESS)
 
     cc.defines << %w(ESP_PLATFORM)
   end
@@ -55,9 +55,15 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.build_mrbtest_lib_only
   conf.enable_cxx_exception
   
-  conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
-  conf.gem :github => "mruby-esp32/mruby-esp32-system"
+  conf.gem :core => "mruby-print"
+  conf.gem :core => "mruby-fiber"
+  conf.gem :core => "mruby-struct"
+  conf.gem :core => "mruby-metaprog"
+  conf.gem :core => "mruby-math"
+  conf.gem :core => "mruby-random"
+
   conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
+  conf.gem :github => "kishima/mruby-esp32-system"
   conf.gem :github => "kishima/mruby-esp32-narya"
 end

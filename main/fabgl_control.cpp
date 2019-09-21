@@ -25,8 +25,7 @@ void fabgl_init(void)
   VGAController.begin(VGA_RED1, VGA_RED0, VGA_GREEN1, VGA_GREEN0, VGA_BLUE1, VGA_BLUE0, VGA_HSYNC, VGA_VSYNC);
 
   VGAController.setResolution(VGA_320x200_75Hz, -1, -1, DOUBLEBUFFERING);
-  //VGAController.moveScreen(20, 0);
-  //VGAController.moveScreen(-8, 0);
+  VGAController.moveScreen(20, 0);
   Canvas.selectFont(Canvas.getPresetFontInfo(40, 14)); // get a font for about 40x14 text screen
   Canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
 }
