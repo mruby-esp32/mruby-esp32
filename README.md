@@ -7,7 +7,7 @@ This project is under way, not officially released.
 ## How to use
 
 - You need a [Narya development board](https://github.com/kishima/narya_board).
-- ESP-IDF v3.2.2 is required. (Other version is not cofirmed)
+- ESP-IDF v3.2.2 is required. (Other version is not confirmed)
 
 1. Clone this repository
 
