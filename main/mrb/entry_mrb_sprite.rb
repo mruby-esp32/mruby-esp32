@@ -26,25 +26,33 @@ end
 
 def load_balls
   balls = []
-  15.times do 
-    balls << Ball.new(0, rand(230), rand(10)+10, rand % 8,rand(15)+2)
+  10.times do 
+    balls << Ball.new(rand(320), rand(200)+20, 2, 7, 1 )
+  end
+  5.times do 
+    balls << Ball.new(rand(320), rand(200)+20, 7, 6, 3 )
+  end
+  2.times do 
+    balls << Ball.new(rand(320), rand(200)+20, 12, 5, 4 )
   end
   balls
 end
+
+puts "Sprite.new"
+sp = Narya::Sprite.new
+sp.move_to(100,100)
 
 balls = load_balls
 count = 0
 loop do
   Narya::Display::clear
+
+  Narya::Display::draw_text(20,5,"Family mruby DEMO!")
   balls.each do |ball|
-    ball.move(ball.speed,ball.speed/2)
+    ball.move(-ball.speed,0)
     draw ball
   end
+  sp.move(3,0)
+  
   Narya::Display::swap
-  ESP32::System::delay(1)
-  count += 1
-  if count > 500
-    count = 0
-    balls = load_balls
-  end
 end
