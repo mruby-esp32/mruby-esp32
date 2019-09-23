@@ -27,7 +27,7 @@ end
 def load_balls
   balls = []
   15.times do 
-    balls << Ball.new(0, rand(230), rand(10)+10, rand % 8,rand(15)+2)
+    balls << Ball.new(0, rand(230), rand(10)+10, rand(7) ,rand(15)+2)
   end
   balls
 end
