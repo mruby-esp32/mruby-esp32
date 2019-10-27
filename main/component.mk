@@ -4,7 +4,9 @@ COMPONENT_EXTRA_INCLUDES := $(PROJECT_PATH)/components/FabGL_component/src
 
 COMPONENT_EXTRA_CLEAN := entry_mrb.h
 
-MRUBY_ENTRY := entry_mrb.rb
+CFLAGS += -D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG
+
+MRUBY_ENTRY := entry_mrb_sprite.rb
 
 family_mruby_main.o: entry_mrb.h
 

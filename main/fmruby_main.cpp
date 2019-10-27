@@ -14,10 +14,12 @@
 #include "mruby/string.h"
 
 #include "fmruby_fabgl.h"
+#include "fmruby_app.h"
 
 #include "entry_mrb.h"
 
-#define TAG "mruby_task"
+#define TAG "fmrb"
+
 
 
 void*
@@ -37,18 +39,18 @@ void mruby_task(void *pvParameter)
 {
   mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
   int ai = mrb_gc_arena_save(mrb);
-  ESP_LOGI(TAG, "%s", "Loading binary...");
+  printf("Loading binary...\n");
   mrb_load_irep(mrb, entry_mrb);
   if (mrb->exc) {
-    ESP_LOGE(TAG, "Exception occurred: %s", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
+    printf("Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
     mrb->exc = 0;
   } else {
-    ESP_LOGI(TAG, "%s", "Success");
+    printf("Success\n");
   }
   mrb_gc_arena_restore(mrb, ai);
   mrb_close(mrb);
 
-  ESP_LOGI(TAG, "%s", "End of mruby task");
+  printf("End of mruby task\n");
   while (1) {
 	  vTaskDelay(1);
   }
@@ -61,11 +63,18 @@ void setup(){
 void loop(){
   nvs_flash_init();
   fabgl_init();
-  
-  xTaskCreate(&mruby_task, "mruby_task", 8192, NULL, 5, NULL);
+  printf("fabgl_init() done\n");
+  terminal_init();
+  printf("terminal_init() done\n");
+
+  xTaskCreate(&terminal_task, "terminal_task", 8192, NULL, 5, NULL);
+
+ 
+  //xTaskCreate(&mruby_task, "mruby_task", 8192, NULL, 5, NULL);
   while(1){
-	  vTaskDelay(1);
+	  vTaskDelay(100);
   }
+
 }
 
 #endif

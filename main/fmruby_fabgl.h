@@ -3,5 +3,4 @@
 
 void fabgl_init(void);
 
-
 #endif
