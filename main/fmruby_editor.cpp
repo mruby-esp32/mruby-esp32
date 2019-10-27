@@ -74,7 +74,9 @@ static void wait_key(void){
     if (Terminal.available())
     {
       char c = Terminal.read();
-      if(c==0x0D)return;
+      if(c == 0x0D){
+        return;
+      }
     }
   }
 }
@@ -84,6 +86,7 @@ void FmrbEditor::begin(void){
   load(sample_script);
   printf("Editor wait_key\n");
   wait_key();
+  printf("Editor got key\n");
   Terminal.clear();
 
   while(true)

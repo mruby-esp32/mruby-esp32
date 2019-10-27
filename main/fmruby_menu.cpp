@@ -44,7 +44,7 @@ void terminal_task(void *pvParameter)
 
   while(true)
   {
-
+/*
     printf("LOOP\n");
       for(int i=0;i<30;i++){
         Terminal.write("\eM");
@@ -54,7 +54,7 @@ void terminal_task(void *pvParameter)
         Terminal.write("\eD");
         vTaskDelay(100 / portTICK_PERIOD_MS);
       }
-
+*/
 
     if (Terminal.available())
     {

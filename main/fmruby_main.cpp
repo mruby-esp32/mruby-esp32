@@ -62,6 +62,7 @@ void setup(){
 
 void loop(){
   nvs_flash_init();
+  printf("nvs_flash_init() done\n");
   fabgl_init();
   printf("fabgl_init() done\n");
   terminal_init();
