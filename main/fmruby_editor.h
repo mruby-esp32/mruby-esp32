@@ -1,12 +1,12 @@
 #pragma once
 
 class FmrbEditor {
-  public:
+public:
   FmrbEditor();
   void begin(void);
   void close(void);
 
-  private:
+private:
   char* m_buff_head;
   int m_height;
   int m_width;
@@ -16,3 +16,4 @@ class FmrbEditor {
   void load(const char* buf);
   void move(int x,int y);
 };
+

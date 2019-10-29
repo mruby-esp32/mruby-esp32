@@ -10,67 +10,7 @@
 
 #include "entry_mrb.h"
 
-const char* sample_script2 = 
-R"(
-puts "*** Family mruby v0.1 ***"
 
-class Ball
-  def initialize(x,y,r,col,speed)
-    @x = x
-    @y = y
-    @r = r
-    @color = col
-    @speed = speed
-  end
-  attr_accessor :x, :y, :r, :color, :speed
-
-  def move(x,y)
-    @x += x
-    @x = 0 if @x > 320
-    @x = 320 if @x < 0
-    @y += y
-    @y = 0 if @y > 200
-    @y = 200 if @y < 0
-  end
-end
-
-def draw(ball)
-  Narya::Display::draw_circle(ball.x,ball.y,ball.r,ball.color)
-end
-
-def load_balls
-  balls = []
-  10.times do 
-    balls << Ball.new(rand(320), rand(200)+20, 2, 7, 1 )
-  end
-  5.times do 
-    balls << Ball.new(rand(320), rand(200)+20, 7, 6, 3 )
-  end
-  2.times do 
-    balls << Ball.new(rand(320), rand(200)+20, 12, 5, 4 )
-  end
-  balls
-end
-
-puts "Sprite.new"
-sp = Narya::Sprite.new
-sp.move_to(100,100)
-
-balls = load_balls
-count = 0
-loop do
-  Narya::Display::clear
-
-  Narya::Display::draw_text(20,5,"Family mruby DEMO!")
-  balls.each do |ball|
-    ball.move(-ball.speed,0)
-    draw ball
-  end
-  sp.move(3,0)
-  
-  Narya::Display::swap
-end
-)";
 
 void* mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
 {
@@ -83,13 +23,24 @@ void* mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
   }
 }
 
+#define DOUBLEBUFFERING 1
+void mruby_init()
+{
+  VGAController.setResolution(VGA_320x200_75Hz, -1, -1, DOUBLEBUFFERING);
 
-void mruby_task(void *pvParameter)
+  Canvas.selectFont(Canvas.getPresetFontInfo(40, 14)); // get a font for about 40x14 text screen
+  Canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
+
+}
+
+
+//void mruby_task(void *pvParameter)
+void mruby_engine(char* code_string)
 {
   mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
   int ai = mrb_gc_arena_save(mrb);
 
-  mrb_value val = mrb_load_string(mrb,sample_script2);
+  mrb_value val = mrb_load_string(mrb,code_string);
   if (mrb->exc) {
     printf("Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
     mrb->exc = 0;

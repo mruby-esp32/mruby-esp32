@@ -5,8 +5,10 @@
 extern TerminalClass Terminal;
 
 void terminal_init(void);
-void terminal_task(void *pvParameter);
+//void terminal_task(void *pvParameter);
+void terminal_func(void);
 
-void mruby_task(void *pvParameter);
+void mruby_init(void);
+void mruby_engine(char* code_string);
 
 #endif
