@@ -7,4 +7,6 @@ extern TerminalClass Terminal;
 void terminal_init(void);
 void terminal_task(void *pvParameter);
 
+void mruby_task(void *pvParameter);
+
 #endif

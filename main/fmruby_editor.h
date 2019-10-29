@@ -8,6 +8,11 @@ class FmrbEditor {
 
   private:
   char* m_buff_head;
+  int m_height;
+  int m_width;
+  int m_x;
+  int m_y;
   
   void load(const char* buf);
+  void move(int x,int y);
 };

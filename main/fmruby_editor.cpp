@@ -68,13 +68,13 @@ FmrbEditor::FmrbEditor(){
 
 }
 
-static void wait_key(void){
+static void wait_key(char target){
   while(true)
   {
     if (Terminal.available())
     {
       char c = Terminal.read();
-      if(c == 0x0D){
+      if(c == target){
         return;
       }
     }
@@ -82,12 +82,15 @@ static void wait_key(void){
 }
 
 void FmrbEditor::begin(void){
+  m_height = Terminal.getColumns();
+  m_width  = Terminal.getRows();
   printf("Editor begin\n");
-  load(sample_script);
-  printf("Editor wait_key\n");
-  wait_key();
+  wait_key(0x0D);
   printf("Editor got key\n");
   Terminal.clear();
+  move(0,0);
+  load(sample_script);
+  printf("Editor wait_key\n");
 
   while(true)
   {
@@ -115,5 +118,29 @@ void FmrbEditor::close(void){
 
 void FmrbEditor::load(const char* buf)
 {
+  int csr=0;
+  while(buf[csr]!='\0')
+  {
+    if(buf[csr]==0x0A) //LF
+    {
+      Terminal.write("\r\n"); 
+    }else{
+      Terminal.write(buf[csr]); 
+    }
+    csr++;
+  }
+  //m_buff_head = buf;
+}
 
+void FmrbEditor::move(int x,int y)
+{
+  if(x>80)x=80-1;
+  if(x<0)x=0;
+  if(y>25)y=25-1;
+  if(y<0)y=0;
+  m_x = x;
+  m_y = y;
+  char buf[10];
+  sprintf(buf,"\e[%d;%dH",m_x,m_y);
+  Terminal.write(buf);
 }

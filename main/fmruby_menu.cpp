@@ -35,12 +35,18 @@ void terminal_init(void)
   Terminal.enableCursor(true);
 }
 
+#include <mruby.h>
+#include <mruby/array.h>
+#include <mruby/proc.h>
+#include <mruby/compile.h>
+#include <mruby/dump.h>
 
 void terminal_task(void *pvParameter)
 {
 
   Editor.begin();
   return;
+
 
   while(true)
   {
