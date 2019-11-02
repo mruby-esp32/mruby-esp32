@@ -6,27 +6,31 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
+#include "fmruby.h"
 #include "fmruby_fabgl.h"
 #include "fmruby_app.h"
 
-void setup(){
-
+void* fmrb_spi_malloc(size_t size)
+{
+  return heap_caps_malloc(size,MALLOC_CAP_SPIRAM);
 }
 
-void loop(){
+void* fmrb_spi_realloc(void* ptr, size_t size)
+{
+  return heap_caps_realloc(ptr,size,MALLOC_CAP_SPIRAM);
+}
+
+
+void setup(){
   nvs_flash_init();
   printf("nvs_flash_init() done\n");
   fabgl_init();
   printf("fabgl_init() done\n");
+}
 
-  terminal_func();
-  //xTaskCreatePinnedToCore(&terminal_task, "terminal_task", 8192, NULL, 1, NULL, 1);  
-  //xTaskCreate(&terminal_task, "terminal_task", 8192, NULL, 5, NULL);
-  //printf("xTaskCreate(terminal_task) done\n");
- 
-  //xTaskCreate(&mruby_task, "mruby_task", 8192, NULL, 5, NULL);
+void loop(){
+  menu_app();
   while(1){
 	  vTaskDelay(1000);
   }
-
 }

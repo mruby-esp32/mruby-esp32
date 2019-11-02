@@ -1,4 +1,4 @@
-#include "fabgl.h"
+#include "fmruby.h"
 #include "fmruby_app.h"
 #include "fmruby_fabgl.h"
 #include "fmruby_editor.h"
@@ -75,6 +75,7 @@ void print_info()
   Terminal.printf("\e[32mFree DMA Memory    :\e[33m %d\r\n", heap_caps_get_free_size(MALLOC_CAP_DMA));
   Terminal.printf("\e[32mFree 32 bit Memory :\e[33m %d\r\n\n", heap_caps_get_free_size(MALLOC_CAP_32BIT));
   Terminal.write("\e[32mFree typing test - press ESC to introduce escape VT/ANSI codes\r\n\n");
+  Terminal.write("\e[37m");
 }
 
 FmrbEditor Editor;
@@ -87,7 +88,7 @@ void terminal_init(void)
   Terminal.connectLocally();      // to use Terminal.read(), available(), etc..
 
   Terminal.setBackgroundColor(Color::Black);
-  Terminal.setForegroundColor(Color::BrightGreen);
+  Terminal.setForegroundColor(Color::White);
   Terminal.clear();
 
   print_info();
@@ -96,63 +97,26 @@ void terminal_init(void)
 
 }
 
-//void terminal_task(void *pvParameter)
-void terminal_func()
+void menu_app()
 {
   printf("terminal_task\n");
-  
-  //fabgl_init();
-  //printf("fabgl_init() done\n");
 
-  terminal_init();
-  printf("terminal_init() done\n");
+  while(true){
+    fabgl_terminal_mode_init();
+    terminal_init();
+    printf("terminal_init() done\n");
 
+    //select app
 
-  //Editor.begin();
-  //return;
+    //1.editor, 2.run script
 
-  printf("LOOP\n");
-  for(int i=0;i<30;i++){
-    Terminal.write("\eM");
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-  }
-  printf("LOOP1\n");
+    int err_code = Editor.run();
+    //vTaskDelay(10000 / portTICK_RATE_MS);
 
-  Terminal.end();
-  printf("Terminal.end()\n");
+    Terminal.end();
+    printf("Terminal.end()\n");
 
-  mruby_init();
-  mruby_engine(sample_script2);
-
-  while(true)
-  {
-/*
-    printf("LOOP\n");
-      for(int i=0;i<30;i++){
-        Terminal.write("\eM");
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-      }
-      for(int i=0;i<30;i++){
-        Terminal.write("\eD");
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-      }
-*/
-
-    if (Terminal.available())
-    {
-      char c = Terminal.read();
-      switch (c) {
-        case 0x7F:       // DEL -> backspace + ESC[K
-          Terminal.write("\b\e[K");
-          break;
-        case 0x0D:       // CR  -> CR + LF
-          Terminal.write("\r\n");
-          break;
-        default:
-          Terminal.write(c);
-          break;
-      }
-
-    }
+    fabgl_mruby_mode_init();
+    mruby_engine(sample_script2);
   }
 }

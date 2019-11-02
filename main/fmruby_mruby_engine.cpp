@@ -8,9 +8,7 @@
 #include "fmruby_fabgl.h"
 #include "fmruby_app.h"
 
-#include "entry_mrb.h"
-
-
+//#include "entry_mrb.h"
 
 void* mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
 {
@@ -23,18 +21,6 @@ void* mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
   }
 }
 
-#define DOUBLEBUFFERING 1
-void mruby_init()
-{
-  VGAController.setResolution(VGA_320x200_75Hz, -1, -1, DOUBLEBUFFERING);
-
-  Canvas.selectFont(Canvas.getPresetFontInfo(40, 14)); // get a font for about 40x14 text screen
-  Canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
-
-}
-
-
-//void mruby_task(void *pvParameter)
 void mruby_engine(char* code_string)
 {
   mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
@@ -66,7 +52,9 @@ void mruby_engine(char* code_string)
   mrb_close(mrb);
 */
   printf("End of mruby task\n");
+  /*
   while (1) {
 	  vTaskDelay(1);
   }
+  */
 }
