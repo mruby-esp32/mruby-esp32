@@ -39,5 +39,6 @@ private:
   void move_cursor(int x,int y);
   void move(int x,int y);
   void finalize(void);
+  void print_csr_info(void);
 };
 

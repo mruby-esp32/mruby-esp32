@@ -66,7 +66,7 @@ loop do
 end
 )";
 
-FmrbEditor::FmrbEditor():m_buff_head(NULL),m_disp_head_line(0){
+FmrbEditor::FmrbEditor():m_buff_head(NULL),m_disp_head_line(1){
 
 }
 
@@ -92,7 +92,7 @@ int FmrbEditor::run(void){
   printf("Editor begin\n");
   wait_key(0x0D);
   Terminal.clear();
-  move(0,0);
+  move_cursor(1,1);
   load(sample_script);
   update();
 
@@ -103,8 +103,8 @@ int FmrbEditor::run(void){
     if (Terminal.available())
     {
       char c = Terminal.read();
-      printf("> %02x\n",c);
-      
+      //printf("> %02x\n",c);
+
       if(!escape)
       {
         if(c>=0x20 && c<=0x7E){
@@ -159,6 +159,7 @@ int FmrbEditor::run(void){
               case 0x43:  // ESC[C : RIGHT
               case 0x44:  // ESC[D : LEFT
                 move_edit_cursor(c);
+                print_csr_info();
                 escape = 0;
                 break;
               case 0x31:  // ESC[1 : ...
@@ -304,6 +305,7 @@ void FmrbEditor::load(const char* buf)
 {
   m_error = EDIT_NO_ERROR;
   int csr=0;
+  m_total_line = 0;
   struct EditLine* fist_line = (struct EditLine*)malloc(sizeof(struct EditLine));
   if(NULL==fist_line){
     m_error = EDIT_MEM_ERROR;
@@ -319,6 +321,7 @@ void FmrbEditor::load(const char* buf)
       return;
     }
     printf("load size=%04d : %s\n",line->length,line->text);
+    m_total_line += 1;
     csr += line->length;
     line->prev = last_line;
     last_line->next = line;
@@ -330,9 +333,14 @@ void FmrbEditor::load(const char* buf)
   m_buff_head = fist_line;
 }
 
+void FmrbEditor::print_csr_info(void)
+{
+  printf("(%02d,%02d) head=%d total=%d\n",m_x,m_y,m_disp_head_line,m_total_line);
+}
+
 void FmrbEditor::move_edit_cursor(int dir)
 {
-  int current_line_n = m_disp_head_line + m_y;
+  int current_line_n = m_disp_head_line-1 + m_y;
   printf("current_line_n=%d\n",current_line_n);
   EditLine* line = seek_line(current_line_n);
   if(NULL==line){
@@ -340,42 +348,42 @@ void FmrbEditor::move_edit_cursor(int dir)
   }
   switch(dir){
     case 0x41:  // A : UP
-      if(0==m_y){
+      if(1==m_y){
         //scroll
-        if(m_disp_head_line > 0){
+        if(m_disp_head_line > 1){
           m_disp_head_line -= 1;
           update();
         }
-      }else if(m_y > 0 && m_y <= m_height-1 ){
+      }else if(m_y > 1){
         m_y = m_y - 1;
-        if( m_x >= line->prev->length ){
-          m_x = line->prev->length-1;
+        if( m_x > line->prev->length ){
+          m_x = line->prev->length;
         }
         move_cursor(m_x, m_y);
       }
       break;
     case 0x42:  // B : DOWN
-      if(m_height-1 == m_y){
+      if(m_disp_height == m_y){
         //scroll
-        if(m_disp_head_line > 0 && m_disp_head_line+m_disp_height < m_total_line){
+        if(m_disp_head_line-1+m_disp_height < m_total_line){
           m_disp_head_line += 1;
           update();
         }
-      }else if(m_y >= 0 && m_y < m_height-1 ){
+      }else if(m_y < m_disp_height ){
         m_y = m_y + 1;
-        if( m_x >= line->next->length ){
-          m_x = line->next->length-1;
+        if( m_x > line->next->length ){
+          m_x = line->next->length;
         }
         move_cursor(m_x, m_y);
       }
       break;
     case 0x43:  // C : RIGHT
-      if(m_x < line->length+1){
+      if(m_x < line->length){
         move_cursor(m_x + 1, m_y);
       }
       break;
     case 0x44:  // D : LEFT
-      if(m_x > 0){
+      if(m_x > 1){
         move_cursor(m_x - 1, m_y);
       }
       break;
@@ -387,10 +395,10 @@ void FmrbEditor::move_edit_cursor(int dir)
 
 void FmrbEditor::move_cursor(int x,int y)
 {
-  if(x>=m_width)x=m_width-1;
-  if(x<0)x=0;
-  if(y>m_height)y=m_height-1;
-  if(y<0)y=0;
+  if(x>m_width)x=m_width;
+  if(x<1)x=1;
+  if(y>m_height)y=m_height;
+  if(y<1)y=1;
   m_x = x;
   m_y = y;
   move(m_x,m_y);
@@ -398,10 +406,10 @@ void FmrbEditor::move_cursor(int x,int y)
 
 void FmrbEditor::move(int x,int y)
 {
-  if(x>=m_width)x=m_width-1;
-  if(x<0)x=0;
-  if(y>m_height)y=m_height-1;
-  if(y<0)y=0;
+  if(x>m_width)x=m_width;
+  if(x<1)x=1;
+  if(y>m_height)y=m_height;
+  if(y<1)y=1;
   char buf[10];
   sprintf(buf,"\e[%d;%dH",y,x);
   Terminal.write(buf);
@@ -410,6 +418,11 @@ void FmrbEditor::move(int x,int y)
 
 EditLine* FmrbEditor::seek_line(int n)
 {
+  if(n<1 || n>m_total_line)
+  {
+    printf("seek line > total line\n");
+    return NULL;
+  }
   if(NULL==m_buff_head)
   {
     printf("m_buff_head is NULL\n");
@@ -418,8 +431,8 @@ EditLine* FmrbEditor::seek_line(int n)
   if(NULL == m_buff_head->next){
     return NULL; 
   } 
-  EditLine* line = m_buff_head->next;
-  for(int i=0;i<n;i++){
+  EditLine* line = m_buff_head;
+  for(int i=1;i<=n;i++){
     line = line->next;
     if(NULL==line){
       printf("line %d doesn't exist\n",n);
@@ -431,7 +444,8 @@ EditLine* FmrbEditor::seek_line(int n)
 
 void FmrbEditor::draw_line(int disp_y,EditLine* line)
 {
-  move(0,disp_y);
+  move(1,disp_y);
+  Terminal.write("\e[2K"); // delete line
   Terminal.write(line->text);
   //Terminal.write("\r\n");
 }
@@ -440,18 +454,17 @@ void FmrbEditor::draw_line(int disp_y,EditLine* line)
 void FmrbEditor::update()
 {
   EditLine* line = seek_line(m_disp_head_line);
-  int cnt=0;
-  printf("m_height=%d\n",m_height);
+  int cnt=1;
   while(NULL != line){
     draw_line(cnt,line);
     if(m_y == cnt){
       if( m_x >= line->length ){
-        move(line->length-1, m_y);
+        move(line->length, m_y);
       }
     }
     line = line->next;
     cnt++;
-    if(cnt >= m_disp_height)
+    if(cnt > m_disp_height)
     {
       break;
     }
@@ -459,12 +472,12 @@ void FmrbEditor::update()
 
   //Draw Functions
   int bottom = m_height;
-  move(0,bottom);
-  Terminal.write("\e[7mUPDATE\e[0m");
-  move(8,bottom);
-  Terminal.write("\e[7m MENU \e[0m");
-  move(16,bottom);
-  Terminal.write("\e[7m RUN  \e[0m");
+  move(1,bottom);
+  Terminal.write("\e[7m UPDATE \e[0m");
+  move(11,bottom);
+  Terminal.write("\e[7m  MENU  \e[0m");
+  move(21,bottom);
+  Terminal.write("\e[7m  RUN   \e[0m");
 
   move(m_x,m_y);
 }
