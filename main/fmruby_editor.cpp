@@ -6,7 +6,7 @@
 #include "fmruby_editor.h"
 
 const char* sample_script = 
-R"(puts "*** Family mruby v0.0 ***"
+R"(puts "*** Family mruby v0.1 ***"
 
 class Ball
   def initialize(x,y,r,col,speed)
@@ -86,54 +86,166 @@ static void wait_key(char target){
 int FmrbEditor::run(void){
   m_height = Terminal.getRows();
   m_width  = Terminal.getColumns();
+  m_disp_height = m_height - 1;
+  m_disp_width = m_width;
+
   printf("Editor begin\n");
   wait_key(0x0D);
-  printf("Editor got key\n");
   Terminal.clear();
   move(0,0);
   load(sample_script);
   update();
 
-  char last = '\0';
+  int escape = 0;
+  char escape_c[4] = {0};
   while(true)
   {
     if (Terminal.available())
     {
       char c = Terminal.read();
       printf("> %02x\n",c);
-      switch (c) {
-        //---FUNCTION KEY---
-        //UPDATE
-        //SAVE
-        //LOAD
-        //RUN
-        //---Other KEY---
-        case 0x7F:       // DEL -> backspace + ESC[K
-          Terminal.write("\b\e[K");
-          break;
-        case 0x0D:       // CR  -> CR + LF
-          Terminal.write("\r\n");
-          break;
-        case 0x4F:
-          //Function key
-          break;
-        case 0x51:
-          if(last == 0x4F){
-            printf("F2\n");
+      
+      if(!escape)
+      {
+        if(c>=0x20 && c<=0x7E){
+          //Visible character
+        }else{
+          switch(c){
+            case 0x7F: // BS
+              printf("BS\n");
+              break;
+            case 0x0D: // CR
+              printf("RETURN\n");
+              break;
+            case 0x1A: // Ctrl-z
+              printf("Ctrl-z\n");
+              break;
+            case 0x18: // Ctrl-x
+              printf("Ctrl-x\n");
+              break;
+            case 0x16: // Ctrl-x
+              printf("Ctrl-v\n");
+              break;
+            case 0x03: // Ctrl-c
+              printf("Ctrl-c\n");
+              break;
+            case 0x04: // Ctrl-d
+              printf("Ctrl-d\n");
+              break;
+            case 0x1B: // ESC
+              escape = 1;
+              break;
           }
-          break;
-        case 0x52:
-          if(last == 0x4F){
-            printf("F3\n");
-            return 0;
-          }
-          break;
+        }
 
-        default:
-          Terminal.write(c);
-          break;
+      }else{ // Escape
+
+        if(escape==1){
+          switch(c){
+            case 0x5B: // '[' : Cursor/ 
+            case 0x4F: // 'O' : Function key
+              escape_c[0] = c;
+              escape=2;
+              break;
+            default:
+              escape=0;
+              break;
+          }
+        }else if(escape==2){
+          if(escape_c[0]==0x5B){
+            switch(c){
+              case 0x41:  // ESC[A : UP
+              case 0x42:  // ESC[B : DOWN
+              case 0x43:  // ESC[C : RIGHT
+              case 0x44:  // ESC[D : LEFT
+                move_edit_cursor(c);
+                escape = 0;
+                break;
+              case 0x31:  // ESC[1 : ...
+              case 0x32:  // ESC[2 : ...
+              case 0x33:  // ESC[3 : ...
+                escape_c[1] = c;
+                escape = 3;
+                break;
+              default:
+                escape = 0;
+              break;
+            }
+          }else if(escape_c[0]==0x4F){
+            switch(c){
+              case 0x50: // ESC OP : F1
+                printf("F1\n");
+                break;
+              case 0x51: // ESC OP : F2
+                printf("F2\n");
+                break;
+              case 0x52: // ESC OP : F3
+                printf("F3\n");
+                return 0;
+                break;
+              case 0x53: // ESC OP : F4
+                printf("F4\n");
+                break;
+            }
+            escape = 0;
+          }else{
+            escape = 0;
+          }
+        }else if(escape==3){
+          if(escape_c[1]==0x31){
+            switch(c){
+              case 0x35: // ESC[15 : ..  F5
+              case 0x37: // ESC[17 : ..  F6
+              case 0x38: // ESC[18 : ..  F7
+              case 0x39: // ESC[19 : ..  F8
+                escape_c[2] = c;
+                escape = 4;
+                break;
+              default:
+                escape = 0;
+                break;
+            }
+          }else if(escape_c[1]==0x32){
+            switch(c){
+              case 0x30: // ESC[20 : ..  F9
+              case 0x31: // ESC[21 : ..  F10
+              case 0x33: // ESC[23 : ..  F11
+              case 0x34: // ESC[24 : ..  F12
+                escape_c[2] = c;
+                escape = 4;
+                break;
+              default:
+                escape = 0;
+                break;
+            }
+          }else if(escape_c[1]==0x33){
+            if(c==0x7E){ // ESC[3~ : DEL
+              printf("DEL\n");
+            }
+            escape=0;
+          }else{
+            escape=0;
+          }
+        }else if(escape==4){
+          switch(c){
+            case 0x7E: //  ESC[1*~ : FN
+              printf("FN\n");
+              break;
+            default:
+              break;
+          }
+          escape=0;
+        }else{ //escape > 4
+          escape=0;
+        }
+
+        if(escape==0){
+          escape_c[0] = 0;
+          escape_c[1] = 0;
+          escape_c[2] = 0;
+          escape_c[3] = 0;
+        }
       }
-      last = c;
     }
   }
 }
@@ -218,18 +330,83 @@ void FmrbEditor::load(const char* buf)
   m_buff_head = fist_line;
 }
 
-void FmrbEditor::move(int x,int y)
+void FmrbEditor::move_edit_cursor(int dir)
 {
-  if(x>80)x=80-1;
+  int current_line_n = m_disp_head_line + m_y;
+  printf("current_line_n=%d\n",current_line_n);
+  EditLine* line = seek_line(current_line_n);
+  if(NULL==line){
+    return;
+  }
+  switch(dir){
+    case 0x41:  // A : UP
+      if(0==m_y){
+        //scroll
+        if(m_disp_head_line > 0){
+          m_disp_head_line -= 1;
+          update();
+        }
+      }else if(m_y > 0 && m_y <= m_height-1 ){
+        m_y = m_y - 1;
+        if( m_x >= line->prev->length ){
+          m_x = line->prev->length-1;
+        }
+        move_cursor(m_x, m_y);
+      }
+      break;
+    case 0x42:  // B : DOWN
+      if(m_height-1 == m_y){
+        //scroll
+        if(m_disp_head_line > 0 && m_disp_head_line+m_disp_height < m_total_line){
+          m_disp_head_line += 1;
+          update();
+        }
+      }else if(m_y >= 0 && m_y < m_height-1 ){
+        m_y = m_y + 1;
+        if( m_x >= line->next->length ){
+          m_x = line->next->length-1;
+        }
+        move_cursor(m_x, m_y);
+      }
+      break;
+    case 0x43:  // C : RIGHT
+      if(m_x < line->length+1){
+        move_cursor(m_x + 1, m_y);
+      }
+      break;
+    case 0x44:  // D : LEFT
+      if(m_x > 0){
+        move_cursor(m_x - 1, m_y);
+      }
+      break;
+    default:
+      break;
+  }
+
+}
+
+void FmrbEditor::move_cursor(int x,int y)
+{
+  if(x>=m_width)x=m_width-1;
   if(x<0)x=0;
-  if(y>25)y=25-1;
+  if(y>m_height)y=m_height-1;
   if(y<0)y=0;
   m_x = x;
   m_y = y;
+  move(m_x,m_y);
+}
+
+void FmrbEditor::move(int x,int y)
+{
+  if(x>=m_width)x=m_width-1;
+  if(x<0)x=0;
+  if(y>m_height)y=m_height-1;
+  if(y<0)y=0;
   char buf[10];
-  sprintf(buf,"\e[%d;%dH",m_y,m_x);
+  sprintf(buf,"\e[%d;%dH",y,x);
   Terminal.write(buf);
 }
+
 
 EditLine* FmrbEditor::seek_line(int n)
 {
@@ -252,29 +429,43 @@ EditLine* FmrbEditor::seek_line(int n)
   return line;
 }
 
+void FmrbEditor::draw_line(int disp_y,EditLine* line)
+{
+  move(0,disp_y);
+  Terminal.write(line->text);
+  //Terminal.write("\r\n");
+}
+
+
 void FmrbEditor::update()
 {
   EditLine* line = seek_line(m_disp_head_line);
   int cnt=0;
   printf("m_height=%d\n",m_height);
   while(NULL != line){
-    Terminal.write(line->text);
-    Terminal.write("\r\n");
+    draw_line(cnt,line);
+    if(m_y == cnt){
+      if( m_x >= line->length ){
+        move(line->length-1, m_y);
+      }
+    }
     line = line->next;
     cnt++;
-    if(cnt >= m_height-1)
+    if(cnt >= m_disp_height)
     {
       break;
     }
   }
+
+  //Draw Functions
   int bottom = m_height;
   move(0,bottom);
-  Terminal.write("\e[7mLOAD\e[0m");
+  Terminal.write("\e[7mUPDATE\e[0m");
   move(8,bottom);
-  Terminal.write("\e[7mSAVE\e[0m");
+  Terminal.write("\e[7m MENU \e[0m");
   move(16,bottom);
-  Terminal.write("\e[7mRUN \e[0m");
+  Terminal.write("\e[7m RUN  \e[0m");
 
-  move(0,0);
+  move(m_x,m_y);
 }
 

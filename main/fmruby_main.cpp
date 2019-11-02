@@ -30,7 +30,7 @@ void setup(){
 
 void loop(){
   menu_app();
-  while(1){
+  while(true){
 	  vTaskDelay(1000);
   }
 }

@@ -21,16 +21,22 @@ public:
 private:
   EditLine* m_buff_head;
   int m_height;
+  int m_disp_height;
   int m_width;
+  int m_disp_width;
   int m_x;
   int m_y;
   int m_disp_head_line;
+  int m_total_line;
   enum EDIT_STATUS m_error;
   
   void update(void);
   void load(const char* buf);
   EditLine* load_line(const char* in);
   EditLine* seek_line(int n);
+  void draw_line(int disp_y,EditLine* line);
+  void move_edit_cursor(int dir);
+  void move_cursor(int x,int y);
   void move(int x,int y);
   void finalize(void);
 };
