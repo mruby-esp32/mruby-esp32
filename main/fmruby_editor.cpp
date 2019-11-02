@@ -6,8 +6,7 @@
 #include "fmruby_editor.h"
 
 const char* sample_script = 
-R"(
-puts "*** Family mruby v0.0 ***"
+R"(puts "*** Family mruby v0.0 ***"
 
 class Ball
   def initialize(x,y,r,col,speed)
@@ -95,6 +94,7 @@ int FmrbEditor::run(void){
   load(sample_script);
   update();
 
+  char last = '\0';
   while(true)
   {
     if (Terminal.available())
@@ -114,10 +114,26 @@ int FmrbEditor::run(void){
         case 0x0D:       // CR  -> CR + LF
           Terminal.write("\r\n");
           break;
+        case 0x4F:
+          //Function key
+          break;
+        case 0x51:
+          if(last == 0x4F){
+            printf("F2\n");
+          }
+          break;
+        case 0x52:
+          if(last == 0x4F){
+            printf("F3\n");
+            return 0;
+          }
+          break;
+
         default:
           Terminal.write(c);
           break;
       }
+      last = c;
     }
   }
 }
