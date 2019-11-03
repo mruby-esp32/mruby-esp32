@@ -66,43 +66,88 @@ loop do
 end
 )";
 
-EditLine::EditLine():
-  text(NULL),
-  length(0),
-  flag(0),
-  lineno(0),
-  buff_size(0),
-  prev(NULL),
-  next(NULL)
+EditLine* EditLine::create_line(void)
 {
+  EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
+  if(line){
+    if(line->init() < 0){
+      free(line);
+      line = NULL;
+    }    
+  }
+  return line;
+}
 
+
+int EditLine::init(void)
+{
+  text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
+  if(text == NULL) return -1;
+  memset(text,0,EDITLINE_BLOCK_SIZE);
+  text[0] = '\0';
+  length = 0;
+  flag = 0;
+  lineno = 0;
+  buff_size = EDITLINE_BLOCK_SIZE;
+  prev = NULL;
+  next = NULL;
+  return 0;
 }
 
 int EditLine::insert(uint16_t pos,char c)
 {
-  if(pos>length)
-  {
-    return -1;
-  }
+  if(text==NULL) return -1;
 
-  if(text==NULL)
+  printf("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
+  if( length+1+1 > buff_size) // Text lenght + null char + new char >= cuurent buff size
   {
-    text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_MAX);
-    if(NULL==text)
+    printf("realloc block(text_p:%p new buff size:%d)\n",text,buff_size+EDITLINE_BLOCK_SIZE);
+    text = (char*)fmrb_spi_realloc(text,buff_size+EDITLINE_BLOCK_SIZE);
+    if (NULL==text)
     {
       return -1;
     }
-    text[pos]=c;
-
-  }else if(pos % EDITLINE_BLOCK_MAX == 0){
-    if (NULL==fmrb_spi_realloc(text,pos+EDITLINE_BLOCK_MAX))
-    {
-      free(text);
-      return -1;
-    }
+    memset(text+buff_size,0,EDITLINE_BLOCK_SIZE);
+    buff_size += EDITLINE_BLOCK_SIZE;
   }
-  return 1;
+  // 012345
+  // ABC@      pos=2, length=3, buffsize=6
+  // ABXC@            length=4, buffsize=6
+
+  printf("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
+  memmove(text+pos+1,text+pos,length-pos+1);
+  text[pos]=c;
+  length+=1;
+  return 0;
 }
+
+int EditLine::backdelete(uint16_t pos)
+{
+  if(text==NULL) return -1;
+  if(pos==0) return -1;
+  // 012345
+  // ABC@      pos=1, length=3, buffsize=6
+  // BC@              length=2, buffsize=6
+
+  printf("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
+  memmove(text+pos-1,text+pos,length-pos+1);
+  length-=1;
+
+  printf("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
+  if( length+1 <= buff_size - EDITLINE_BLOCK_SIZE) // Text lenght + null char < cuurent buff size - BLOCK
+  {
+    printf("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
+    text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
+    if (NULL==text)
+    {
+      return -1;
+    }
+    buff_size -= EDITLINE_BLOCK_SIZE;
+  }
+
+  return 0;
+}
+
 
 int EditLine::insert(char c)
 {
@@ -305,18 +350,9 @@ void FmrbEditor::finalize(void){
 
 }
 
-static EditLine* alloc_new_line()
-{
-  EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
-  if(line){
-    memset(line,0,sizeof(EditLine));
-  }
-  return line;
-}
-
 EditLine* FmrbEditor::load_line(const char* in)
 {
-  EditLine* line_p = alloc_new_line();
+  EditLine* line_p = EditLine::create_line();
   if(NULL==line_p){
     m_error = EDIT_MEM_ERROR;
     return NULL;
@@ -325,25 +361,20 @@ EditLine* FmrbEditor::load_line(const char* in)
   bool end_flag=false;
   while(!end_flag)
   {
-    if(csr % EDITLINE_BLOCK_MAX == 0){
-      if(line_p->text==NULL)
+#if 1
+    if( (csr+1) % EDITLINE_BLOCK_SIZE == 0){
+      if (NULL==fmrb_spi_realloc(line_p->text,csr+EDITLINE_BLOCK_SIZE))
       {
-        line_p->text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_MAX);
-        if(NULL==line_p->text)
-        {
-          free(line_p);
-          return NULL;
-        }
-      }else{
-        if (NULL==fmrb_spi_realloc(line_p->text,csr+EDITLINE_BLOCK_MAX))
-        {
-          free(line_p->text);
-          free(line_p);
-          return NULL;
-        }
+        free(line_p->text);
+        free(line_p);
+        return NULL;
       }
+      line_p->buff_size = line_p->buff_size+EDITLINE_BLOCK_SIZE;
     }
     line_p->text[csr] = in[csr];
+#else
+    line_p->insert(in[csr]);
+#endif
     //if(in[csr]==0x0A)
     if(in[csr]=='\r' || in[csr]=='\n')
     {
@@ -362,7 +393,7 @@ void FmrbEditor::load(const char* buf)
   m_error = EDIT_NO_ERROR;
   int csr=0;
   m_total_line = 0;
-  EditLine* fist_line = alloc_new_line();
+  EditLine* fist_line = EditLine::create_line();
   if(NULL==fist_line){
     m_error = EDIT_MEM_ERROR;
     return;
@@ -543,7 +574,12 @@ void FmrbEditor::update()
 
 void FmrbEditor::insert_ch(char c)
 {
-
+  EditLine* line = seek_line(m_disp_head_line+m_y-1);
+  printf("INSERT(%c):text:%s\n",c,line->text);
+  line->insert(m_x-m_lineno_shift-1,c);
+  draw_line(m_y,line);
+  m_x += 1;
+  move(m_x,m_y);
 }
 
 void FmrbEditor::insert_ret()
@@ -553,5 +589,12 @@ void FmrbEditor::insert_ret()
 
 void FmrbEditor::delete_ch()
 {
-
+  EditLine* line = seek_line(m_disp_head_line+m_y-1);
+  printf("BS:text:%s\n",line->text);
+  if(m_x-m_lineno_shift-1>0){
+    line->backdelete(m_x-m_lineno_shift-1);
+    draw_line(m_y,line);
+    m_x -= 1;
+    move(m_x,m_y);
+  }
 }

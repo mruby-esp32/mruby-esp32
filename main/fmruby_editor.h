@@ -2,11 +2,9 @@
 
 #include <stdint.h>
 
-#define EDITLINE_BLOCK_MAX (16)
+#define EDITLINE_BLOCK_SIZE (16)
 
-class EditLine {
-public:
-  EditLine();
+struct EditLine {
   char* text;
   uint16_t length;
   uint16_t flag;
@@ -15,8 +13,11 @@ public:
   EditLine* prev;
   EditLine* next;
 
+  static EditLine* create_line(void);
+  int init(void);
   int insert(char c);  
   int insert(uint16_t pos,char c);
+  int backdelete(uint16_t pos);
 private:
 
 };
