@@ -66,6 +66,49 @@ loop do
 end
 )";
 
+EditLine::EditLine():
+  text(NULL),
+  length(0),
+  flag(0),
+  lineno(0),
+  buff_size(0),
+  prev(NULL),
+  next(NULL)
+{
+
+}
+
+int EditLine::insert(uint16_t pos,char c)
+{
+  if(pos>length)
+  {
+    return -1;
+  }
+
+  if(text==NULL)
+  {
+    text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_MAX);
+    if(NULL==text)
+    {
+      return -1;
+    }
+    text[pos]=c;
+
+  }else if(pos % EDITLINE_BLOCK_MAX == 0){
+    if (NULL==fmrb_spi_realloc(text,pos+EDITLINE_BLOCK_MAX))
+    {
+      free(text);
+      return -1;
+    }
+  }
+  return 1;
+}
+
+int EditLine::insert(char c)
+{
+  return 1;
+}
+
 FmrbEditor::FmrbEditor():
   m_buff_head(NULL),
   m_lineno_shift(6),
@@ -264,17 +307,16 @@ void FmrbEditor::finalize(void){
 
 static EditLine* alloc_new_line()
 {
-  struct EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(struct EditLine));
+  EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
   if(line){
     memset(line,0,sizeof(EditLine));
   }
   return line;
 }
 
-#define LINE_MAX (16)
-struct EditLine* FmrbEditor::load_line(const char* in)
+EditLine* FmrbEditor::load_line(const char* in)
 {
-  struct EditLine* line_p = alloc_new_line();
+  EditLine* line_p = alloc_new_line();
   if(NULL==line_p){
     m_error = EDIT_MEM_ERROR;
     return NULL;
@@ -283,17 +325,17 @@ struct EditLine* FmrbEditor::load_line(const char* in)
   bool end_flag=false;
   while(!end_flag)
   {
-    if(csr % LINE_MAX == 0){
+    if(csr % EDITLINE_BLOCK_MAX == 0){
       if(line_p->text==NULL)
       {
-        line_p->text = (char*)fmrb_spi_malloc(LINE_MAX);
+        line_p->text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_MAX);
         if(NULL==line_p->text)
         {
           free(line_p);
           return NULL;
         }
       }else{
-        if (NULL==fmrb_spi_realloc(line_p->text,csr+LINE_MAX))
+        if (NULL==fmrb_spi_realloc(line_p->text,csr+EDITLINE_BLOCK_MAX))
         {
           free(line_p->text);
           free(line_p);
@@ -320,16 +362,16 @@ void FmrbEditor::load(const char* buf)
   m_error = EDIT_NO_ERROR;
   int csr=0;
   m_total_line = 0;
-  struct EditLine* fist_line = alloc_new_line();
+  EditLine* fist_line = alloc_new_line();
   if(NULL==fist_line){
     m_error = EDIT_MEM_ERROR;
     return;
   }
   fist_line->prev=NULL;
-  struct EditLine* last_line = fist_line;
+  EditLine* last_line = fist_line;
   while(buf[csr]!='\0')
   {
-    struct EditLine* line = load_line(&buf[csr]);
+    EditLine* line = load_line(&buf[csr]);
     if(NULL==line){
       m_error = EDIT_MEM_ERROR;
       return;
