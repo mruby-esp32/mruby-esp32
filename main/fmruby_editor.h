@@ -31,6 +31,7 @@ class FmrbEditor {
 public:
   FmrbEditor();
   int run(void);
+  char* dump_script(void);
 
 private:
   EditLine* m_buff_head;

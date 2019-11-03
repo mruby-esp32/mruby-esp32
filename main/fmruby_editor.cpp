@@ -584,6 +584,7 @@ void FmrbEditor::insert_ch(char c)
 
 void FmrbEditor::insert_ret()
 {
+  EditLine* line = seek_line(m_disp_head_line+m_y-1);
 
 }
 
@@ -597,4 +598,37 @@ void FmrbEditor::delete_ch()
     m_x -= 1;
     move(m_x,m_y);
   }
+}
+
+
+
+char* FmrbEditor::dump_script(void)
+{
+  if(NULL==m_buff_head) return NULL;
+  if(NULL==m_buff_head->next) return NULL;
+  EditLine* line = m_buff_head->next;
+  int total_length = 0;
+  while(line)
+  {
+    total_length += line->length + 1;
+    line = line->next;
+  }
+  printf("total_length=%d\n",total_length);
+  char* buff = (char*)fmrb_spi_malloc(total_length);
+  if(NULL==buff){
+    printf("cannot allocate memory!\n");
+    return NULL;
+  }
+  int csr = 0;
+  line = m_buff_head->next;
+  while(line)
+  {
+    memcpy(&buff[csr],line->text,line->length);
+    buff[csr+line->length]='\n';
+    csr += line->length+1;
+    line = line->next;
+  }
+  buff[csr]='\0';
+  printf("%s\n",buff);
+  return buff;
 }
