@@ -66,7 +66,11 @@ loop do
 end
 )";
 
-FmrbEditor::FmrbEditor():m_buff_head(NULL),m_disp_head_line(1){
+FmrbEditor::FmrbEditor():
+  m_buff_head(NULL),
+  m_lineno_shift(6),
+  m_disp_head_line(1)
+{
 
 }
 
@@ -92,7 +96,7 @@ int FmrbEditor::run(void){
   printf("Editor begin\n");
   wait_key(0x0D);
   Terminal.clear();
-  move_cursor(1,1);
+  move_cursor(m_lineno_shift+1,1);
   load(sample_script);
   update();
 
@@ -265,6 +269,7 @@ struct EditLine* FmrbEditor::load_line(const char* in)
   }
   line_p->text = NULL;
   line_p->flag = 0;
+  line_p->lineno = 0;
   int csr=0;
   bool end_flag=false;
   while(!end_flag)
@@ -322,6 +327,7 @@ void FmrbEditor::load(const char* buf)
     }
     printf("load size=%04d : %s\n",line->length,line->text);
     m_total_line += 1;
+    line->lineno = m_total_line;
     csr += line->length;
     line->prev = last_line;
     last_line->next = line;
@@ -341,7 +347,7 @@ void FmrbEditor::print_csr_info(void)
 void FmrbEditor::move_edit_cursor(int dir)
 {
   int current_line_n = m_disp_head_line-1 + m_y;
-  printf("current_line_n=%d\n",current_line_n);
+  //printf("current_line_n=%d\n",current_line_n);
   EditLine* line = seek_line(current_line_n);
   if(NULL==line){
     return;
@@ -356,8 +362,8 @@ void FmrbEditor::move_edit_cursor(int dir)
         }
       }else if(m_y > 1){
         m_y = m_y - 1;
-        if( m_x > line->prev->length ){
-          m_x = line->prev->length;
+        if( m_x > m_lineno_shift + line->prev->length + 1 ){
+          m_x = m_lineno_shift + line->prev->length + 1;
         }
         move_cursor(m_x, m_y);
       }
@@ -371,19 +377,19 @@ void FmrbEditor::move_edit_cursor(int dir)
         }
       }else if(m_y < m_disp_height ){
         m_y = m_y + 1;
-        if( m_x > line->next->length ){
-          m_x = line->next->length;
+        if( m_x > m_lineno_shift + line->next->length + 1 ){
+          m_x = m_lineno_shift + line->next->length + 1;
         }
         move_cursor(m_x, m_y);
       }
       break;
     case 0x43:  // C : RIGHT
-      if(m_x < line->length){
+      if(m_x <= m_lineno_shift + line->length){
         move_cursor(m_x + 1, m_y);
       }
       break;
     case 0x44:  // D : LEFT
-      if(m_x > 1){
+      if(m_x > m_lineno_shift + 1){
         move_cursor(m_x - 1, m_y);
       }
       break;
@@ -446,6 +452,8 @@ void FmrbEditor::draw_line(int disp_y,EditLine* line)
 {
   move(1,disp_y);
   Terminal.write("\e[2K"); // delete line
+
+  Terminal.printf("\e[34m%04d: \e[0m",line->lineno);
   Terminal.write(line->text);
   //Terminal.write("\r\n");
 }
@@ -473,11 +481,11 @@ void FmrbEditor::update()
   //Draw Functions
   int bottom = m_height;
   move(1,bottom);
-  Terminal.write("\e[7m UPDATE \e[0m");
+  Terminal.write("\e[30m\e[46m UPDATE \e[0m");
   move(11,bottom);
-  Terminal.write("\e[7m  MENU  \e[0m");
+  Terminal.write("\e[30m\e[46m  MENU  \e[0m");
   move(21,bottom);
-  Terminal.write("\e[7m  RUN   \e[0m");
+  Terminal.write("\e[30m\e[46m  RUN   \e[0m");
 
   move(m_x,m_y);
 }

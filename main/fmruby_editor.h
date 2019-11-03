@@ -4,6 +4,7 @@ struct EditLine{
   char* text;
   int length;
   int flag;
+  int lineno;
   EditLine* prev;
   EditLine* next;
 };
@@ -24,6 +25,7 @@ private:
   int m_disp_height;
   int m_width;
   int m_disp_width;
+  int m_lineno_shift;
   int m_x;
   int m_y;
   int m_disp_head_line;
