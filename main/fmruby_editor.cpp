@@ -70,29 +70,53 @@ EditLine* EditLine::create_line(void)
 {
   EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
   if(line){
-    if(line->init() < 0){
+    if(line->init(NULL) < 0){
       free(line);
-      line = NULL;
+      return NULL;
     }    
   }
   return line;
 }
 
-
-int EditLine::init(void)
+EditLine* EditLine::create_line(char* input)
 {
-  text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
-  if(text == NULL) return -1;
-  memset(text,0,EDITLINE_BLOCK_SIZE);
-  text[0] = '\0';
-  length = 0;
+  EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
+  if(NULL==line)return NULL;
+  
+  if(line->init(input) < 0){
+    free(line);
+    return NULL;
+  }
+  return line;
+}
+
+
+int EditLine::init(char* input)
+{
+  if(NULL==input){
+    text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
+    if(text == NULL) return -1;
+    memset(text,0,EDITLINE_BLOCK_SIZE);
+    text[0] = '\0';
+    length = 0;
+    buff_size = EDITLINE_BLOCK_SIZE;
+  }else{
+    int input_len = strlen(input);
+    int block_size = (input_len+1)/EDITLINE_BLOCK_SIZE + 1;
+    buff_size = EDITLINE_BLOCK_SIZE * block_size;
+    text = (char*)fmrb_spi_malloc(buff_size);
+    if(text == NULL) return -1;
+    memset(text,0,buff_size);
+    strcpy(text,input);
+    length = input_len;
+  }
   flag = 0;
   lineno = 0;
-  buff_size = EDITLINE_BLOCK_SIZE;
   prev = NULL;
   next = NULL;
   return 0;
 }
+
 
 int EditLine::insert(uint16_t pos,char c)
 {
@@ -154,6 +178,41 @@ int EditLine::insert(char c)
   return 1;
 }
 
+char* EditLine::cut(uint16_t start_pos, uint16_t end_pos)
+{
+  // 0123456789
+  // abcde@     // start:2 end:5
+  // cde@       // buff
+  // ab@        // text
+
+  if(NULL==text)return NULL;
+  if(end_pos < start_pos)return NULL;
+  int copy_size = end_pos - start_pos + 1;
+  char* buff = (char*)fmrb_spi_malloc(copy_size);
+  memcpy(buff,&text[start_pos],copy_size);
+  memmove(&text[start_pos],&text[end_pos],length-end_pos+1);
+  length -= copy_size-1;
+  
+  printf("start:%d end:%d length=%d buffsize=%d\n",start_pos,end_pos,length,buff_size);
+  if( length+1 <= buff_size - EDITLINE_BLOCK_SIZE) // Text lenght + null char < cuurent buff size - BLOCK
+  {
+    printf("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
+    text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
+    if (NULL==text)
+    {
+      free(buff);
+      return NULL;
+    }
+    buff_size -= EDITLINE_BLOCK_SIZE;
+  }
+  return buff;
+}
+
+
+/*********************
+ * FmrbEditor
+ * 
+ */
 FmrbEditor::FmrbEditor():
   m_buff_head(NULL),
   m_lineno_shift(6),
@@ -210,6 +269,7 @@ int FmrbEditor::run(void){
               break;
             case 0x0D: // CR
               printf("RETURN\n");
+              insert_ret();
               break;
             case 0x1A: // Ctrl-z
               printf("Ctrl-z\n");
@@ -572,6 +632,21 @@ void FmrbEditor::update()
   move(m_x,m_y);
 }
 
+void FmrbEditor::update_lineno(void)
+{
+  if(NULL==m_buff_head) return;
+  if(NULL==m_buff_head->next) return;
+  EditLine* line = m_buff_head->next;
+  int lineno = 0;
+  while(line)
+  {
+    lineno += 1;
+    line->lineno = lineno;
+    line = line->next;
+  }
+
+}
+
 void FmrbEditor::insert_ch(char c)
 {
   EditLine* line = seek_line(m_disp_head_line+m_y-1);
@@ -585,7 +660,33 @@ void FmrbEditor::insert_ch(char c)
 void FmrbEditor::insert_ret()
 {
   EditLine* line = seek_line(m_disp_head_line+m_y-1);
+  if(NULL==line)return;
+  char* cut_test = line->cut(m_x-m_lineno_shift-1,line->length);
+  if(NULL==cut_test)return;
+  EditLine* new_line = EditLine::create_line(cut_test);
+  if(NULL==new_line){
+    free(cut_test);
+    return;
+  }
+  new_line->prev = line;
+  new_line->next = line->next;
+  line->next = new_line;
+  m_total_line++;
+  free(cut_test);
+  update_lineno();
 
+  m_x = m_lineno_shift + 1;
+
+  if(m_disp_height == m_y){
+    //scroll
+    if(m_disp_head_line-1+m_disp_height < m_total_line){
+      m_disp_head_line += 1;
+    }
+  }else{
+    m_y = m_y + 1;
+  }
+
+  update();
 }
 
 void FmrbEditor::delete_ch()

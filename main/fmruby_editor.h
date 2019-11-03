@@ -14,10 +14,12 @@ struct EditLine {
   EditLine* next;
 
   static EditLine* create_line(void);
-  int init(void);
+  static EditLine* create_line(char*);
+  int init(char* input);
   int insert(char c);  
   int insert(uint16_t pos,char c);
   int backdelete(uint16_t pos);
+  char* cut(uint16_t start_pos, uint16_t end_pos);
 private:
 
 };
@@ -51,6 +53,7 @@ private:
   EditLine* seek_line(int n);
 
   void update(void);
+  void update_lineno(void);
   void draw_line(int disp_y,EditLine* line);
 
   void move_edit_cursor(int dir);
