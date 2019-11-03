@@ -113,10 +113,12 @@ int FmrbEditor::run(void){
       {
         if(c>=0x20 && c<=0x7E){
           //Visible character
+          insert_ch(c);
         }else{
           switch(c){
             case 0x7F: // BS
               printf("BS\n");
+              delete_ch();
               break;
             case 0x0D: // CR
               printf("RETURN\n");
@@ -127,7 +129,7 @@ int FmrbEditor::run(void){
             case 0x18: // Ctrl-x
               printf("Ctrl-x\n");
               break;
-            case 0x16: // Ctrl-x
+            case 0x16: // Ctrl-v
               printf("Ctrl-v\n");
               break;
             case 0x03: // Ctrl-c
@@ -226,6 +228,7 @@ int FmrbEditor::run(void){
           }else if(escape_c[1]==0x33){
             if(c==0x7E){ // ESC[3~ : DEL
               printf("DEL\n");
+              delete_ch();
             }
             escape=0;
           }else{
@@ -259,17 +262,23 @@ void FmrbEditor::finalize(void){
 
 }
 
+static EditLine* alloc_new_line()
+{
+  struct EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(struct EditLine));
+  if(line){
+    memset(line,0,sizeof(EditLine));
+  }
+  return line;
+}
+
 #define LINE_MAX (16)
 struct EditLine* FmrbEditor::load_line(const char* in)
 {
-  struct EditLine* line_p = (struct EditLine*)fmrb_spi_malloc(sizeof(struct EditLine));
+  struct EditLine* line_p = alloc_new_line();
   if(NULL==line_p){
     m_error = EDIT_MEM_ERROR;
     return NULL;
   }
-  line_p->text = NULL;
-  line_p->flag = 0;
-  line_p->lineno = 0;
   int csr=0;
   bool end_flag=false;
   while(!end_flag)
@@ -311,7 +320,7 @@ void FmrbEditor::load(const char* buf)
   m_error = EDIT_NO_ERROR;
   int csr=0;
   m_total_line = 0;
-  struct EditLine* fist_line = (struct EditLine*)malloc(sizeof(struct EditLine));
+  struct EditLine* fist_line = alloc_new_line();
   if(NULL==fist_line){
     m_error = EDIT_MEM_ERROR;
     return;
@@ -490,3 +499,17 @@ void FmrbEditor::update()
   move(m_x,m_y);
 }
 
+void FmrbEditor::insert_ch(char c)
+{
+
+}
+
+void FmrbEditor::insert_ret()
+{
+
+}
+
+void FmrbEditor::delete_ch()
+{
+
+}
