@@ -2,6 +2,16 @@
 
 #include <stdint.h>
 
+class FmrbFileService {
+public:
+  FmrbFileService();
+  int init();
+  char* load();
+  int save(char* buff);
+private:
+  bool m_opened;
+};
+
 #define EDITLINE_BLOCK_SIZE (16)
 
 struct EditLine {
@@ -48,6 +58,11 @@ private:
   int m_total_line;
   enum EDIT_STATUS m_error;
   
+  void load_file();
+  void save_file();
+  void load_demo_file();
+  void clear_buffer();
+
   void load(const char* buf);
   EditLine* load_line(const char* in);
   EditLine* seek_line(int n);

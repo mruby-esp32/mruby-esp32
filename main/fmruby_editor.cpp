@@ -5,8 +5,15 @@
 #include "fmruby_app.h"
 #include "fmruby_editor.h"
 
+#include "FS.h"
+#include "SPIFFS.h"
+
+const char* null_script = 
+R"(
+)";
+
 const char* sample_script = 
-R"(puts "*** Family mruby v0.1 ***"
+R"(puts "*** Family mruby v0.5 ***"
 
 class Ball
   def initialize(x,y,r,col,speed)
@@ -65,6 +72,72 @@ loop do
   Narya::Display::swap
 end
 )";
+
+FmrbFileService file_service;
+
+#define DEFAULT_TEST_PATH "/default.rb"
+FmrbFileService::FmrbFileService(){
+  m_opened=false;
+}
+
+#define FORMAT_SPIFFS_IF_FAILED false
+
+int FmrbFileService::init(){
+  VGAController.suspendBackgroundPrimitiveExecution();
+  bool ret = SPIFFS.begin();
+  VGAController.resumeBackgroundPrimitiveExecution();
+  if(!ret){
+    printf("SPIFFS Mount Failed\n");
+    return -1;
+  }
+  printf("SPIFFS Mount OK\n");
+  m_opened=true;
+  return 0;
+}
+
+char* FmrbFileService::load(){
+  printf("Reading file: %s\r\n", DEFAULT_TEST_PATH);
+  if(!m_opened) return NULL;
+
+  VGAController.suspendBackgroundPrimitiveExecution();
+  File file = SPIFFS.open(DEFAULT_TEST_PATH);
+  if(!file || file.isDirectory()){
+    printf("- failed to open file for reading\n");
+    VGAController.resumeBackgroundPrimitiveExecution();
+    return NULL;
+  }
+  printf("- read from file: size=%d\n",(int)file.size());
+  char* buff = (char*)fmrb_spi_malloc((int)file.size()+1);
+  if(!buff){
+    printf("malloc error\n");
+    VGAController.resumeBackgroundPrimitiveExecution();
+    return NULL;
+  }
+  VGAController.resumeBackgroundPrimitiveExecution();
+  file.read((uint8_t*)buff,(size_t)file.size());
+  return buff;
+}
+int FmrbFileService::save(char* buff){
+  printf("Writing file: %s\r\n", DEFAULT_TEST_PATH);
+  if(!m_opened) return -1;
+
+  VGAController.suspendBackgroundPrimitiveExecution();
+  File file = SPIFFS.open(DEFAULT_TEST_PATH, FILE_WRITE);
+  if(!file){
+    printf("- failed to open file for writing\n");
+    VGAController.resumeBackgroundPrimitiveExecution();
+    return -1;
+  }
+  if(file.print(buff)){
+    printf("- file written\n");
+  } else {
+    printf("- write failed\n");
+    VGAController.resumeBackgroundPrimitiveExecution();
+    return -1;
+  }
+  VGAController.resumeBackgroundPrimitiveExecution();
+  return 0;
+}
 
 EditLine* EditLine::create_line(void)
 {
@@ -240,11 +313,13 @@ int FmrbEditor::run(void){
   m_disp_height = m_height - 1;
   m_disp_width = m_width;
 
+  printf("File service init\n");
+  //file_service.init();
   printf("Editor begin\n");
   wait_key(0x0D);
   Terminal.clear();
   move_cursor(m_lineno_shift+1,1);
-  load(sample_script);
+  load(null_script);
   update();
 
   int escape = 0;
@@ -333,13 +408,15 @@ int FmrbEditor::run(void){
                 break;
               case 0x51: // ESC OP : F2
                 printf("F2\n");
+                save_file();
                 break;
               case 0x52: // ESC OP : F3
                 printf("F3\n");
-                return 0;
+                load_file();
                 break;
               case 0x53: // ESC OP : F4
                 printf("F4\n");
+                return 0;
                 break;
             }
             escape = 0;
@@ -350,6 +427,11 @@ int FmrbEditor::run(void){
           if(escape_c[1]==0x31){
             switch(c){
               case 0x35: // ESC[15 : ..  F5
+                Terminal.read();
+                printf("F5\n");
+                load_demo_file();
+                escape = 0;
+                break;
               case 0x37: // ESC[17 : ..  F6
               case 0x38: // ESC[18 : ..  F7
               case 0x39: // ESC[19 : ..  F8
@@ -625,9 +707,13 @@ void FmrbEditor::update()
   move(1,bottom);
   Terminal.write("\e[30m\e[46m UPDATE \e[0m");
   move(11,bottom);
-  Terminal.write("\e[30m\e[46m  MENU  \e[0m");
+  Terminal.write("\e[30m\e[46m  SAVE  \e[0m");
   move(21,bottom);
+  Terminal.write("\e[30m\e[46m  LOAD  \e[0m");
+  move(31,bottom);
   Terminal.write("\e[30m\e[46m  RUN   \e[0m");
+  move(41,bottom);
+  Terminal.write("\e[30m\e[46m  DEMO  \e[0m");
 
   move(m_x,m_y);
 }
@@ -650,7 +736,7 @@ void FmrbEditor::update_lineno(void)
 void FmrbEditor::insert_ch(char c)
 {
   EditLine* line = seek_line(m_disp_head_line+m_y-1);
-  printf("INSERT(%c):text:%s\n",c,line->text);
+  //printf("INSERT(%c):text:%s\n",c,line->text);
   line->insert(m_x-m_lineno_shift-1,c);
   draw_line(m_y,line);
   m_x += 1;
@@ -692,7 +778,7 @@ void FmrbEditor::insert_ret()
 void FmrbEditor::delete_ch()
 {
   EditLine* line = seek_line(m_disp_head_line+m_y-1);
-  printf("BS:text:%s\n",line->text);
+  //printf("BS:text:%s\n",line->text);
   if(m_x-m_lineno_shift-1>0){
     line->backdelete(m_x-m_lineno_shift-1);
     draw_line(m_y,line);
@@ -732,4 +818,50 @@ char* FmrbEditor::dump_script(void)
   buff[csr]='\0';
   printf("%s\n",buff);
   return buff;
+}
+
+void FmrbEditor::clear_buffer(){
+  printf("clear_buffer\n");
+  EditLine* line = m_buff_head;
+  while(line)
+  {
+    if(line->text){
+      free(line->text);
+    }
+    EditLine* old = line;
+    line = line->next;
+    free(old);
+  }
+  m_buff_head = NULL;
+}
+
+void FmrbEditor::load_file(){
+  printf("load_file\n");
+  //clear current buffer
+  clear_buffer();
+  char* buff = file_service.load();
+  move_cursor(m_lineno_shift+1,1);
+  load(buff);
+  update();
+  printf("load_file done\n");
+}
+
+void FmrbEditor::load_demo_file(){
+  //clear current buffer
+  clear_buffer();
+  move_cursor(m_lineno_shift+1,1);
+  load(sample_script);
+  update();
+}
+
+void FmrbEditor::save_file(){
+  printf("save_file\n");
+  char* buff = dump_script();
+  if(buff){
+    file_service.save(buff);
+    free(buff);
+  }else{
+    printf("dump_script error\n");
+  }
+  printf("save_file done\n");
 }

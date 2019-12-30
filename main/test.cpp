@@ -1,52 +1,14 @@
 #include <stdio.h>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "fabgl.h"
 
-#define RUN_MAIN
-//#define TEST_AUDIO
+
 //#define TEST_SD
-
-#include "fmruby.h"
-#include "fmruby_fabgl.h"
-#include "fmruby_app.h"
-
-void* fmrb_spi_malloc(size_t size)
-{
-  return heap_caps_malloc(size,MALLOC_CAP_SPIRAM);
-}
-
-void* fmrb_spi_realloc(void* ptr, size_t size)
-{
-  return heap_caps_realloc(ptr,size,MALLOC_CAP_SPIRAM);
-}
-
-#ifdef TEST_AUDIO
-SoundGenerator soundGenerator;
-SquareWaveformGenerator square;
-
-void sound_test()
-{
-  WaveformGenerator * curGen = nullptr;
-  //SamplesGenerator mario = SamplesGenerator(marioSamples, sizeof(marioSamples));
-  soundGenerator.play(true);
-  soundGenerator.setVolume(100);
-  curGen = &square;
-  //curGen = &mario;
-  soundGenerator.attach(curGen);
-  curGen->enable(true);
-  curGen->setFrequency(500);
-  //while(true){
-  vTaskDelay(5000);
-  //}
-  soundGenerator.detach(curGen);
-  //curGen->enable(false);
-  printf("sound_test done\n");
-}
-#endif
+//#define TEST_AUDIO
 
 #ifdef TEST_SD
 #include "SD.h"
@@ -151,25 +113,72 @@ void sdcard_test()
 }
 #endif
 
-#ifdef RUN_MAIN
+
+#ifdef TEST_AUDIO
+SoundGenerator soundGenerator;
+SquareWaveformGenerator square;
+//WaveformGenerator * curGen = nullptr;
+
+void sound_test()
+{
+  WaveformGenerator * curGen = nullptr;
+  //SamplesGenerator mario = SamplesGenerator(marioSamples, sizeof(marioSamples));
+  soundGenerator.play(true);
+  soundGenerator.setVolume(100);
+  curGen = &square;
+  //curGen = &mario;
+  soundGenerator.attach(curGen);
+  curGen->enable(true);
+  curGen->setFrequency(500);
+  while(true){
+  vTaskDelay(1000);
+  }
+  //curGen->enable(false);
+}
+#endif
+
+
+#if defined(TEST_SD) || defined(TEST_AUDIO)
+
+static void uart_test2()
+{
+  //rx,tx
+  printf("UART test\n");
+  Serial2.begin(115200,SERIAL_8N1,34,26,false,20000UL);
+  vTaskDelay(300);
+
+  int cnt = 0;
+  while(cnt<3){
+    printf("loop\n");
+    while(Serial2.available() > 0){
+      char inChar = Serial2.read();
+      printf("%c",inChar);
+    }
+    Serial2.write("hello\n");
+    vTaskDelay(1000);
+    cnt++;
+  }
+
+}
+
+
 void setup(){
   nvs_flash_init();
   printf("nvs_flash_init() done\n");
-  fabgl_init();
-  printf("fabgl_init() done\n");
   vTaskDelay(100);
 }
 
 void loop(){
-#ifdef TEST_AUDIO
-  sound_test();
-#endif
+  //uart_test2();
 #ifdef TEST_SD
   sdcard_test();
 #endif
-  menu_app();
+#ifdef TEST_AUDIO
+  sound_test();
+#endif
   while(true){
 	  vTaskDelay(1000);
   }
 }
+
 #endif

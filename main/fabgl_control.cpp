@@ -30,7 +30,9 @@ void fabgl_init(void)
 void fabgl_terminal_mode_init(void)
 {
   printf("fabgl_terminal_mode_init\n");
+  
   VGAController.setResolution(VGA_640x350_70HzAlt1, 640, 350);
+  //VGAController.setResolution(VGA_512x384_60Hz, 512, 384);
   VGAController.moveScreen(20, 0);
   printf("fabgl_terminal_mode_init done\n");
 }
