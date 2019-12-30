@@ -53,7 +53,6 @@ def load_balls
   balls
 end
 
-puts "Sprite.new"
 sp = Narya::Sprite.new
 sp.move_to(100,100)
 
@@ -61,13 +60,32 @@ balls = load_balls
 count = 0
 loop do
   Narya::Display::clear
-
   Narya::Display::draw_text(20,5,"Family mruby DEMO!")
   balls.each do |ball|
     ball.move(-ball.speed,0)
     draw ball
   end
-  sp.move(3,0)
+  mx=0
+  my=0
+  if Narya::Input::available
+    #151 UP, 153 DOWN, 155 LEFT, 157 RIGHT
+    if Narya::Input::keydown?(151)
+      my=-2
+    end
+    if Narya::Input::keydown?(153)
+      my=2
+    end
+    if Narya::Input::keydown?(155)
+      mx=-2
+    end
+    if Narya::Input::keydown?(157)
+      mx=2
+    end
+    if Narya::Input::keydown?(125)
+      break
+    end
+  end
+  sp.move(mx,my)
   
   Narya::Display::swap
 end
@@ -408,11 +426,11 @@ int FmrbEditor::run(void){
                 break;
               case 0x51: // ESC OP : F2
                 printf("F2\n");
-                save_file();
+                //save_file();
                 break;
               case 0x52: // ESC OP : F3
                 printf("F3\n");
-                load_file();
+                //load_file();
                 break;
               case 0x53: // ESC OP : F4
                 printf("F4\n");
