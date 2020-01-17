@@ -4,14 +4,17 @@
 
 This project is under way, not officially released.
 
+Latest release is v0.5 beta.
+
 ## Demo
 
-[![demo img](http://img.youtube.com/vi/htTnSmDAAdM/mqdefault.jpg)](https://youtu.be/htTnSmDAAdM "")
+<iframe width="560" height="315" src="https://www.youtube.com/embed/za9LFTUpPRg" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## How to use
 
 - You need a [Narya development board](https://github.com/kishima/narya_board).
-- ESP-IDF v3.2.2 is required. (Other version is not confirmed)
+- ESP-IDF v3.2.2 is required for v0.5 beta. (Other version is not confirmed)  
+  See [reference](https://docs.espressif.com/projects/esp-idf/en/v3.2.2/get-started/index.html) how to prepare it.
 
 1. Clone this repository
 
