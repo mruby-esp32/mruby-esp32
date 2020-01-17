@@ -8,88 +8,11 @@
 #include "FS.h"
 #include "SPIFFS.h"
 
-const char* null_script = 
-R"(
-)";
+const char* null_script = "\n";
 
 const char* sample_script = 
-R"(puts "*** Family mruby v0.5 ***"
+#include "./mrb/entry_mrb.rb"
 
-class Ball
-  def initialize(x,y,r,col,speed)
-    @x = x
-    @y = y
-    @r = r
-    @color = col
-    @speed = speed
-  end
-  attr_accessor :x, :y, :r, :color, :speed
-
-  def move(x,y)
-    @x += x
-    @x = 0 if @x > 320
-    @x = 320 if @x < 0
-    @y += y
-    @y = 0 if @y > 200
-    @y = 200 if @y < 0
-  end
-end
-
-def draw(ball)
-  Narya::Display::draw_circle(ball.x,ball.y,ball.r,ball.color)
-end
-
-def load_balls
-  balls = []
-  10.times do 
-    balls << Ball.new(rand(320), rand(200)+20, 2, 7, 1 )
-  end
-  5.times do 
-    balls << Ball.new(rand(320), rand(200)+20, 7, 6, 3 )
-  end
-  2.times do 
-    balls << Ball.new(rand(320), rand(200)+20, 12, 5, 4 )
-  end
-  balls
-end
-
-sp = Narya::Sprite.new
-sp.move_to(100,100)
-
-balls = load_balls
-count = 0
-loop do
-  Narya::Display::clear
-  Narya::Display::draw_text(20,5,"Family mruby DEMO!")
-  balls.each do |ball|
-    ball.move(-ball.speed,0)
-    draw ball
-  end
-  mx=0
-  my=0
-  if Narya::Input::available
-    #151 UP, 153 DOWN, 155 LEFT, 157 RIGHT
-    if Narya::Input::keydown?(151)
-      my=-2
-    end
-    if Narya::Input::keydown?(153)
-      my=2
-    end
-    if Narya::Input::keydown?(155)
-      mx=-2
-    end
-    if Narya::Input::keydown?(157)
-      mx=2
-    end
-    if Narya::Input::keydown?(125)
-      break
-    end
-  end
-  sp.move(mx,my)
-  
-  Narya::Display::swap
-end
-)";
 
 FmrbFileService file_service;
 
@@ -334,10 +257,15 @@ int FmrbEditor::run(void){
   printf("File service init\n");
   //file_service.init();
   printf("Editor begin\n");
+
   wait_key(0x0D);
+
   Terminal.clear();
   move_cursor(m_lineno_shift+1,1);
+
   load(null_script);
+  //load_demo_file();
+
   update();
 
   int escape = 0;

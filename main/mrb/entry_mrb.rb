@@ -1,4 +1,4 @@
-puts "*** Family mruby v0.0 ***"
+R"(puts "*** Family mruby v0.6 ***"
 
 class Ball
   def initialize(x,y,r,col,speed)
@@ -26,25 +26,52 @@ end
 
 def load_balls
   balls = []
-  15.times do 
-    balls << Ball.new(0, rand(230), rand(10)+10, rand(7) ,rand(15)+2)
+  10.times do 
+    balls << Ball.new(rand(320), rand(200)+20, 2, 7, 1 )
+  end
+  5.times do 
+    balls << Ball.new(rand(320), rand(200)+20, 7, 6, 3 )
+  end
+  2.times do 
+    balls << Ball.new(rand(320), rand(200)+20, 12, 5, 4 )
   end
   balls
 end
+
+sp = Narya::Sprite.new
+sp.move_to(100,100)
 
 balls = load_balls
 count = 0
 loop do
   Narya::Display::clear
+  Narya::Display::draw_text(20,5,"Family mruby DEMO!")
   balls.each do |ball|
-    ball.move(ball.speed,ball.speed/2)
+    ball.move(-ball.speed,0)
     draw ball
   end
-  Narya::Display::swap
-  ESP32::System::delay(1)
-  count += 1
-  if count > 500
-    count = 0
-    balls = load_balls
+  mx=0
+  my=0
+  if Narya::Input::available
+    #151 UP, 153 DOWN, 155 LEFT, 157 RIGHT
+    if Narya::Input::keydown?(151)
+      my=-2
+    end
+    if Narya::Input::keydown?(153)
+      my=2
+    end
+    if Narya::Input::keydown?(155)
+      mx=-2
+    end
+    if Narya::Input::keydown?(157)
+      mx=2
+    end
+    if Narya::Input::keydown?(125)
+      break
+    end
   end
+  sp.move(mx,my)
+  
+  Narya::Display::swap
 end
+)";
