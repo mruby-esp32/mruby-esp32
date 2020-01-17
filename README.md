@@ -8,7 +8,7 @@ Latest release is v0.5 beta.
 
 ## Demo
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/za9LFTUpPRg" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![Family mruby demo](https://img.youtube.com/vi/za9LFTUpPRg/0.jpg)](https://www.youtube.com/watch?v=za9LFTUpPRg)
 
 ## How to use
 
