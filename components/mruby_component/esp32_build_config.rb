@@ -32,13 +32,19 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cc.include_paths << ENV["COMPONENT_INCLUDES"].split(' ')
     cc.include_paths << ENV["COMPONENT_EXTRA_INCLUDES"]&.split(' ')
     cc.flags << '-Wno-maybe-uninitialized'
-    cc.flags.collect! { |x| x.gsub('-MP', '') }
+    cc.flags.collect! { |x|
+      if x.kind_of?(Array) and x.size == 1
+        x = x.first
+      end
+      x.gsub('-MP', '') 
+    }
 
     cc.defines << %w(MRB_HEAP_PAGE_SIZE=64)
     cc.defines << %w(MRB_USE_IV_SEGLIST)
     cc.defines << %w(KHASH_DEFAULT_SIZE=8)
     cc.defines << %w(MRB_STR_BUF_MIN_SIZE=20)
-    #cc.defines << %w(MRB_GC_STRESS)
+    cc.defines << %w(FMRB_TARGET_BUILD)
+    cc.defines << %w(MRB_METHOD_T_STRUCT)
 
     cc.defines << %w(ESP_PLATFORM)
   end
@@ -47,6 +53,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cxx.include_paths = conf.cc.include_paths.dup
 
     cxx.flags.collect! { |x| x.gsub('-MP', '') }
+    cxx.flags << '-fpermissive'
 
     cxx.defines = conf.cc.defines.dup
   end
@@ -61,7 +68,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.gem :core => "mruby-struct"
   conf.gem :core => "mruby-metaprog"
   conf.gem :core => "mruby-math"
-  conf.gem :core => "mruby-random"
+  #conf.gem :core => "mruby-random"
 
   conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
   conf.gem :github => "kishima/mruby-esp32-system"
