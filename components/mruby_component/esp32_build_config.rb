@@ -64,11 +64,12 @@ MRuby::CrossBuild.new('esp32') do |conf|
   
   conf.gem :core => "mruby-compiler"
   conf.gem :core => "mruby-print"
-  conf.gem :core => "mruby-fiber"
+  #conf.gem :core => "mruby-fiber"
   conf.gem :core => "mruby-struct"
   conf.gem :core => "mruby-metaprog"
   conf.gem :core => "mruby-math"
   conf.gem :core => "mruby-random"
+  conf.gem :core => "mruby-toplevel-ext"
 
   conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
   conf.gem :github => "kishima/mruby-esp32-system"

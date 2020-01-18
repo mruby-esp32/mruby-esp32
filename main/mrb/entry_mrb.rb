@@ -1,4 +1,5 @@
 R"(puts "*** Family mruby v0.6 ***"
+include Narya
 
 class Ball
   def initialize(x,y,r,col,speed)
@@ -21,7 +22,7 @@ class Ball
 end
 
 def draw(ball)
-  Narya::Display::draw_circle(ball.x,ball.y,ball.r,ball.color)
+  Display::draw_circle(ball.x,ball.y,ball.r,ball.color)
 end
 
 def load_balls
@@ -38,40 +39,40 @@ def load_balls
   balls
 end
 
-sp = Narya::Sprite.new
+sp = Sprite.new
 sp.move_to(100,100)
 
 balls = load_balls
 count = 0
 loop do
-  Narya::Display::clear
-  Narya::Display::draw_text(20,5,"Family mruby DEMO!")
+  Display::clear
+  Display::draw_text(20,5,"Family mruby DEMO!")
   balls.each do |ball|
     ball.move(-ball.speed,0)
     draw ball
   end
   mx=0
   my=0
-  if Narya::Input::available
+  if Input::available
     #151 UP, 153 DOWN, 155 LEFT, 157 RIGHT
-    if Narya::Input::keydown?(151)
+    if Input::keydown?(151)
       my=-2
     end
-    if Narya::Input::keydown?(153)
+    if Input::keydown?(153)
       my=2
     end
-    if Narya::Input::keydown?(155)
+    if Input::keydown?(155)
       mx=-2
     end
-    if Narya::Input::keydown?(157)
+    if Input::keydown?(157)
       mx=2
     end
-    if Narya::Input::keydown?(125)
+    if Input::keydown?(125)
       break
     end
   end
   sp.move(mx,my)
   
-  Narya::Display::swap
+  Display::swap
 end
 )";
