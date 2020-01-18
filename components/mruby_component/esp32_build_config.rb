@@ -68,7 +68,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.gem :core => "mruby-struct"
   conf.gem :core => "mruby-metaprog"
   conf.gem :core => "mruby-math"
-  #conf.gem :core => "mruby-random"
+  conf.gem :core => "mruby-random"
 
   conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
   conf.gem :github => "kishima/mruby-esp32-system"
