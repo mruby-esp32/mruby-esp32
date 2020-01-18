@@ -35,6 +35,9 @@ void terminal_init(void)
 
 }
 
+//#define TEST_SCRIPT
+#ifndef TEST_SCRIPT
+
 void menu_app()
 {
   printf("terminal_task\n");
@@ -49,7 +52,6 @@ void menu_app()
     //1.editor, 2.run script
 
     int err_code = Editor.run();
-    //vTaskDelay(10000 / portTICK_RATE_MS);
     char* scirpt = Editor.dump_script();
     Terminal.end();
     printf("Terminal.end()\n");
@@ -60,3 +62,16 @@ void menu_app()
     }
   }
 }
+#else
+const char* sample_script2 = 
+#include "./mrb/entry_mrb.rb";
+
+void menu_app(){ //Test
+  printf("ScriptTest\n");
+  const char* scirpt = sample_script2;
+  if(scirpt){
+    fabgl_mruby_mode_init();
+    mruby_engine(scirpt);
+  }
+}
+#endif
