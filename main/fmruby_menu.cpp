@@ -9,7 +9,7 @@ void print_info()
   Terminal.write ("\e[34m   Powereded by FabGL\e[32m\r\n\n");
   Terminal.printf("\e[32mScreen Size        :\e[33m %d x %d\r\n", VGAController.getScreenWidth(), VGAController.getScreenHeight());
   Terminal.printf("\e[32mTerminal Size      :\e[33m %d x %d\r\n", Terminal.getColumns(), Terminal.getRows());
-  Terminal.printf("\e[32mKeyboard           :\e[33m %s\r\n", Keyboard.isKeyboardAvailable() ? "OK" : "Error");
+  Terminal.printf("\e[32mKeyboard           :\e[33m %s\r\n", PS2Controller.keyboard()->isKeyboardAvailable() ? "OK" : "Error");
   Terminal.printf("\e[32mFree DMA Memory    :\e[33m %d\r\n", heap_caps_get_free_size(MALLOC_CAP_DMA));
   Terminal.printf("\e[32mFree 32 bit Memory :\e[33m %d\r\n\n", heap_caps_get_free_size(MALLOC_CAP_32BIT));
   Terminal.write("\e[32m >> Press Enter\r\n\n");
@@ -22,7 +22,7 @@ void terminal_init(void)
 {
   printf("start terminal_init\n");
 
-  Terminal.begin();
+  Terminal.begin(&VGAController);
   Terminal.connectLocally();      // to use Terminal.read(), available(), etc..
 
   Terminal.setBackgroundColor(Color::Black);

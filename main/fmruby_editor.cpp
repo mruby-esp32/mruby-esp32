@@ -3,6 +3,7 @@
 #include "fabgl.h"
 #include "fmruby.h"
 #include "fmruby_app.h"
+#include "fmruby_fabgl.h"
 #include "fmruby_editor.h"
 
 #include "FS.h"
@@ -258,13 +259,15 @@ int FmrbEditor::run(void){
   //file_service.init();
   printf("Editor begin\n");
 
-  wait_key(0x0D);
+  //wait_key(0x0D);
+  vTaskDelay(4000);
 
   Terminal.clear();
   move_cursor(m_lineno_shift+1,1);
 
-  load(null_script);
-  //load_demo_file();
+  //load(null_script);
+  load_demo_file();
+  return 1;
 
   update();
 

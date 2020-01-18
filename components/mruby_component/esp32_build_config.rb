@@ -72,5 +72,5 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
   conf.gem :github => "kishima/mruby-esp32-system"
-  conf.gem :github => "kishima/mruby-esp32-narya", checksum_hash: '6985c04680aa8d738aae5ac31937e935309f2853', branch: 'master'
+  conf.gem :github => "kishima/mruby-esp32-narya", checksum_hash: '5e26b275987e47ae38ecbc70684cb9ce245103b6', branch: 'master'
 end
