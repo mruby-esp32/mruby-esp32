@@ -9,6 +9,7 @@
 #define RUN_MAIN
 //#define TEST_AUDIO
 //#define TEST_SD
+#define TEST_SPIFFS
 
 #include "fmruby.h"
 #include "fmruby_fabgl.h"
@@ -151,10 +152,21 @@ void sdcard_test()
 }
 #endif
 
+#ifdef TEST_SPIFFS
+static void test_spiffs(){
+  printf("File service init\n");
+  file_service.init();
+}
+#endif
+
 #ifdef RUN_MAIN
 void setup(){
   nvs_flash_init();
   printf("nvs_flash_init() done\n");
+#ifdef TEST_SPIFFS
+  test_spiffs();
+#endif
+  printf("fabgl_init()\n");
   fabgl_init();
   printf("fabgl_init() done\n");
   vTaskDelay(100);

@@ -6,80 +6,12 @@
 #include "fmruby_fabgl.h"
 #include "fmruby_editor.h"
 
-#include "FS.h"
-#include "SPIFFS.h"
 
 const char* null_script = "\n";
 
 const char* sample_script = 
 #include "./mrb/entry_mrb.rb"
-
-
-FmrbFileService file_service;
-
-#define DEFAULT_TEST_PATH "/default.rb"
-FmrbFileService::FmrbFileService(){
-  m_opened=false;
-}
-
-#define FORMAT_SPIFFS_IF_FAILED false
-
-int FmrbFileService::init(){
-  VGAController.suspendBackgroundPrimitiveExecution();
-  bool ret = SPIFFS.begin();
-  VGAController.resumeBackgroundPrimitiveExecution();
-  if(!ret){
-    printf("SPIFFS Mount Failed\n");
-    return -1;
-  }
-  printf("SPIFFS Mount OK\n");
-  m_opened=true;
-  return 0;
-}
-
-char* FmrbFileService::load(){
-  printf("Reading file: %s\r\n", DEFAULT_TEST_PATH);
-  if(!m_opened) return NULL;
-
-  VGAController.suspendBackgroundPrimitiveExecution();
-  File file = SPIFFS.open(DEFAULT_TEST_PATH);
-  if(!file || file.isDirectory()){
-    printf("- failed to open file for reading\n");
-    VGAController.resumeBackgroundPrimitiveExecution();
-    return NULL;
-  }
-  printf("- read from file: size=%d\n",(int)file.size());
-  char* buff = (char*)fmrb_spi_malloc((int)file.size()+1);
-  if(!buff){
-    printf("malloc error\n");
-    VGAController.resumeBackgroundPrimitiveExecution();
-    return NULL;
-  }
-  VGAController.resumeBackgroundPrimitiveExecution();
-  file.read((uint8_t*)buff,(size_t)file.size());
-  return buff;
-}
-int FmrbFileService::save(char* buff){
-  printf("Writing file: %s\r\n", DEFAULT_TEST_PATH);
-  if(!m_opened) return -1;
-
-  VGAController.suspendBackgroundPrimitiveExecution();
-  File file = SPIFFS.open(DEFAULT_TEST_PATH, FILE_WRITE);
-  if(!file){
-    printf("- failed to open file for writing\n");
-    VGAController.resumeBackgroundPrimitiveExecution();
-    return -1;
-  }
-  if(file.print(buff)){
-    printf("- file written\n");
-  } else {
-    printf("- write failed\n");
-    VGAController.resumeBackgroundPrimitiveExecution();
-    return -1;
-  }
-  VGAController.resumeBackgroundPrimitiveExecution();
-  return 0;
-}
+;
 
 EditLine* EditLine::create_line(void)
 {
@@ -256,18 +188,16 @@ int FmrbEditor::run(void){
   m_disp_width = m_width;
 
   printf("File service init\n");
-  //file_service.init();
+  file_service.init();
   printf("Editor begin\n");
 
-  //wait_key(0x0D);
-  vTaskDelay(4000);
+  wait_key(0x0D);
 
   Terminal.clear();
   move_cursor(m_lineno_shift+1,1);
 
-  //load(null_script);
-  load_demo_file();
-  return 1;
+  load(null_script);
+  //load_demo_file();
 
   update();
 

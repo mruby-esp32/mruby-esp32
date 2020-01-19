@@ -48,7 +48,6 @@ void menu_app()
     printf("terminal_init() done\n");
 
     //select app
-
     //1.editor, 2.run script
 
     int err_code = Editor.run();
