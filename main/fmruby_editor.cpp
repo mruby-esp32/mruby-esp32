@@ -13,6 +13,10 @@ const char* sample_script =
 #include "./mrb/entry_mrb.rb"
 ;
 
+//#define EDT_DEBUG(...)  printf(__VA_ARGS__)
+#define EDT_DEBUG(...)
+
+
 EditLine* EditLine::create_line(void)
 {
   EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
@@ -69,10 +73,10 @@ int EditLine::insert(uint16_t pos,char c)
 {
   if(text==NULL) return -1;
 
-  printf("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
+  EDT_DEBUG("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
   if( length+1+1 > buff_size) // Text lenght + null char + new char >= cuurent buff size
   {
-    printf("realloc block(text_p:%p new buff size:%d)\n",text,buff_size+EDITLINE_BLOCK_SIZE);
+    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size+EDITLINE_BLOCK_SIZE);
     text = (char*)fmrb_spi_realloc(text,buff_size+EDITLINE_BLOCK_SIZE);
     if (NULL==text)
     {
@@ -85,7 +89,7 @@ int EditLine::insert(uint16_t pos,char c)
   // ABC@      pos=2, length=3, buffsize=6
   // ABXC@            length=4, buffsize=6
 
-  printf("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
+  EDT_DEBUG("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
   memmove(text+pos+1,text+pos,length-pos+1);
   text[pos]=c;
   length+=1;
@@ -100,14 +104,14 @@ int EditLine::backdelete(uint16_t pos)
   // ABC@      pos=1, length=3, buffsize=6
   // BC@              length=2, buffsize=6
 
-  printf("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
+  EDT_DEBUG("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
   memmove(text+pos-1,text+pos,length-pos+1);
   length-=1;
 
-  printf("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
+  EDT_DEBUG("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
   if( length+1 <= buff_size - EDITLINE_BLOCK_SIZE) // Text lenght + null char < cuurent buff size - BLOCK
   {
-    printf("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
+    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
     text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
     if (NULL==text)
     {
@@ -140,10 +144,10 @@ char* EditLine::cut(uint16_t start_pos, uint16_t end_pos)
   memmove(&text[start_pos],&text[end_pos],length-end_pos+1);
   length -= copy_size-1;
   
-  printf("start:%d end:%d length=%d buffsize=%d\n",start_pos,end_pos,length,buff_size);
+  EDT_DEBUG("start:%d end:%d length=%d buffsize=%d\n",start_pos,end_pos,length,buff_size);
   if( length+1 <= buff_size - EDITLINE_BLOCK_SIZE) // Text lenght + null char < cuurent buff size - BLOCK
   {
-    printf("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
+    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
     text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
     if (NULL==text)
     {
@@ -228,27 +232,27 @@ int FmrbEditor::run(void){
         }else{
           switch(c){
             case 0x7F: // BS
-              printf("BS\n");
+              EDT_DEBUG("BS\n");
               delete_ch();
               break;
             case 0x0D: // CR
-              printf("RETURN\n");
+              EDT_DEBUG("RETURN\n");
               insert_ret();
               break;
             case 0x1A: // Ctrl-z
-              printf("Ctrl-z\n");
+              EDT_DEBUG("Ctrl-z\n");
               break;
             case 0x18: // Ctrl-x
-              printf("Ctrl-x\n");
+              EDT_DEBUG("Ctrl-x\n");
               break;
             case 0x16: // Ctrl-v
-              printf("Ctrl-v\n");
+              EDT_DEBUG("Ctrl-v\n");
               break;
             case 0x03: // Ctrl-c
-              printf("Ctrl-c\n");
+              EDT_DEBUG("Ctrl-c\n");
               break;
             case 0x04: // Ctrl-d
-              printf("Ctrl-d\n");
+              EDT_DEBUG("Ctrl-d\n");
               break;
             case 0x1B: // ESC
               escape = 1;
@@ -304,7 +308,7 @@ int FmrbEditor::run(void){
                 load_file();
                 break;
               case 0x53: // ESC OP : F4
-                printf("F4\n");
+                EDT_DEBUG("F4\n");
                 return 0;
                 break;
             }
@@ -317,7 +321,7 @@ int FmrbEditor::run(void){
             switch(c){
               case 0x35: // ESC[15 : ..  F5
                 m_term->read();
-                printf("F5\n");
+                EDT_DEBUG("F5\n");
                 load_demo_file();
                 escape = 0;
                 break;
@@ -346,7 +350,7 @@ int FmrbEditor::run(void){
             }
           }else if(escape_c[1]==0x33){
             if(c==0x7E){ // ESC[3~ : DEL
-              printf("DEL\n");
+              EDT_DEBUG("DEL\n");
               delete_ch();
             }
             escape=0;
@@ -356,7 +360,7 @@ int FmrbEditor::run(void){
         }else if(escape==4){
           switch(c){
             case 0x7E: //  ESC[1*~ : FN
-              printf("FN\n");
+              EDT_DEBUG("FN\n");
               break;
             default:
               break;
@@ -690,7 +694,7 @@ char* FmrbEditor::dump_script(void)
     line = line->next;
   }
   printf("total_length=%d\n",total_length);
-  char* buff = (char*)fmrb_spi_malloc(total_length);
+  char* buff = (char*)fmrb_spi_malloc(total_length+1);
   if(NULL==buff){
     printf("cannot allocate memory!\n");
     return NULL;
@@ -705,7 +709,8 @@ char* FmrbEditor::dump_script(void)
     line = line->next;
   }
   buff[csr]='\0';
-  printf("%s\n",buff);
+  printf("csr=%d total_length=%d\n",csr,total_length);
+  //printf("%s\n",buff);
   return buff;
 }
 

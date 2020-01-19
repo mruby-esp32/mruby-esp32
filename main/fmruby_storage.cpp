@@ -8,12 +8,16 @@
 #include "FS.h"
 #include "SPIFFS.h"
 
+#include "SD.h"
+#include "SPI.h"
+SPIClass hspi(HSPI);
 
 FmrbFileService file_service;
 
 #define DEFAULT_TEST_PATH "/spiffs/default.rb"
 FmrbFileService::FmrbFileService(){
-  m_opened=false;
+  m_spiffs_opened=false;
+  m_sd_opened=false;
 }
 
 #define FORMAT_SPIFFS_IF_FAILED false
@@ -27,6 +31,37 @@ static void resume_int(){
   vTaskDelay(50);
 }
 
+static int init_sd()
+{
+  gpio_pullup_en(GPIO_NUM_12);
+  hspi.begin(14,12,13,15); 
+  pinMode(15, OUTPUT); //HSPI SS
+
+ if(!SD.begin(15,hspi,4000000,"/sd",5)){
+      printf("Card Mount Failed\n");
+      return -1;
+  }
+  uint8_t cardType = SD.cardType();
+
+  if(cardType == CARD_NONE){
+      printf("No SD card attached\n");
+      return -1;
+  }
+
+  printf("SD Card Type: ");
+  if(cardType == CARD_MMC){
+      printf("MMC\n");
+  } else if(cardType == CARD_SD){
+      printf("SDSC\n");
+  } else if(cardType == CARD_SDHC){
+      printf("SDHC\n");
+  } else {
+      printf("UNKNOWN\n");
+  }
+  uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+  printf("SD Card Size: %lluMB\n", cardSize);
+  return 0;
+}
 
 int FmrbFileService::init(){
   suspend_int();
@@ -37,16 +72,27 @@ int FmrbFileService::init(){
     return -1;
   }
   printf("SPIFFS Mount OK\n");
-  m_opened=true;
+  m_spiffs_opened=true;
+
+  suspend_int();
+  int sd_stat = init_sd();
+  resume_int();
+  if(sd_stat>=0){
+    m_sd_opened = true;
+  }else{
+    m_sd_opened = false;
+  }
+
   return 0;
 }
 
 char* FmrbFileService::load(){
   printf("Reading file: %s\r\n", DEFAULT_TEST_PATH);
-  if(!m_opened) return NULL;
+  if(!m_spiffs_opened) return NULL;
 
   suspend_int();
-  File file = SPIFFS.open(DEFAULT_TEST_PATH);
+  //File file = SPIFFS.open(DEFAULT_TEST_PATH);
+  File file = SD.open("sd/default.rb");
   if(!file || file.isDirectory()){
     printf("- failed to open file for reading\n");
     resume_int();
@@ -65,10 +111,11 @@ char* FmrbFileService::load(){
 }
 int FmrbFileService::save(char* buff){
   printf("Writing file: %s\r\n", DEFAULT_TEST_PATH);
-  if(!m_opened) return -1;
+  if(!m_spiffs_opened) return -1;
 
   suspend_int();
-  File file = SPIFFS.open(DEFAULT_TEST_PATH, FILE_WRITE);
+  //File file = SPIFFS.open(DEFAULT_TEST_PATH, FILE_WRITE);
+  File file = SD.open("sd/default.rb", FILE_WRITE);
   if(!file){
     printf("- failed to open file for writing\n");
     resume_int();

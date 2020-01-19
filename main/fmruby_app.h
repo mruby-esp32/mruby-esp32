@@ -9,7 +9,8 @@ public:
   char* load();
   int save(char* buff);
 private:
-  bool m_opened;
+  bool m_spiffs_opened;
+  bool m_sd_opened;
 };
 
 extern FmrbFileService file_service;
