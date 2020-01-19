@@ -3,4 +3,5 @@ build/
 sdkconfig.old
 old1*
 *.lock
+spiffs_image
 
