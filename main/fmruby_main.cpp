@@ -9,7 +9,7 @@
 #define RUN_MAIN
 //#define TEST_AUDIO
 //#define TEST_SD
-#define TEST_SPIFFS
+//#define TEST_SPIFFS
 
 #include "fmruby.h"
 #include "fmruby_fabgl.h"
@@ -161,6 +161,17 @@ static void test_spiffs(){
 
 #ifdef RUN_MAIN
 void setup(){
+#ifndef TEST_SD
+  //SPI SD pins
+  //pinMode(12, OUTPUT);
+  //pinMode(13, OUTPUT);
+  //pinMode(14, OUTPUT);
+  pinMode(15, OUTPUT); //SS
+  //digitalWrite(15,HIGH);//HIGH => NOT selected
+  gpio_pullup_en(GPIO_NUM_12); //=> 12 must be low during BOOT
+  //hspi.begin(14,12,13,15); 
+#endif
+
   nvs_flash_init();
   printf("nvs_flash_init() done\n");
 #ifdef TEST_SPIFFS

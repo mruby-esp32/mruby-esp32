@@ -77,6 +77,7 @@ int FmrbSystemApp::run()
 
     //Booting Family mruby
     if(first_flag){
+      file_service.init();
       show_splash();
       first_flag=false;
     }
