@@ -4,6 +4,7 @@
 #include "fmruby_fabgl.h"
 #include "fmruby_app.h"
 
+#include "esp_partition.h"
 
 #include "FS.h"
 #include "SPIFFS.h"
@@ -14,7 +15,7 @@ SPIClass hspi(HSPI);
 
 FmrbFileService file_service;
 
-#define DEFAULT_TEST_PATH "/spiffs/default.rb"
+#define DEFAULT_TEST_PATH "/test.rb"
 FmrbFileService::FmrbFileService(){
   m_spiffs_opened=false;
   m_sd_opened=false;
@@ -68,6 +69,19 @@ static int init_sd()
 
 int FmrbFileService::init(){
   AutoSuspendInterrupts autoSuspendInt;
+  
+  /*
+  const esp_partition_t* partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+                                      ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
+  if(partition){
+    printf("label:%s\n",partition->label);
+    printf("addr:%X\n",partition->address);
+    printf("size:%d\n",partition->size);
+  }else{
+    printf("spiffs partition not found\n");
+  }
+  */
+
   bool ret = SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED,"/spiffs",1);
   if(!ret){
     printf("SPIFFS Mount Failed\n");
@@ -97,15 +111,25 @@ char* FmrbFileService::load(){
     printf("- failed to open file for reading\n");
     return NULL;
   }
-  printf("- read from file: size=%d\n",(int)file.size());
-  char* buff = (char*)fmrb_spi_malloc((int)file.size()+1);
+  int size = (int)file.size();
+  printf("- read from file: size=%d\n",size);
+  char* buff = (char*)fmrb_spi_malloc(size+1);
   if(!buff){
     printf("malloc error\n");
+    file.close();
     return NULL;
   }
-  file.read((uint8_t*)buff,(size_t)file.size());
+  size_t rsize = file.read((uint8_t*)buff,(size_t)size);
+  printf("- read done:%d\n",(int)rsize);
+  file.close();
+  if(rsize==0){
+    free(buff);
+    return NULL;
+  }
+  buff[size]=(uint8_t)'\0';
   return buff;
 }
+
 int FmrbFileService::save(char* buff){
   printf("Writing file: %s\r\n", DEFAULT_TEST_PATH);
   if(!m_spiffs_opened) return -1;
@@ -121,9 +145,11 @@ int FmrbFileService::save(char* buff){
     printf("- file written\n");
   } else {
     printf("- write failed\n");
+    file.close();
     return -1;
   }
   printf("- save done\n");
+  file.close();
   return 0;
 }
 

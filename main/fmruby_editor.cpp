@@ -735,7 +735,12 @@ void FmrbEditor::load_file(){
   clear_buffer();
   char* buff = file_service.load();
   move_cursor(m_lineno_shift+1,1);
-  load(buff);
+  if(buff){
+    load(buff);
+  }else{
+    printf("failed to load file\n");
+    load(null_script);
+  }
   update();
   printf("load_file done\n");
 }
