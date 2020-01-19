@@ -32,7 +32,9 @@ enum EDIT_STATUS{
 class FmrbEditor {
 public:
   FmrbEditor();
+  int begin(fabgl::Terminal* terminal);
   int run(void);
+  int release(void);
   char* dump_script(void);
 
 private:
@@ -46,8 +48,10 @@ private:
   int m_y;
   int m_disp_head_line;
   int m_total_line;
+  fabgl::Terminal* m_term;
   enum EDIT_STATUS m_error;
   
+  void wait_key(char);
   void load_file();
   void save_file();
   void load_demo_file();

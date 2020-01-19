@@ -156,24 +156,35 @@ char* EditLine::cut(uint16_t start_pos, uint16_t end_pos)
 }
 
 
-/*********************
+/***********************************
  * FmrbEditor
- * 
- */
+ *   An editor for mruby code
+ ***********************************/
 FmrbEditor::FmrbEditor():
   m_buff_head(NULL),
   m_lineno_shift(6),
-  m_disp_head_line(1)
+  m_disp_head_line(1),
+  m_term(NULL) 
 {
 
 }
+int FmrbEditor::begin(fabgl::Terminal* terminal)
+{
+  m_term = terminal;
+  return 0;
+}
 
-static void wait_key(char target){
+int FmrbEditor::release()
+{
+  return 0;
+}
+
+void FmrbEditor::wait_key(char target){
   while(true)
   {
-    if (Terminal.available())
+    if (m_term->available())
     {
-      char c = Terminal.read();
+      char c = m_term->read();
       if(c == target){
         return;
       }
@@ -182,8 +193,9 @@ static void wait_key(char target){
 }
 
 int FmrbEditor::run(void){
-  m_height = Terminal.getRows();
-  m_width  = Terminal.getColumns();
+  if(!m_term) return -1;
+  m_height = m_term->getRows();
+  m_width  = m_term->getColumns();
   m_disp_height = m_height - 1;
   m_disp_width = m_width;
 
@@ -193,7 +205,7 @@ int FmrbEditor::run(void){
 
   wait_key(0x0D);
 
-  Terminal.clear();
+  m_term->clear();
   move_cursor(m_lineno_shift+1,1);
 
   load(null_script);
@@ -205,9 +217,9 @@ int FmrbEditor::run(void){
   char escape_c[4] = {0};
   while(true)
   {
-    if (Terminal.available())
+    if (m_term->available())
     {
-      char c = Terminal.read();
+      char c = m_term->read();
       //printf("> %02x\n",c);
 
       if(!escape)
@@ -306,7 +318,7 @@ int FmrbEditor::run(void){
           if(escape_c[1]==0x31){
             switch(c){
               case 0x35: // ESC[15 : ..  F5
-                Terminal.read();
+                m_term->read();
                 printf("F5\n");
                 load_demo_file();
                 escape = 0;
@@ -521,7 +533,7 @@ void FmrbEditor::move(int x,int y)
   if(y<1)y=1;
   char buf[10];
   sprintf(buf,"\e[%d;%dH",y,x);
-  Terminal.write(buf);
+  m_term->write(buf);
 }
 
 
@@ -554,11 +566,11 @@ EditLine* FmrbEditor::seek_line(int n)
 void FmrbEditor::draw_line(int disp_y,EditLine* line)
 {
   move(1,disp_y);
-  Terminal.write("\e[2K"); // delete line
+  m_term->write("\e[2K"); // delete line
 
-  Terminal.printf("\e[34m%04d: \e[0m",line->lineno);
-  Terminal.write(line->text);
-  //Terminal.write("\r\n");
+  m_term->printf("\e[34m%04d: \e[0m",line->lineno);
+  m_term->write(line->text);
+  //m_term->write("\r\n");
 }
 
 
@@ -584,15 +596,15 @@ void FmrbEditor::update()
   //Draw Functions
   int bottom = m_height;
   move(1,bottom);
-  Terminal.write("\e[30m\e[46m UPDATE \e[0m");
+  m_term->write("\e[30m\e[46m UPDATE \e[0m");
   move(11,bottom);
-  Terminal.write("\e[30m\e[46m  SAVE  \e[0m");
+  m_term->write("\e[30m\e[46m  SAVE  \e[0m");
   move(21,bottom);
-  Terminal.write("\e[30m\e[46m  LOAD  \e[0m");
+  m_term->write("\e[30m\e[46m  LOAD  \e[0m");
   move(31,bottom);
-  Terminal.write("\e[30m\e[46m  RUN   \e[0m");
+  m_term->write("\e[30m\e[46m  RUN   \e[0m");
   move(41,bottom);
-  Terminal.write("\e[30m\e[46m  DEMO  \e[0m");
+  m_term->write("\e[30m\e[46m  DEMO  \e[0m");
 
   move(m_x,m_y);
 }

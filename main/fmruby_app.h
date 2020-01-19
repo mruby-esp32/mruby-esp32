@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fmruby_editor.h"
+
 class FmrbFileService {
 public:
   FmrbFileService();
@@ -12,8 +14,22 @@ private:
 
 extern FmrbFileService file_service;
 
+class FmrbSystemApp {
+public:
+  FmrbSystemApp();
+  int run();
+private:
+  char* m_script;
+  FmrbEditor m_editor;
+  fabgl::Terminal m_terminal;
+  int init_terminal();
+  int print_system_info();
+  int show_splash();
+  int run_editor();
+  int run_mruby();
 
-void terminal_init(void);
+};
+
 void menu_app(void);
 
 void mruby_init(void);

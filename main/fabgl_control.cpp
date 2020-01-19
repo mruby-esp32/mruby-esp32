@@ -15,14 +15,12 @@
 
 fabgl::VGAController VGAController;
 fabgl::PS2Controller PS2Controller;
-fabgl::Terminal      Terminal;
 fabgl::Canvas        FMRB_canvas(&VGAController);
 
 void fabgl_init(void)
 {
 
-  PS2Controller.begin(PS2Preset::KeyboardPort0,KbdMode::GenerateVirtualKeys);
-
+  PS2Controller.begin(PS2Preset::KeyboardPort0);
   VGAController.begin(VGA_RED1, VGA_RED0, VGA_GREEN1, VGA_GREEN0, VGA_BLUE1, VGA_BLUE0, VGA_HSYNC, VGA_VSYNC);
   
   //VGAController.setResolution(VGA_320x200_75Hz, 320, 200);

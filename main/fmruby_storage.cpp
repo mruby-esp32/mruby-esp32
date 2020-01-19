@@ -59,7 +59,7 @@ char* FmrbFileService::load(){
     resume_int();
     return NULL;
   }
-  VGAController.resumeBackgroundPrimitiveExecution();
+  resume_int();
   file.read((uint8_t*)buff,(size_t)file.size());
   return buff;
 }
