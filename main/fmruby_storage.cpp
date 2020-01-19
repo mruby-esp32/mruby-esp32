@@ -82,6 +82,7 @@ int FmrbFileService::save(char* buff){
     return -1;
   }
   resume_int();
+  printf("- save done\n");
   return 0;
 }
 

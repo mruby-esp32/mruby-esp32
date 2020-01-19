@@ -15,12 +15,8 @@ int FmrbSystemApp::init_terminal(void)
   printf("start terminal_init\n");
   fabgl_terminal_mode_init();
 
-
-  printf("AA1\n");
   m_terminal.begin(&VGAController);
-  printf("AA2\n");
   m_terminal.connectLocally();
-  printf("AA3\n");
   //Terminal.connectSerialPort(Serial,true);
 
   m_terminal.setBackgroundColor(Color::Black);

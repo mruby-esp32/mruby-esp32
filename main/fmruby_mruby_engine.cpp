@@ -37,24 +37,5 @@ void mruby_engine(char* code_string)
   mrb_gc_arena_restore(mrb, ai);
   mrb_close(mrb);
 
-/*
-  mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
-  int ai = mrb_gc_arena_save(mrb);
-  printf("Loading binary...!\n");
-  mrb_load_irep(mrb, entry_mrb);
-  if (mrb->exc) {
-    printf("Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
-    mrb->exc = 0;
-  } else {
-    printf("Success\n");
-  }
-  mrb_gc_arena_restore(mrb, ai);
-  mrb_close(mrb);
-*/
   printf("End of mruby task\n");
-  /*
-  while (1) {
-	  vTaskDelay(1);
-  }
-  */
 }

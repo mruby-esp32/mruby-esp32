@@ -199,8 +199,6 @@ int FmrbEditor::run(void){
   m_disp_height = m_height - 1;
   m_disp_width = m_width;
 
-  printf("File service init\n");
-  file_service.init();
   printf("Editor begin\n");
 
   wait_key(0x0D);
@@ -299,11 +297,11 @@ int FmrbEditor::run(void){
                 break;
               case 0x51: // ESC OP : F2
                 printf("F2\n");
-                //save_file();
+                save_file();
                 break;
               case 0x52: // ESC OP : F3
                 printf("F3\n");
-                //load_file();
+                load_file();
                 break;
               case 0x53: // ESC OP : F4
                 printf("F4\n");
