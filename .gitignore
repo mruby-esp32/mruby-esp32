@@ -4,4 +4,4 @@ sdkconfig.old
 old1*
 *.lock
 spiffs_image
-
+.DS_Store
