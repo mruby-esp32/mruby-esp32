@@ -15,7 +15,7 @@ SPIClass hspi(HSPI);
 
 FmrbFileService file_service;
 
-#define DEFAULT_TEST_PATH "/test.rb"
+//#define DEFAULT_TEST_PATH "/test.rb"
 FmrbFileService::FmrbFileService(){
   m_spiffs_opened=false;
   m_sd_opened=false;
@@ -100,12 +100,12 @@ int FmrbFileService::init(){
   return 0;
 }
 
-char* FmrbFileService::load(){
-  printf("Reading file: %s\r\n", DEFAULT_TEST_PATH);
+char* FmrbFileService::load(const char* path){
+  printf("Reading file: %s\r\n", path);
   if(!m_spiffs_opened) return NULL;
 
   AutoSuspendInterrupts autoSuspendInt;
-  File file = SPIFFS.open(DEFAULT_TEST_PATH);
+  File file = SPIFFS.open(path);
   //File file = SD.open("/default.rb");
   if(!file || file.isDirectory()){
     printf("- failed to open file for reading\n");
@@ -130,12 +130,12 @@ char* FmrbFileService::load(){
   return buff;
 }
 
-int FmrbFileService::save(char* buff){
-  printf("Writing file: %s\r\n", DEFAULT_TEST_PATH);
+int FmrbFileService::save(char* buff,const char* path){
+  printf("Writing file: %s\r\n", path);
   if(!m_spiffs_opened) return -1;
 
   AutoSuspendInterrupts autoSuspendInt;
-  File file = SPIFFS.open(DEFAULT_TEST_PATH, FILE_WRITE);
+  File file = SPIFFS.open(path, FILE_WRITE);
   //File file = SD.open("/default.rb", FILE_WRITE);
   if(!file){
     printf("- failed to open file for writing\n");

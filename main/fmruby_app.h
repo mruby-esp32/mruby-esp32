@@ -6,8 +6,8 @@ class FmrbFileService {
 public:
   FmrbFileService();
   int init();
-  char* load();
-  int save(char* buff);
+  char* load(const char* path);
+  int save(char* buff,const char* path);
 private:
   bool m_spiffs_opened;
   bool m_sd_opened;

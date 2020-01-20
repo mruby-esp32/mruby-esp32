@@ -40,7 +40,16 @@ int FmrbSystemApp::print_system_info()
   return 0;
 }
 
+static void draw_img(uint16_t x,uint16_t y,char* data){
+
+}
+
 int FmrbSystemApp::show_splash(){
+  char* img_data = file_service.load("logo.img");
+  if(!img_data){
+    draw_img(0,0,img_data);
+    free(img_data);
+  }
   print_system_info();
   m_terminal.enableCursor(true);
   return 0;
