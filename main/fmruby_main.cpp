@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -15,6 +16,7 @@
 #include "fmruby_fabgl.h"
 #include "fmruby_app.h"
 
+
 void* fmrb_spi_malloc(size_t size)
 {
   return heap_caps_malloc(size,MALLOC_CAP_SPIRAM);
@@ -23,6 +25,22 @@ void* fmrb_spi_malloc(size_t size)
 void* fmrb_spi_realloc(void* ptr, size_t size)
 {
   return heap_caps_realloc(ptr,size,MALLOC_CAP_SPIRAM);
+}
+
+void fmrb_debug_print(FMRB_LOG lv,const char *fmt,...)
+{
+  va_list arg;
+  switch(lv){
+    case FMRB_LOG::DEBUG:
+    printf("[DBG]");break;
+    case FMRB_LOG::INFO:
+    printf("[INF]");break;
+    case FMRB_LOG::MSG:
+    printf("[MSG]");break;
+  }
+  va_start(arg, fmt);
+  vprintf(fmt, arg);
+  va_end(arg);
 }
 
 #ifdef TEST_AUDIO

@@ -733,7 +733,7 @@ void FmrbEditor::load_file(){
   printf("load_file\n");
   //clear current buffer
   clear_buffer();
-  char* buff = file_service.load();
+  char* buff = file_service.load("/default.rb");
   move_cursor(m_lineno_shift+1,1);
   if(buff){
     load(buff);
@@ -757,7 +757,7 @@ void FmrbEditor::save_file(){
   printf("save_file\n");
   char* buff = dump_script();
   if(buff){
-    file_service.save(buff);
+    file_service.save(buff,"/default.rb");
     free(buff);
   }else{
     printf("dump_script error\n");

@@ -40,18 +40,32 @@ int FmrbSystemApp::print_system_info()
   return 0;
 }
 
-static void draw_img(uint16_t x,uint16_t y,char* data){
+static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data){
+  const int header = 4;
+  uint16_t width  = (data[header]) + (data[header+1]<<8);
+  uint16_t height = (data[header+2]) + (data[header+3]<<8);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"img:%d,%d\n",width,height);
 
+  uint8_t* p = data+header+4;
+  for(uint16_t y=0;y<height;y++){
+    for(uint16_t x=0;x<width;x++){
+      if(((*p)&0xC0) == 0 ){ //check alpha
+        VGAController.setRawPixel(x0+x,y0+y,
+          VGAController.createRawPixel(RGB222((*p)&0x03, ((*p)&0x0C) >> 2, ((*p)&0x30) >> 4)));
+      }
+      p++;
+    }
+  }
 }
 
 int FmrbSystemApp::show_splash(){
-  char* img_data = file_service.load("logo.img");
-  if(!img_data){
-    draw_img(0,0,img_data);
+  uint8_t* img_data = (uint8_t*)file_service.load("/test.img");
+  if(img_data){
+    draw_img(200,80,img_data);
     free(img_data);
   }
-  print_system_info();
-  m_terminal.enableCursor(true);
+  //print_system_info();
+  //m_terminal.enableCursor(true);
   return 0;
 }
 
