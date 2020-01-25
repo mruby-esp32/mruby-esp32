@@ -18,6 +18,7 @@ enum class FMRB_LOG{
   MSG,
   INFO,
   ERR,
+  RAW,
 };
 
 void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line,...);

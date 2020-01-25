@@ -40,6 +40,8 @@ void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line, ...
     printf("[INF]");break;
     case FMRB_LOG::ERR:
     printf("[ERR]");break;
+    case FMRB_LOG::RAW:
+    break;
   }
 
   if(lv==FMRB_LOG::ERR){

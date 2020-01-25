@@ -4,6 +4,7 @@
 
 
 FmrbSystemApp SystemApp;
+FmrbMrubyEngine MrubyEngine;
 
 FmrbSystemApp::FmrbSystemApp()
 {
@@ -86,7 +87,7 @@ int FmrbSystemApp::run_editor(){
 int FmrbSystemApp::run_mruby(){
   if(m_script){
     fabgl_mruby_mode_init();
-    mruby_engine(m_script);
+    MrubyEngine.run(m_script);
     free(m_script);
   }
   return 0;

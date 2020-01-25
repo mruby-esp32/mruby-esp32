@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fmruby_editor.h"
+#include "mruby.h"
 
 class FmrbFileService {
 public:
@@ -32,8 +33,16 @@ private:
 
 };
 
+class FmrbMrubyEngine {
+public:
+  FmrbMrubyEngine();
+  void run(char* code_string);
+private:
+  int m_exec_result;
+  char* m_error_msg;
+  int m_error_line;
+  static void* mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud);
+  void check_backtrace(mrb_state *mrb);
+};
+
 void menu_app(void);
-
-void mruby_init(void);
-void mruby_engine(char* code_string);
-
