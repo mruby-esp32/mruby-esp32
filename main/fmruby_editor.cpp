@@ -735,7 +735,7 @@ void FmrbEditor::load_file(){
   //clear current buffer
   clear_buffer();
   uint32_t fsize;
-  char* buff = file_service.load("/default.rb",fsize,true,false);
+  char* buff = FMRB_storage.load("/default.rb",fsize,true,false);
   move_cursor(m_lineno_shift+1,1);
   if(buff){
     load(buff);
@@ -759,7 +759,7 @@ void FmrbEditor::save_file(){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file\n");
   char* buff = dump_script();
   if(buff){
-    file_service.save(buff,"/default.rb");
+    FMRB_storage.save(buff,"/default.rb");
     fmrb_free(buff);
   }else{
     FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");

@@ -6,30 +6,30 @@
 class FmrbFileService {
 public:
   FmrbFileService();
-  int init();
+  FMRB_RCODE init();
   char* load(const char* path,uint32_t &fsize,bool is_text=false,bool localmem=true);
   char* load_bitmap(const char* path,uint16_t &width,uint16_t &height,uint32_t &type);
-  int save(char* buff,const char* path);
+  FMRB_RCODE save(char* buff,const char* path);
 private:
   bool m_spiffs_opened;
   bool m_sd_opened;
 };
 
-extern FmrbFileService file_service;
+extern FmrbFileService FMRB_storage;
 
 class FmrbSystemApp {
 public:
   FmrbSystemApp();
-  int run();
+  FMRB_RCODE run();
 private:
   char* m_script;
   FmrbEditor m_editor;
   fabgl::Terminal m_terminal;
-  int init_terminal();
-  int print_system_info();
-  int show_splash();
-  int run_editor();
-  int run_mruby();
+  FMRB_RCODE init_terminal();
+  FMRB_RCODE print_system_info();
+  FMRB_RCODE show_splash();
+  FMRB_RCODE run_editor();
+  FMRB_RCODE run_mruby();
 
 };
 

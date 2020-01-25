@@ -21,6 +21,13 @@ enum class FMRB_LOG{
   RAW,
 };
 
+enum class FMRB_RCODE{
+  DEVICE_ERROR=-100,
+  MEMALLOC_ERROR,
+  ERROR=-1,
+  OK=0,
+};
+
 void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line,...);
 
 #ifdef ENABLE_FMRB_LOG

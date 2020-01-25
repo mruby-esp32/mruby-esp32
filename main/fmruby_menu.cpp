@@ -11,7 +11,7 @@ FmrbSystemApp::FmrbSystemApp()
   
 }
 
-int FmrbSystemApp::init_terminal(void)
+FMRB_RCODE FmrbSystemApp::init_terminal(void)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"start terminal_init\n");
   fabgl_terminal_mode_init();
@@ -24,10 +24,10 @@ int FmrbSystemApp::init_terminal(void)
   m_terminal.setForegroundColor(Color::White);
   m_terminal.clear();
   FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal_init() done\n");
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
-int FmrbSystemApp::print_system_info()
+FMRB_RCODE FmrbSystemApp::print_system_info()
 {
   m_terminal.printf("\e[37m* Family mruby *   Ver. %s (%s)\r\n",FMRB_VERSION,FMRB_RELEASE);
   m_terminal.write ("\e[34m   Powereded by FabGL\e[32m\r\n\n");
@@ -38,7 +38,7 @@ int FmrbSystemApp::print_system_info()
   m_terminal.printf("\e[32mFree 32 bit Memory :\e[33m %d\r\n\n", heap_caps_get_free_size(MALLOC_CAP_32BIT));
   m_terminal.write("\e[32m >> Press Enter\r\n\n");
   m_terminal.write("\e[37m");
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
 static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data){
@@ -59,42 +59,42 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data){
   }
 }
 
-int FmrbSystemApp::show_splash(){
-  //uint8_t* img_data = (uint8_t*)file_service.load("/test.img");
+FMRB_RCODE FmrbSystemApp::show_splash(){
+  //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/test.img");
   uint32_t fsize;
-  //uint8_t* img_data = (uint8_t*)file_service.load("/bktest.img",fsize,false,false);
-  uint8_t* img_data = (uint8_t*)file_service.load("/bk_small.img",fsize,false,false);
+  //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bktest.img",fsize,false,false);
+  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bk_small.img",fsize,false,false);
   if(img_data){
     draw_img(0,0,img_data);
     fmrb_free(img_data);
   }
   print_system_info();
   m_terminal.enableCursor(true);
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
 
-int FmrbSystemApp::run_editor(){
+FMRB_RCODE FmrbSystemApp::run_editor(){
     m_editor.begin(&m_terminal);
     int err = m_editor.run();
     if(err >= 0){
       m_script = m_editor.dump_script();
     }
     m_editor.release();
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
-int FmrbSystemApp::run_mruby(){
+FMRB_RCODE FmrbSystemApp::run_mruby(){
   if(m_script){
     fabgl_mruby_mode_init();
     MrubyEngine.run(m_script);
     fmrb_free(m_script);
   }
-  return 0;
+  return FMRB_RCODE::OK;
 
 }
 
-int FmrbSystemApp::run()
+FMRB_RCODE FmrbSystemApp::run()
 {
   static bool first_flag = true;
   m_script = NULL;
@@ -104,7 +104,7 @@ int FmrbSystemApp::run()
 
     //Booting Family mruby
     if(first_flag){
-      file_service.init();
+      FMRB_storage.init();
       show_splash();
       first_flag=false;
     }
@@ -120,7 +120,7 @@ int FmrbSystemApp::run()
     run_mruby();
 
   }
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
 //#define TEST_SCRIPT

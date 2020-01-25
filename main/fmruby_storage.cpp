@@ -13,7 +13,7 @@
 #include "SPI.h"
 SPIClass hspi(HSPI);
 
-FmrbFileService file_service;
+FmrbFileService FMRB_storage;
 
 //#define DEFAULT_TEST_PATH "/test.rb"
 FmrbFileService::FmrbFileService(){
@@ -59,7 +59,7 @@ static int init_sd()
   return 0;
 }
 
-int FmrbFileService::init(){
+FMRB_RCODE FmrbFileService::init(){
   AutoSuspendInterrupts autoSuspendInt;
   
   /*
@@ -77,7 +77,7 @@ int FmrbFileService::init(){
   bool ret = SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED,"/spiffs",1);
   if(!ret){
     FMRB_DEBUG(FMRB_LOG::ERR,"SPIFFS Mount Failed\n");
-    return -1;
+    return FMRB_RCODE::DEVICE_ERROR;
   }
   FMRB_DEBUG(FMRB_LOG::DEBUG,"SPIFFS Mount OK\n");
   m_spiffs_opened=true;
@@ -89,7 +89,7 @@ int FmrbFileService::init(){
     m_sd_opened = false;
   }
 
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
 char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool localmem){
@@ -146,26 +146,26 @@ char* FmrbFileService::load_bitmap(const char* path,uint16_t &width,uint16_t &he
   return data;
 }
 
-int FmrbFileService::save(char* buff,const char* path){
+FMRB_RCODE FmrbFileService::save(char* buff,const char* path){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"Writing file: %s\r\n", path);
-  if(!m_spiffs_opened) return -1;
+  if(!m_spiffs_opened) return FMRB_RCODE::ERROR;
 
   AutoSuspendInterrupts autoSuspendInt;
   File file = SPIFFS.open(path, FILE_WRITE);
   //File file = SD.open("/default.rb", FILE_WRITE);
   if(!file){
     FMRB_DEBUG(FMRB_LOG::ERR,"- failed to open file for writing\n");
-    return -1;
+    return FMRB_RCODE::ERROR;
   }
   if(file.print(buff)){
     FMRB_DEBUG(FMRB_LOG::DEBUG,"- file written\n");
   } else {
     FMRB_DEBUG(FMRB_LOG::ERR,"- write failed\n");
     file.close();
-    return -1;
+    return FMRB_RCODE::ERROR;
   }
   FMRB_DEBUG(FMRB_LOG::DEBUG,"- save done\n");
   file.close();
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
