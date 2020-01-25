@@ -17,20 +17,12 @@ private:
 
 extern FmrbFileService FMRB_storage;
 
-class FmrbSystemApp {
-public:
-  FmrbSystemApp();
-  FMRB_RCODE run();
-private:
-  char* m_script;
-  FmrbEditor m_editor;
-  fabgl::Terminal m_terminal;
-  FMRB_RCODE init_terminal();
-  FMRB_RCODE print_system_info();
-  FMRB_RCODE show_splash();
-  FMRB_RCODE run_editor();
-  FMRB_RCODE run_mruby();
-
+enum class FMRB_SYS_STATE{
+  INIT=0,
+  SHOW_MENU,
+  DO_EDIT,
+  EXEC_FROM_EDIT,
+  EXEC_FROM_FILE,
 };
 
 class FmrbMrubyEngine {
@@ -44,6 +36,28 @@ private:
   int m_error_line;
   static void* mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud);
   void check_backtrace(mrb_state *mrb);
+};
+
+
+class FmrbSystemApp {
+public:
+  FmrbSystemApp();
+  FMRB_RCODE run();
+private:
+  char* m_script;
+  FMRB_SYS_STATE m_state;
+  FmrbEditor m_editor;
+  bool m_terminal_available;
+  fabgl::Terminal m_terminal;
+  FmrbMrubyEngine m_mruby_engine;
+  void wait_key(char target);
+  FMRB_RCODE init_terminal();
+  FMRB_RCODE close_terminal();
+  FMRB_RCODE print_system_info();
+  FMRB_RCODE show_splash();
+  FMRB_RCODE run_editor();
+  FMRB_RCODE run_mruby();
+
 };
 
 void menu_app(void);

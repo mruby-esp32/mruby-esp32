@@ -197,7 +197,7 @@ void FmrbEditor::wait_key(char target){
   }
 }
 
-int FmrbEditor::run(void){
+int FmrbEditor::run(char* input_script){
   if(!m_term) return -1;
   m_height = m_term->getRows();
   m_width  = m_term->getColumns();
@@ -206,13 +206,17 @@ int FmrbEditor::run(void){
 
   FMRB_DEBUG(FMRB_LOG::INFO,"Editor begin\n");
 
-  wait_key(0x0D);
-
   m_term->clear();
   move_cursor(m_lineno_shift+1,1);
 
-  load(null_script);
-  //load_demo_file();
+  if(input_script)
+  {
+    load(input_script);
+    fmrb_free(input_script);
+  }else{
+    load(null_script);
+    //load_demo_file();
+  }
 
   update();
 
@@ -459,7 +463,7 @@ void FmrbEditor::load(const char* buf)
 
 void FmrbEditor::print_csr_info(void)
 {
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"(%02d,%02d) head=%d total=%d\n",m_x,m_y,m_disp_head_line,m_total_line);
+  EDT_DEBUG("(%02d,%02d) head=%d total=%d\n",m_x,m_y,m_disp_head_line,m_total_line);
 }
 
 void FmrbEditor::move_edit_cursor(int dir)

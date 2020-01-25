@@ -4,31 +4,70 @@
 
 
 FmrbSystemApp SystemApp;
-FmrbMrubyEngine MrubyEngine;
 
 FmrbSystemApp::FmrbSystemApp()
 {
-  
+  m_state = FMRB_SYS_STATE::INIT;
+  m_terminal_available = false;
 }
 
 FMRB_RCODE FmrbSystemApp::init_terminal(void)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"start terminal_init\n");
-  fabgl_terminal_mode_init();
+  if(!m_terminal_available){
+    fabgl_terminal_mode_init();
 
-  m_terminal.begin(&VGAController);
-  m_terminal.connectLocally();
-  //Terminal.connectSerialPort(Serial,true);
+    m_terminal.begin(&VGAController);
+    m_terminal.connectLocally();
+    //Terminal.connectSerialPort(Serial,true);
 
-  m_terminal.setBackgroundColor(Color::Black);
-  m_terminal.setForegroundColor(Color::White);
-  m_terminal.clear();
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal_init() done\n");
+    m_terminal.setBackgroundColor(Color::Black);
+    m_terminal.setForegroundColor(Color::White);
+    m_terminal.clear();
+    m_terminal.enableCursor(true);
+    //FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal_init() done\n");
+    m_terminal_available = true;
+  }else{
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal is already initialized\n");
+  }
   return FMRB_RCODE::OK;
+}
+
+FMRB_RCODE FmrbSystemApp::close_terminal(void)
+{
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"start close_terminal\n");
+  if(m_terminal_available)
+  {
+    m_terminal.end();
+    m_terminal_available = false;
+  }else{
+    //FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal is already closed\n");
+    return FMRB_RCODE::ERROR;
+  }
+  return FMRB_RCODE::OK;
+}
+
+void FmrbSystemApp::wait_key(char target)
+{
+  if(!m_terminal_available) return;
+
+  while(true)
+  {
+    if (m_terminal.available())
+    {
+      char c = m_terminal.read();
+      if(c == target){
+        return;
+      }
+    }
+    vTaskDelay(10);
+  }
 }
 
 FMRB_RCODE FmrbSystemApp::print_system_info()
 {
+  if(!m_terminal_available) return FMRB_RCODE::ERROR;
+
   m_terminal.printf("\e[37m* Family mruby *   Ver. %s (%s)\r\n",FMRB_VERSION,FMRB_RELEASE);
   m_terminal.write ("\e[34m   Powereded by FabGL\e[32m\r\n\n");
   m_terminal.printf("\e[32mScreen Size        :\e[33m %d x %d\r\n", VGAController.getScreenWidth(), VGAController.getScreenHeight());
@@ -69,14 +108,14 @@ FMRB_RCODE FmrbSystemApp::show_splash(){
     fmrb_free(img_data);
   }
   print_system_info();
-  m_terminal.enableCursor(true);
   return FMRB_RCODE::OK;
 }
 
 
 FMRB_RCODE FmrbSystemApp::run_editor(){
     m_editor.begin(&m_terminal);
-    int err = m_editor.run();
+    int err = m_editor.run(m_script);
+    m_script = NULL;
     if(err >= 0){
       m_script = m_editor.dump_script();
     }
@@ -87,8 +126,8 @@ FMRB_RCODE FmrbSystemApp::run_editor(){
 FMRB_RCODE FmrbSystemApp::run_mruby(){
   if(m_script){
     fabgl_mruby_mode_init();
-    MrubyEngine.run(m_script);
-    fmrb_free(m_script);
+    m_mruby_engine.run(m_script);
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"m_mruby_engine END\n");
   }
   return FMRB_RCODE::OK;
 
@@ -96,29 +135,48 @@ FMRB_RCODE FmrbSystemApp::run_mruby(){
 
 FMRB_RCODE FmrbSystemApp::run()
 {
-  static bool first_flag = true;
-  m_script = NULL;
-
   while(true){
-    init_terminal();
-
+    FMRB_DEBUG(FMRB_LOG::MSG,"[AppState:%d]\n",m_state);
     //Booting Family mruby
-    if(first_flag){
-      FMRB_storage.init();
-      show_splash();
-      first_flag=false;
+    switch(m_state){
+      case FMRB_SYS_STATE::INIT:
+      {
+        init_terminal();
+        m_script = NULL;
+        FMRB_storage.init();
+        show_splash();
+        wait_key(0x0D);
+        m_state = FMRB_SYS_STATE::SHOW_MENU;
+        break;
+      }
+      case FMRB_SYS_STATE::SHOW_MENU:
+      {
+        if(!m_terminal_available){
+          init_terminal();
+        }
+        m_state = FMRB_SYS_STATE::DO_EDIT;
+        break;
+      }
+      case FMRB_SYS_STATE::DO_EDIT:
+      {
+        if(!m_terminal_available){
+          init_terminal();
+        }
+        run_editor();
+        m_state = FMRB_SYS_STATE::EXEC_FROM_EDIT;
+        break;
+      }
+      case FMRB_SYS_STATE::EXEC_FROM_EDIT:
+      {
+        if(m_terminal_available) close_terminal();
+        run_mruby();
+        m_state = FMRB_SYS_STATE::DO_EDIT;
+        break;
+      }
+      case FMRB_SYS_STATE::EXEC_FROM_FILE:
+      default:
+      return FMRB_RCODE::ERROR;
     }
-
-    //Select app
-    //1.editor, 2.run script
-
-    run_editor();
-
-    m_terminal.end();
-    FMRB_DEBUG(FMRB_LOG::DEBUG,"Terminal.end()\n");
-
-    run_mruby();
-
   }
   return FMRB_RCODE::OK;
 }

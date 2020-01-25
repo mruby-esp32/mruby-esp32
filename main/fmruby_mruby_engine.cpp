@@ -94,4 +94,5 @@ void FmrbMrubyEngine::run(char* code_string)
   mrb_close(mrb);
 
   FMRB_DEBUG(FMRB_LOG::DEBUG,"End of mruby engine\n");
+  return;
 }

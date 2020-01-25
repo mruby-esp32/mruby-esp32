@@ -14,6 +14,7 @@
 
 #define DOUBLEBUFFERING 1
 
+// Shared with mgem
 fabgl::VGAController VGAController;
 fabgl::PS2Controller PS2Controller;
 fabgl::Canvas        FMRB_canvas(&VGAController);

@@ -33,7 +33,7 @@ class FmrbEditor {
 public:
   FmrbEditor();
   int begin(fabgl::Terminal* terminal);
-  int run(void);
+  int run(char* input_script);
   int release(void);
   char* dump_script(void);
 
