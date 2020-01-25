@@ -123,7 +123,7 @@ char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool l
   FMRB_DEBUG(FMRB_LOG::DEBUG,"- read done:%d\n",(int)rsize);
   file.close();
   if(rsize==0){
-    free(buff);
+    fmrb_free(buff);
     return NULL;
   }
   if(is_text){

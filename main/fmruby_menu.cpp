@@ -66,7 +66,7 @@ int FmrbSystemApp::show_splash(){
   uint8_t* img_data = (uint8_t*)file_service.load("/bk_small.img",fsize,false,false);
   if(img_data){
     draw_img(0,0,img_data);
-    free(img_data);
+    fmrb_free(img_data);
   }
   print_system_info();
   m_terminal.enableCursor(true);
@@ -88,7 +88,7 @@ int FmrbSystemApp::run_mruby(){
   if(m_script){
     fabgl_mruby_mode_init();
     MrubyEngine.run(m_script);
-    free(m_script);
+    fmrb_free(m_script);
   }
   return 0;
 

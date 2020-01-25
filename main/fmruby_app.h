@@ -38,6 +38,7 @@ public:
   FmrbMrubyEngine();
   void run(char* code_string);
 private:
+  static constexpr int DBG_MSG_MAX_LEN = 128;
   int m_exec_result;
   char* m_error_msg;
   int m_error_line;

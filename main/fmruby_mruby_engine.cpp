@@ -19,11 +19,11 @@ FmrbMrubyEngine::FmrbMrubyEngine(){
 void* FmrbMrubyEngine::mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
 {
   if (size == 0) {
-    free(p);
+    fmrb_free(p);
     return NULL;
   }
   else {
-    return heap_caps_realloc(p, size, MALLOC_CAP_SPIRAM);
+    return fmrb_spi_realloc(p, size);
   }
 }
 
@@ -42,6 +42,7 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
   mrb_value s = mrb_funcall(mrb, exc, "inspect", 0);
   int i;
   mrb_value *loc;
+  int log_len = 0;
 
   for (i=depth-1,loc=&RARRAY_PTR(backtrace)[i]; i>0; i--,loc--) {
     if (mrb_string_p(*loc)) {
@@ -50,14 +51,25 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
     }
   }
   if (mrb_string_p(*loc)) {
-    FMRB_DEBUG(FMRB_LOG::ERR,"%.*s: ", (int)RSTRING_LEN(*loc), RSTRING_PTR(*loc));
+    log_len = (int)RSTRING_LEN(*loc);
+    FMRB_DEBUG(FMRB_LOG::ERR,"%.*s: ", log_len, RSTRING_PTR(*loc));
   }
+  log_len += (int)RSTRING_LEN(s);
   FMRB_DEBUG(FMRB_LOG::RAW,"%s\n", RSTRING_PTR(s));
-  
+
+  if(log_len > DBG_MSG_MAX_LEN){
+    log_len = DBG_MSG_MAX_LEN;
+  }
+
 }
 
 void FmrbMrubyEngine::run(char* code_string)
 {
+  m_exec_result = 0;
+  if(m_error_msg) fmrb_free(m_error_msg);
+  m_error_msg = NULL;
+  m_error_line = -1;
+
   mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
 
   int ai = mrb_gc_arena_save(mrb);
@@ -73,6 +85,7 @@ void FmrbMrubyEngine::run(char* code_string)
       check_backtrace(mrb);
     }
     mrb->exc = 0;
+    m_exec_result = -1;
   } else {
     FMRB_DEBUG(FMRB_LOG::INFO,"\n<Exec mruby completed successfully>\n");
   }

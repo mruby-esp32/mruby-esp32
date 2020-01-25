@@ -7,7 +7,7 @@
 
 void* fmrb_spi_malloc(size_t size);
 void* fmrb_spi_realloc(void* ptr, size_t size);
-
+void fmrb_free(void* ptr);
 
 #define FMRB_BITMAP_HEADER_SIZE (4)
 

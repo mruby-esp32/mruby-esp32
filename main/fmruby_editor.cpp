@@ -23,7 +23,7 @@ EditLine* EditLine::create_line(void)
   EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
   if(line){
     if(line->init(NULL) < 0){
-      free(line);
+      fmrb_free(line);
       return NULL;
     }    
   }
@@ -36,7 +36,7 @@ EditLine* EditLine::create_line(char* input)
   if(NULL==line)return NULL;
   
   if(line->init(input) < 0){
-    free(line);
+    fmrb_free(line);
     return NULL;
   }
   return line;
@@ -152,7 +152,7 @@ char* EditLine::cut(uint16_t start_pos, uint16_t end_pos)
     text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
     if (NULL==text)
     {
-      free(buff);
+      fmrb_free(buff);
       return NULL;
     }
     buff_size -= EDITLINE_BLOCK_SIZE;
@@ -401,8 +401,8 @@ EditLine* FmrbEditor::load_line(const char* in)
     if( (csr+1) % EDITLINE_BLOCK_SIZE == 0){
       if (NULL==fmrb_spi_realloc(line_p->text,csr+EDITLINE_BLOCK_SIZE))
       {
-        free(line_p->text);
-        free(line_p);
+        fmrb_free(line_p->text);
+        fmrb_free(line_p);
         return NULL;
       }
       line_p->buff_size = line_p->buff_size+EDITLINE_BLOCK_SIZE;
@@ -645,14 +645,14 @@ void FmrbEditor::insert_ret()
   if(NULL==cut_test)return;
   EditLine* new_line = EditLine::create_line(cut_test);
   if(NULL==new_line){
-    free(cut_test);
+    fmrb_free(cut_test);
     return;
   }
   new_line->prev = line;
   new_line->next = line->next;
   line->next = new_line;
   m_total_line++;
-  free(cut_test);
+  fmrb_free(cut_test);
   update_lineno();
 
   m_x = m_lineno_shift + 1;
@@ -721,11 +721,11 @@ void FmrbEditor::clear_buffer(){
   while(line)
   {
     if(line->text){
-      free(line->text);
+      fmrb_free(line->text);
     }
     EditLine* old = line;
     line = line->next;
-    free(old);
+    fmrb_free(old);
   }
   m_buff_head = NULL;
 }
@@ -760,7 +760,7 @@ void FmrbEditor::save_file(){
   char* buff = dump_script();
   if(buff){
     file_service.save(buff,"/default.rb");
-    free(buff);
+    fmrb_free(buff);
   }else{
     FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");
   }

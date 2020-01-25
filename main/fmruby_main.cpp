@@ -28,6 +28,10 @@ void* fmrb_spi_realloc(void* ptr, size_t size)
   return heap_caps_realloc(ptr,size,MALLOC_CAP_SPIRAM);
 }
 
+void fmrb_free(void* ptr){
+  free(ptr);
+}
+
 void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line, ...)
 {
   va_list arg;
