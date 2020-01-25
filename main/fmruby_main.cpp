@@ -236,6 +236,6 @@ void mainTask(void *pvParameters)
 extern "C" void app_main()
 {
     initArduino();
-    xTaskCreateUniversal(mainTask, "mainTask", 8192, NULL, 1, &mainTaskHandle, CONFIG_ARDUINO_RUNNING_CORE);
+    xTaskCreateUniversal(mainTask, "mainTask", 8192*2, NULL, 1, &mainTaskHandle, CONFIG_ARDUINO_RUNNING_CORE);
 }
 

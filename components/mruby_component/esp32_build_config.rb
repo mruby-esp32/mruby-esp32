@@ -61,6 +61,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.bins = []
   conf.build_mrbtest_lib_only
   conf.enable_cxx_exception
+  conf.enable_debug
   
   conf.gem :core => "mruby-compiler"
   conf.gem :core => "mruby-print"
@@ -69,6 +70,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.gem :core => "mruby-metaprog"
   conf.gem :core => "mruby-math"
   conf.gem :core => "mruby-random"
+  #conf.gem :core => "mruby-kernel-ext"
   conf.gem :core => "mruby-toplevel-ext"
 
   conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
