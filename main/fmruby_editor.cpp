@@ -442,7 +442,7 @@ void FmrbEditor::load(const char* buf)
       m_error = EDIT_MEM_ERROR;
       return;
     }
-    FMRB_DEBUG(FMRB_LOG::DEBUG,"load size=%04d : %s\n",line->length,line->text);
+    //FMRB_DEBUG(FMRB_LOG::DEBUG,"load size=%04d : %s\n",line->length,line->text);
     m_total_line += 1;
     line->lineno = m_total_line;
     csr += line->length;

@@ -41,8 +41,10 @@ void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line, ...
     printf("[ERR]");break;
   }
 
-  //printf("[%s:%d]",func,line);
-  
+  if(lv==FMRB_LOG::ERR){
+    printf("[%s:%d]",func,line);
+  } 
+
   va_start(arg, fmt);
   vprintf(fmt, arg);
   va_end(arg);
@@ -184,6 +186,9 @@ static void test_spiffs(){
 
 #ifdef RUN_MAIN
 void setup(){
+  FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");
+  FMRB_DEBUG(FMRB_LOG::INFO," Family mruby ver:%s (%s)\n",FMRB_VERSION,FMRB_RELEASE);
+  FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");
 #ifndef TEST_SD
   //SPI SD pins
   //pinMode(12, OUTPUT);
