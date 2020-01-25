@@ -203,7 +203,7 @@ int FmrbEditor::run(void){
   m_disp_height = m_height - 1;
   m_disp_width = m_width;
 
-  printf("Editor begin\n");
+  FMRB_DEBUG(FMRB_LOG::INFO,"Editor begin\n");
 
   wait_key(0x0D);
 
@@ -297,14 +297,14 @@ int FmrbEditor::run(void){
           }else if(escape_c[0]==0x4F){
             switch(c){
               case 0x50: // ESC OP : F1
-                printf("F1\n");
+                FMRB_DEBUG(FMRB_LOG::DEBUG,"F1\n");
                 break;
               case 0x51: // ESC OP : F2
-                printf("F2\n");
+                FMRB_DEBUG(FMRB_LOG::DEBUG,"F2\n");
                 save_file();
                 break;
               case 0x52: // ESC OP : F3
-                printf("F3\n");
+                FMRB_DEBUG(FMRB_LOG::DEBUG,"F3\n");
                 load_file();
                 break;
               case 0x53: // ESC OP : F4
@@ -442,7 +442,7 @@ void FmrbEditor::load(const char* buf)
       m_error = EDIT_MEM_ERROR;
       return;
     }
-    printf("load size=%04d : %s\n",line->length,line->text);
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"load size=%04d : %s\n",line->length,line->text);
     m_total_line += 1;
     line->lineno = m_total_line;
     csr += line->length;
@@ -458,13 +458,13 @@ void FmrbEditor::load(const char* buf)
 
 void FmrbEditor::print_csr_info(void)
 {
-  printf("(%02d,%02d) head=%d total=%d\n",m_x,m_y,m_disp_head_line,m_total_line);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"(%02d,%02d) head=%d total=%d\n",m_x,m_y,m_disp_head_line,m_total_line);
 }
 
 void FmrbEditor::move_edit_cursor(int dir)
 {
   int current_line_n = m_disp_head_line-1 + m_y;
-  //printf("current_line_n=%d\n",current_line_n);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"current_line_n=%d\n",current_line_n);
   EditLine* line = seek_line(current_line_n);
   if(NULL==line){
     return;
@@ -543,12 +543,12 @@ EditLine* FmrbEditor::seek_line(int n)
 {
   if(n<1 || n>m_total_line)
   {
-    printf("seek line > total line\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"seek line > total line\n");
     return NULL;
   }
   if(NULL==m_buff_head)
   {
-    printf("m_buff_head is NULL\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"m_buff_head is NULL\n");
     return NULL;
   }
   if(NULL == m_buff_head->next){
@@ -558,7 +558,7 @@ EditLine* FmrbEditor::seek_line(int n)
   for(int i=1;i<=n;i++){
     line = line->next;
     if(NULL==line){
-      printf("line %d doesn't exist\n",n);
+      FMRB_DEBUG(FMRB_LOG::ERR,"line %d doesn't exist\n",n);
       return NULL;
     }
   }
@@ -629,7 +629,7 @@ void FmrbEditor::update_lineno(void)
 void FmrbEditor::insert_ch(char c)
 {
   EditLine* line = seek_line(m_disp_head_line+m_y-1);
-  //printf("INSERT(%c):text:%s\n",c,line->text);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"INSERT(%c):text:%s\n",c,line->text);
   line->insert(m_x-m_lineno_shift-1,c);
   draw_line(m_y,line);
   m_x += 1;
@@ -671,7 +671,7 @@ void FmrbEditor::insert_ret()
 void FmrbEditor::delete_ch()
 {
   EditLine* line = seek_line(m_disp_head_line+m_y-1);
-  //printf("BS:text:%s\n",line->text);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"BS:text:%s\n",line->text);
   if(m_x-m_lineno_shift-1>0){
     line->backdelete(m_x-m_lineno_shift-1);
     draw_line(m_y,line);
@@ -693,10 +693,10 @@ char* FmrbEditor::dump_script(void)
     total_length += line->length + 1;
     line = line->next;
   }
-  printf("total_length=%d\n",total_length);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"total_length=%d\n",total_length);
   char* buff = (char*)fmrb_spi_malloc(total_length+1);
   if(NULL==buff){
-    printf("cannot allocate memory!\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"cannot allocate memory!\n");
     return NULL;
   }
   int csr = 0;
@@ -709,13 +709,13 @@ char* FmrbEditor::dump_script(void)
     line = line->next;
   }
   buff[csr]='\0';
-  printf("csr=%d total_length=%d\n",csr,total_length);
-  //printf("%s\n",buff);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"csr=%d total_length=%d\n",csr,total_length);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"%s\n",buff);
   return buff;
 }
 
 void FmrbEditor::clear_buffer(){
-  printf("clear_buffer\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"clear_buffer\n");
   EditLine* line = m_buff_head;
   while(line)
   {
@@ -730,7 +730,7 @@ void FmrbEditor::clear_buffer(){
 }
 
 void FmrbEditor::load_file(){
-  printf("load_file\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file\n");
   //clear current buffer
   clear_buffer();
   uint32_t fsize;
@@ -739,11 +739,11 @@ void FmrbEditor::load_file(){
   if(buff){
     load(buff);
   }else{
-    printf("failed to load file\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"failed to load file\n");
     load(null_script);
   }
   update();
-  printf("load_file done\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file done\n");
 }
 
 void FmrbEditor::load_demo_file(){
@@ -755,13 +755,13 @@ void FmrbEditor::load_demo_file(){
 }
 
 void FmrbEditor::save_file(){
-  printf("save_file\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file\n");
   char* buff = dump_script();
   if(buff){
     file_service.save(buff,"/default.rb");
     free(buff);
   }else{
-    printf("dump_script error\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");
   }
-  printf("save_file done\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file done\n");
 }

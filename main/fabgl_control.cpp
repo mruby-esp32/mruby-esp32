@@ -1,4 +1,5 @@
 #include "fabgl.h"
+#include "fmruby.h"
 #include "fmruby_fabgl.h"
 
 // indicate VGA GPIOs to use for selected color configuration for Narya borad
@@ -29,20 +30,20 @@ void fabgl_init(void)
 
 void fabgl_terminal_mode_init(void)
 {
-  printf("fabgl_terminal_mode_init\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_terminal_mode_init\n");
   
   VGAController.setResolution(VGA_640x350_70HzAlt1, 640, 350, false);
   //VGAController.setResolution(VGA_512x384_60Hz, 512, 384,false);
   VGAController.moveScreen(20, 0);
-  printf("fabgl_terminal_mode_init done\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_terminal_mode_init done\n");
 }
 
 void fabgl_mruby_mode_init(void)
 {
-  printf("fabgl_mruby_mode_init\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_mruby_mode_init\n");
   VGAController.setResolution(VGA_320x200_75Hz, -1, -1, true);
 
   //Canvas.selectFont(Canvas.getPresetFontInfo(40, 14)); // get a font for about 40x14 text screen
   //Canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
-  printf("fabgl_mruby_mode_init done\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_mruby_mode_init done\n");
 }

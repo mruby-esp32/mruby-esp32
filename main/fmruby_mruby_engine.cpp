@@ -5,6 +5,7 @@
 #include "mruby/error.h"
 #include "mruby/string.h"
 
+#include "fmruby.h"
 #include "fmruby_fabgl.h"
 #include "fmruby_app.h"
 
@@ -28,14 +29,14 @@ void mruby_engine(char* code_string)
 
   mrb_value val = mrb_load_string(mrb,code_string);
   if (mrb->exc) {
-    printf("Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
     mrb->exc = 0;
   } else {
-    printf("Success\n");
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Success\n");
   }
 
   mrb_gc_arena_restore(mrb, ai);
   mrb_close(mrb);
 
-  printf("End of mruby task\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"End of mruby task\n");
 }

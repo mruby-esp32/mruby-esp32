@@ -40,7 +40,9 @@ void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line, ...
     case FMRB_LOG::ERR:
     printf("[ERR]");break;
   }
-  printf("[%s:%d]",func,line);
+
+  //printf("[%s:%d]",func,line);
+  
   va_start(arg, fmt);
   vprintf(fmt, arg);
   va_end(arg);
@@ -194,13 +196,13 @@ void setup(){
 #endif
 
   nvs_flash_init();
-  printf("nvs_flash_init() done\n");
+  FMRB_DEBUG(FMRB_LOG::INFO,"nvs_flash_init() done\n");
 #ifdef TEST_SPIFFS
   test_spiffs();
 #endif
-  printf("fabgl_init()\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_init()\n");
   fabgl_init();
-  printf("fabgl_init() done\n");
+  FMRB_DEBUG(FMRB_LOG::INFO,"fabgl_init() done\n");
   vTaskDelay(100);
 }
 

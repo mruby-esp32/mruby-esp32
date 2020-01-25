@@ -12,7 +12,7 @@ FmrbSystemApp::FmrbSystemApp()
 
 int FmrbSystemApp::init_terminal(void)
 {
-  printf("start terminal_init\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"start terminal_init\n");
   fabgl_terminal_mode_init();
 
   m_terminal.begin(&VGAController);
@@ -22,7 +22,7 @@ int FmrbSystemApp::init_terminal(void)
   m_terminal.setBackgroundColor(Color::Black);
   m_terminal.setForegroundColor(Color::White);
   m_terminal.clear();
-  printf("terminal_init() done\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal_init() done\n");
   return 0;
 }
 
@@ -113,7 +113,7 @@ int FmrbSystemApp::run()
     run_editor();
 
     m_terminal.end();
-    printf("Terminal.end()\n");
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Terminal.end()\n");
 
     run_mruby();
 
@@ -132,7 +132,7 @@ const char* sample_script2 =
 #include "./mrb/entry_mrb.rb";
 
 void menu_app(){ //Test
-  printf("ScriptTest\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"ScriptTest\n");
   const char* scirpt = sample_script2;
   if(scirpt){
     fabgl_mruby_mode_init();

@@ -23,17 +23,6 @@ FmrbFileService::FmrbFileService(){
 
 #define FORMAT_SPIFFS_IF_FAILED false
 
-/*
-static void suspend_int(){
-  fabgl::suspendInterrupts();
-  vTaskDelay(50);
-}
-static void resume_int(){
-  fabgl::resumeInterrupts();
-  vTaskDelay(50);
-}
-*/
-
 static int init_sd()
 {
   //gpio_pullup_en(GPIO_NUM_12);
@@ -52,6 +41,7 @@ static int init_sd()
       return -1;
   }
 
+#if 0
   printf("SD Card Type: ");
   if(cardType == CARD_MMC){
       printf("MMC\n");
@@ -62,8 +52,10 @@ static int init_sd()
   } else {
       printf("UNKNOWN\n");
   }
+#endif
+
   uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-  printf("SD Card Size: %lluMB\n", cardSize);
+  FMRB_DEBUG(FMRB_LOG::INFO,"SD Card Size: %lluMB\n", cardSize);
   return 0;
 }
 
@@ -74,11 +66,11 @@ int FmrbFileService::init(){
   const esp_partition_t* partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
                                       ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
   if(partition){
-    printf("label:%s\n",partition->label);
-    printf("addr:%X\n",partition->address);
-    printf("size:%d\n",partition->size);
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"label:%s\n",partition->label);
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"addr:%X\n",partition->address);
+    pFMRB_DEBUG(FMRB_LOG::DEBUG,size:%d\n",partition->size);
   }else{
-    printf("spiffs partition not found\n");
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"spiffs partition not found\n");
   }
   */
 
@@ -87,7 +79,7 @@ int FmrbFileService::init(){
     FMRB_DEBUG(FMRB_LOG::ERR,"SPIFFS Mount Failed\n");
     return -1;
   }
-  printf("SPIFFS Mount OK\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"SPIFFS Mount OK\n");
   m_spiffs_opened=true;
 
   int sd_stat = init_sd();
@@ -101,7 +93,7 @@ int FmrbFileService::init(){
 }
 
 char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool localmem){
-  printf("Reading file: %s\r\n", path);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Reading file: %s\r\n", path);
   if(!m_spiffs_opened) return NULL;
 
   AutoSuspendInterrupts autoSuspendInt;
@@ -114,7 +106,7 @@ char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool l
   int term = 0;
   if(is_text) term = 1;
   int size = (int)file.size();
-  printf("- read from file: size=%d\n",size);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"- read from file: size=%d\n",size);
 
   char* buff = NULL;
   if(localmem){
@@ -128,7 +120,7 @@ char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool l
     return NULL;
   }
   size_t rsize = file.read((uint8_t*)buff,(size_t)size);
-  printf("- read done:%d\n",(int)rsize);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"- read done:%d\n",(int)rsize);
   file.close();
   if(rsize==0){
     free(buff);
@@ -155,7 +147,7 @@ char* FmrbFileService::load_bitmap(const char* path,uint16_t &width,uint16_t &he
 }
 
 int FmrbFileService::save(char* buff,const char* path){
-  printf("Writing file: %s\r\n", path);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Writing file: %s\r\n", path);
   if(!m_spiffs_opened) return -1;
 
   AutoSuspendInterrupts autoSuspendInt;
@@ -166,13 +158,13 @@ int FmrbFileService::save(char* buff,const char* path){
     return -1;
   }
   if(file.print(buff)){
-    printf("- file written\n");
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"- file written\n");
   } else {
     FMRB_DEBUG(FMRB_LOG::ERR,"- write failed\n");
     file.close();
     return -1;
   }
-  printf("- save done\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"- save done\n");
   file.close();
   return 0;
 }
