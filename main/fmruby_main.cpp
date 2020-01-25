@@ -3,6 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "Arduino.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -186,9 +187,6 @@ static void test_spiffs(){
 
 #ifdef RUN_MAIN
 void setup(){
-  FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");
-  FMRB_DEBUG(FMRB_LOG::INFO," Family mruby ver:%s (%s)\n",FMRB_VERSION,FMRB_RELEASE);
-  FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");
 #ifndef TEST_SD
   //SPI SD pins
   //pinMode(12, OUTPUT);
@@ -211,7 +209,18 @@ void setup(){
   vTaskDelay(100);
 }
 
-void loop(){
+#endif
+
+TaskHandle_t mainTaskHandle = NULL;
+
+void mainTask(void *pvParameters)
+{
+  FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");
+  FMRB_DEBUG(FMRB_LOG::INFO," Family mruby ver:%s (%s)\n",FMRB_VERSION,FMRB_RELEASE);
+  FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");
+
+  setup();
+
 #ifdef TEST_AUDIO
   sound_test();
 #endif
@@ -223,4 +232,10 @@ void loop(){
 	  vTaskDelay(1000);
   }
 }
-#endif
+
+extern "C" void app_main()
+{
+    initArduino();
+    xTaskCreateUniversal(mainTask, "mainTask", 8192, NULL, 1, &mainTaskHandle, CONFIG_ARDUINO_RUNNING_CORE);
+}
+
