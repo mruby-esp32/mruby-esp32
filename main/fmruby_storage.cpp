@@ -42,13 +42,13 @@ static int init_sd()
   vTaskDelay(500);
 
  if(!SD.begin(15,hspi,4000000,"/sd",1)){
-      printf("Card Mount Failed\n");
+      FMRB_DEBUG(FMRB_LOG::ERR,"Card Mount Failed\n");
       return -1;
   }
   uint8_t cardType = SD.cardType();
 
   if(cardType == CARD_NONE){
-      printf("No SD card attached\n");
+      FMRB_DEBUG(FMRB_LOG::ERR,"No SD card attached\n");
       return -1;
   }
 
@@ -84,7 +84,7 @@ int FmrbFileService::init(){
 
   bool ret = SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED,"/spiffs",1);
   if(!ret){
-    printf("SPIFFS Mount Failed\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"SPIFFS Mount Failed\n");
     return -1;
   }
   printf("SPIFFS Mount OK\n");
@@ -100,7 +100,7 @@ int FmrbFileService::init(){
   return 0;
 }
 
-char* FmrbFileService::load(const char* path){
+char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool localmem){
   printf("Reading file: %s\r\n", path);
   if(!m_spiffs_opened) return NULL;
 
@@ -108,14 +108,22 @@ char* FmrbFileService::load(const char* path){
   File file = SPIFFS.open(path);
   //File file = SD.open("/default.rb");
   if(!file || file.isDirectory()){
-    printf("- failed to open file for reading\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"- failed to open file for reading\n");
     return NULL;
   }
+  int term = 0;
+  if(is_text) term = 1;
   int size = (int)file.size();
   printf("- read from file: size=%d\n",size);
-  char* buff = (char*)fmrb_spi_malloc(size+1);
+
+  char* buff = NULL;
+  if(localmem){
+    buff = (char*)malloc(size+term);
+  }else{
+    buff = (char*)fmrb_spi_malloc(size+term);
+  }
   if(!buff){
-    printf("malloc error\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"malloc error\n");
     file.close();
     return NULL;
   }
@@ -126,8 +134,24 @@ char* FmrbFileService::load(const char* path){
     free(buff);
     return NULL;
   }
-  buff[size]=(uint8_t)'\0';
+  if(is_text){
+    fsize = (uint32_t)rsize+term;
+    buff[size]=(uint8_t)'\0';
+  }else{
+    fsize = (uint32_t)rsize;
+  }
   return buff;
+}
+
+char* FmrbFileService::load_bitmap(const char* path,uint16_t &width,uint16_t &height,uint32_t &type){
+  uint32_t fsize;
+  char* data = load(path,fsize,false,true);
+  if(!data) return NULL;
+  type = *((uint32_t*)data) ;
+  width  = (data[FMRB_BITMAP_HEADER_SIZE]) + (data[FMRB_BITMAP_HEADER_SIZE+1]<<8);
+  height = (data[FMRB_BITMAP_HEADER_SIZE+2]) + (data[FMRB_BITMAP_HEADER_SIZE+3]<<8);
+
+  return data;
 }
 
 int FmrbFileService::save(char* buff,const char* path){
@@ -138,13 +162,13 @@ int FmrbFileService::save(char* buff,const char* path){
   File file = SPIFFS.open(path, FILE_WRITE);
   //File file = SD.open("/default.rb", FILE_WRITE);
   if(!file){
-    printf("- failed to open file for writing\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"- failed to open file for writing\n");
     return -1;
   }
   if(file.print(buff)){
     printf("- file written\n");
   } else {
-    printf("- write failed\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"- write failed\n");
     file.close();
     return -1;
   }

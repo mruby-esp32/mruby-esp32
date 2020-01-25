@@ -59,13 +59,15 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data){
 }
 
 int FmrbSystemApp::show_splash(){
-  uint8_t* img_data = (uint8_t*)file_service.load("/test.img");
+  //uint8_t* img_data = (uint8_t*)file_service.load("/test.img");
+  uint32_t fsize;
+  uint8_t* img_data = (uint8_t*)file_service.load("/bktest.img",fsize,false,false);
   if(img_data){
-    draw_img(200,80,img_data);
+    draw_img(0,0,img_data);
     free(img_data);
   }
-  //print_system_info();
-  //m_terminal.enableCursor(true);
+  print_system_info();
+  m_terminal.enableCursor(true);
   return 0;
 }
 

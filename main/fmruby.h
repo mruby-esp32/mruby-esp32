@@ -8,18 +8,22 @@
 void* fmrb_spi_malloc(size_t size);
 void* fmrb_spi_realloc(void* ptr, size_t size);
 
+
+#define FMRB_BITMAP_HEADER_SIZE (4)
+
 #define ENABLE_FMRB_LOG
 
 enum class FMRB_LOG{
-  INFO=0,
+  DEBUG=0,
   MSG,
-  DEBUG,
+  INFO,
+  ERR,
 };
 
-void fmrb_debug_print(FMRB_LOG lv,const char *fmt,...);
+void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line,...);
 
 #ifdef ENABLE_FMRB_LOG
-  #define FMRB_DEBUG(...) fmrb_debug_print(__VA_ARGS__)
+  #define FMRB_DEBUG(lv,fmt, ...) fmrb_debug_print(lv,fmt, __func__ , __LINE__ , ##__VA_ARGS__ )
 #else
   #define FMRB_DEBUG(...)
 #endif

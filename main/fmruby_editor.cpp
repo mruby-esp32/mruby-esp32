@@ -733,7 +733,8 @@ void FmrbEditor::load_file(){
   printf("load_file\n");
   //clear current buffer
   clear_buffer();
-  char* buff = file_service.load("/default.rb");
+  uint32_t fsize;
+  char* buff = file_service.load("/default.rb",fsize,true,false);
   move_cursor(m_lineno_shift+1,1);
   if(buff){
     load(buff);

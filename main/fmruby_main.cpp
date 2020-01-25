@@ -27,17 +27,20 @@ void* fmrb_spi_realloc(void* ptr, size_t size)
   return heap_caps_realloc(ptr,size,MALLOC_CAP_SPIRAM);
 }
 
-void fmrb_debug_print(FMRB_LOG lv,const char *fmt,...)
+void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line, ...)
 {
   va_list arg;
   switch(lv){
     case FMRB_LOG::DEBUG:
     printf("[DBG]");break;
-    case FMRB_LOG::INFO:
-    printf("[INF]");break;
     case FMRB_LOG::MSG:
     printf("[MSG]");break;
+    case FMRB_LOG::INFO:
+    printf("[INF]");break;
+    case FMRB_LOG::ERR:
+    printf("[ERR]");break;
   }
+  printf("[%s:%d]",func,line);
   va_start(arg, fmt);
   vprintf(fmt, arg);
   va_end(arg);
