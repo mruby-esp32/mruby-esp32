@@ -61,7 +61,8 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data){
 int FmrbSystemApp::show_splash(){
   //uint8_t* img_data = (uint8_t*)file_service.load("/test.img");
   uint32_t fsize;
-  uint8_t* img_data = (uint8_t*)file_service.load("/bktest.img",fsize,false,false);
+  //uint8_t* img_data = (uint8_t*)file_service.load("/bktest.img",fsize,false,false);
+  uint8_t* img_data = (uint8_t*)file_service.load("/bk_small.img",fsize,false,false);
   if(img_data){
     draw_img(0,0,img_data);
     free(img_data);
