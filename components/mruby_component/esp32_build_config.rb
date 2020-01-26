@@ -61,7 +61,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.bins = []
   conf.build_mrbtest_lib_only
   conf.enable_cxx_exception
-  conf.enable_debug
+  #conf.enable_debug
   
   conf.gem :core => "mruby-compiler"
   conf.gem :core => "mruby-print"
@@ -75,5 +75,5 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   #conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
   conf.gem :github => "kishima/mruby-esp32-system"
-  conf.gem :github => "kishima/mruby-esp32-narya", checksum_hash: '5e26b275987e47ae38ecbc70684cb9ce245103b6', branch: 'master'
+  conf.gem :github => "kishima/mruby-esp32-narya", checksum_hash: 'd0ab888549c801b8462e161e576c77691259cc7c', branch: 'master'
 end
