@@ -24,6 +24,7 @@ def wait_key
   end
 end
 
+
 Display::clear
 img = Bitmap.new
 img.load("/test.img")
@@ -37,9 +38,14 @@ Display::swap
 puts "Done2"
 
 ESP32::System::delay 1000
+
+sp = Sprite.new(img)
+sp.move_to(0,100)
+
 loop do
   Display::clear
-  img.draw(20,20)
+  #img.draw(20,20)
+  sp.move(3,0)
   #Display.draw_picture(20,20,"/test.img")
   Display::draw_circle(100,100,8,4)
   Display::swap

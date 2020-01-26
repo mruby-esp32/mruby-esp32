@@ -10,8 +10,9 @@
 const char* null_script = "\n";
 
 const char* sample_script = 
+#include "./mrb/rpg_test.rb"
 //#include "./mrb/entry_mrb.rb"
-#include "./mrb/bitmap_test.rb"
+//#include "./mrb/bitmap_test.rb"
 ;
 
 //#define EDT_DEBUG(...)  printf(__VA_ARGS__)
