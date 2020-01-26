@@ -1,4 +1,5 @@
-R"(puts "*** Family mruby v0.6 ***"
+R"( #"
+puts "*** Family mruby v0.6 ***"
 include Narya
 
 class Ball

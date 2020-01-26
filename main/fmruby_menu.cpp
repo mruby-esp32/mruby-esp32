@@ -99,10 +99,9 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data){
 }
 
 FMRB_RCODE FmrbSystemApp::show_splash(){
-  //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/test.img");
   uint32_t fsize;
-  //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bktest.img",fsize,false,false);
-  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bk_small.img",fsize,false,false);
+  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bktest.img",fsize,false,false);
+  //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bk_small.img",fsize,false,false);
   if(img_data){
     draw_img(0,0,img_data);
     fmrb_free(img_data);
@@ -133,11 +132,27 @@ FMRB_RCODE FmrbSystemApp::run_mruby(){
 
 }
 
+#define TEST_SCRIPT
+#ifdef TEST_SCRIPT
+const char* sample_script2 = 
+#include "./mrb/entry_mrb.rb";
+#endif
+
+extern void mruby_test(char* code_string);
+
 FMRB_RCODE FmrbSystemApp::run()
 {
+  #ifdef TEST_SCRIPT
+  fabgl_mruby_mode_init();
+  //m_mruby_engine.run(sample_script2);
+  mruby_test(sample_script2);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"m_mruby_engine END\n");
+  #endif
+  
   while(true){
     FMRB_DEBUG(FMRB_LOG::MSG,"[AppState:%d]\n",m_state);
-    //Booting Family mruby
+    fmrb_dump_mem_stat();
+
     switch(m_state){
       case FMRB_SYS_STATE::INIT:
       {
@@ -181,22 +196,14 @@ FMRB_RCODE FmrbSystemApp::run()
   return FMRB_RCODE::OK;
 }
 
-//#define TEST_SCRIPT
-#ifndef TEST_SCRIPT
 void menu_app()
 {
+  char* buff = (char*)heap_caps_malloc(4,MALLOC_CAP_DMA);
+  printf("MALLOC_CAP_DMA:%p\n",buff);
+  free(buff);
+  buff = (char*)fmrb_spi_malloc(4);
+  printf("MALLOC_CAP_SPIRAM:%p\n",buff);
+  free(buff);
+
   SystemApp.run();
 }
-#else
-const char* sample_script2 = 
-#include "./mrb/entry_mrb.rb";
-
-void menu_app(){ //Test
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"ScriptTest\n");
-  const char* scirpt = sample_script2;
-  if(scirpt){
-    fabgl_mruby_mode_init();
-    mruby_engine(scirpt);
-  }
-}
-#endif

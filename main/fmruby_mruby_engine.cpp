@@ -65,6 +65,8 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
 
 void FmrbMrubyEngine::run(char* code_string)
 {
+  FMRB_DEBUG(FMRB_LOG::INFO,"\n<Execute mruby script>\n\n");
+
   m_exec_result = 0;
   if(m_error_msg) fmrb_free(m_error_msg);
   m_error_msg = NULL;
@@ -78,16 +80,59 @@ void FmrbMrubyEngine::run(char* code_string)
   mrbc_filename(mrb, cxt, "fmrb");
 
   mrb_value val = mrb_load_string_cxt(mrb,code_string,cxt);
+  //mrb_value val = mrb_load_string(mrb,code_string);
   if (mrb->exc) {
     //FMRB_DEBUG(FMRB_LOG::DEBUG,"Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
-    FMRB_DEBUG(FMRB_LOG::ERR,"Exception occurred\n");
+    FMRB_DEBUG(FMRB_LOG::ERR,"<Exception occurred>\n");
     if (!mrb_undef_p(val)) {
       check_backtrace(mrb);
     }
     mrb->exc = 0;
     m_exec_result = -1;
   } else {
-    FMRB_DEBUG(FMRB_LOG::INFO,"\n<Exec mruby completed successfully>\n");
+    FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby completed successfully>\n");
+  }
+
+  mrb_gc_arena_restore(mrb, ai);
+  mrb_close(mrb);
+
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"End of mruby engine\n");
+  return;
+}
+
+void* t_mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
+{
+  if (size == 0) {
+    fmrb_free(p);
+    return NULL;
+  }
+  else {
+    return fmrb_spi_realloc(p, size);
+  }
+}
+
+void mruby_test(char* code_string)
+{
+  FMRB_DEBUG(FMRB_LOG::INFO,"\n<Execute mruby script2>\n\n");
+
+  mrb_state *mrb = mrb_open_allocf(t_mrb_esp32_psram_allocf,NULL);
+
+  int ai = mrb_gc_arena_save(mrb);
+
+  //mrbc_context *cxt = mrbc_context_new(mrb);
+  //mrbc_filename(mrb, cxt, "fmrb");
+
+  //mrb_value val = mrb_load_string_cxt(mrb,code_string,cxt);
+  mrb_value val = mrb_load_string(mrb,code_string);
+  if (mrb->exc) {
+    //FMRB_DEBUG(FMRB_LOG::DEBUG,"Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
+    FMRB_DEBUG(FMRB_LOG::ERR,"<Exception occurred>\n");
+    if (!mrb_undef_p(val)) {
+      //check_backtrace(mrb);
+    }
+    mrb->exc = 0;
+  } else {
+    FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby completed successfully>\n");
   }
 
   mrb_gc_arena_restore(mrb, ai);

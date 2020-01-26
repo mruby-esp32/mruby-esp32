@@ -110,7 +110,7 @@ char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool l
 
   char* buff = NULL;
   if(localmem){
-    buff = (char*)malloc(size+term);
+    buff = (char*)heap_caps_malloc(size+term,MALLOC_CAP_DMA);
   }else{
     buff = (char*)fmrb_spi_malloc(size+term);
   }
@@ -140,7 +140,7 @@ char* FmrbFileService::load_bitmap(const char* path,uint16_t &width,uint16_t &he
   char* data = load(path,fsize,false,true);
   if(!data) return NULL;
   type = *((uint32_t*)data) ;
-  width  = (data[FMRB_BITMAP_HEADER_SIZE]) + (data[FMRB_BITMAP_HEADER_SIZE+1]<<8);
+  width  = (data[FMRB_BITMAP_HEADER_SIZE])   + (data[FMRB_BITMAP_HEADER_SIZE+1]<<8);
   height = (data[FMRB_BITMAP_HEADER_SIZE+2]) + (data[FMRB_BITMAP_HEADER_SIZE+3]<<8);
 
   return data;

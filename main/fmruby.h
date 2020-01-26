@@ -29,6 +29,7 @@ enum class FMRB_RCODE{
 };
 
 void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line,...);
+void fmrb_dump_mem_stat();
 
 #ifdef ENABLE_FMRB_LOG
   #define FMRB_DEBUG(lv,fmt, ...) fmrb_debug_print(lv,fmt, __func__ , __LINE__ , ##__VA_ARGS__ )
