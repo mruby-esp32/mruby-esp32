@@ -132,7 +132,7 @@ FMRB_RCODE FmrbSystemApp::run_mruby(){
 
 }
 
-#define TEST_SCRIPT
+//#define TEST_SCRIPT
 #ifdef TEST_SCRIPT
 const char* sample_script2 = 
 #include "./mrb/entry_mrb.rb";

@@ -63,9 +63,9 @@ class ImageEditorApp
 
         # File selection button
         proc_open = proc do
-            filetype = '{{All Files} {*}}'
-            file_select.value = Tk.getOpenFile(filetypes: filetype) # , initialdir: $path_name
-            puts "Load start"
+            filetype = '{{img Files} {.img}}'
+            file_select.value = Tk.getOpenFile(filetypes: filetype, initialdir: "./") # , initialdir: $path_name
+            load_data(file_select.value)
         end
         btn_select = TkButton.new(f1, text: 'Load', command: proc_open)
 
@@ -250,6 +250,35 @@ class ImageEditorApp
             end        
         end
         puts "Save done"
+    end
+
+    def load_data(fname)
+      puts "load:#{fname}"
+      data = nil;
+      begin
+        data = File.binread(fname)
+      rescue
+        puts "load error"
+      end
+      return unless data
+      width = data.byteslice(4,2).unpack("v*").first
+      height = data.byteslice(6,2).unpack("v*").first
+      return if width!=16 or height!=16
+      0.upto(height-1) do |y|
+        0.upto(width-1) do |x|
+          byte = data.byteslice(8+y*width+x,1).unpack("C").first
+          xa = (byte & Integer("0xC0")) >> 6
+          xb = (byte & Integer("0x30")) >> 4
+          xg = (byte & Integer("0x0C")) >> 2
+          xr = (byte & Integer("0x03")) >> 0
+          @picdata[x][y].r = xr
+          @picdata[x][y].g = xg
+          @picdata[x][y].b = xb
+          @picdata[x][y].a = xa
+        end 
+      end
+      update_canvas
+      puts "load done"
     end
 
 end

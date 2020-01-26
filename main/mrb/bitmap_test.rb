@@ -10,19 +10,21 @@ def test2
   test
 end
 
-test2
+#test2
+#puts "Draw Done"
 
-puts "Draw Done"
-loop do
-  if Input::available
-    if Input::keydown?(125)
-      break
+def wait_key
+  loop do
+    if Input::available
+      if Input::keydown?(125)
+        break
+      end
+      ESP32::System::delay 10
     end
-    ESP32::System::delay 10
   end
 end
 
-
+Display::clear
 img = Bitmap.new
 img.load("/test.img")
 p img.width
@@ -31,14 +33,16 @@ img.draw(20,20)
 
 
 puts "Done1"
-#Display.swap
+Display::swap
 puts "Done2"
 
 ESP32::System::delay 1000
 loop do
+  Display::clear
   img.draw(20,20)
   #Display.draw_picture(20,20,"/test.img")
-  #Display.swap
+  Display::draw_circle(100,100,8,4)
+  Display::swap
   if Input::available
     if Input::keydown?(125)
       break

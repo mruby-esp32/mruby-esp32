@@ -113,7 +113,7 @@ void* t_mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
 
 void mruby_test(char* code_string)
 {
-  FMRB_DEBUG(FMRB_LOG::INFO,"\n<Execute mruby script2>\n\n");
+  FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby script2>\n\n");
 
   mrb_state *mrb = mrb_open_allocf(t_mrb_esp32_psram_allocf,NULL);
 

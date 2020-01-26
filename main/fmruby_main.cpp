@@ -35,9 +35,9 @@ void fmrb_free(void* ptr){
 void fmrb_dump_mem_stat(){
 
   FMRB_DEBUG(FMRB_LOG::INFO,"-- mem dump ------------------------\n");
-  FMRB_DEBUG(FMRB_LOG::INFO,"Free size(DMA)     = %d\n",heap_caps_get_free_size(MALLOC_CAP_DMA));
-  FMRB_DEBUG(FMRB_LOG::INFO,"Free size(32bit)   = %d\n",heap_caps_get_free_size(MALLOC_CAP_32BIT));
-  FMRB_DEBUG(FMRB_LOG::INFO,"Max free size(DMA) = %d\n",heap_caps_get_largest_free_block(MALLOC_CAP_DMA));
+  FMRB_DEBUG(FMRB_LOG::INFO,"| Free size(DMA)     = %d\n",heap_caps_get_free_size(MALLOC_CAP_DMA));
+  FMRB_DEBUG(FMRB_LOG::INFO,"| Free size(32bit)   = %d\n",heap_caps_get_free_size(MALLOC_CAP_32BIT));
+  FMRB_DEBUG(FMRB_LOG::INFO,"| Max free size(DMA) = %d\n",heap_caps_get_largest_free_block(MALLOC_CAP_DMA));
   //heap_caps_print_heap_info(MALLOC_CAP_DMA);
 }
 
