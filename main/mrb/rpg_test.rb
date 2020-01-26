@@ -28,6 +28,7 @@ class WalkMap
      ]
      @max_x = @map[0].size
      @max_y = @map.size
+     puts "max>#{@max_x},#{@max_y}"
      @bitmap_list = []
      @bitmap_list << Bitmap.new.load("/grass.img")
      @bitmap_list << Bitmap.new.load("/road.img")
@@ -69,10 +70,10 @@ class WalkMap
         sx = @pos_x + x - 6
         sy = @pos_y + y - 6
         chip = 0
-        if(sx<0 or sx>@max_x or sy<0 or sy>@max_y)
-          chip = 0
+        if(sx<0 or sx>=@max_x or sy<0 or sy>=@max_y)
+          chip = 2
         else
-          chip = @map[sx][sy]
+          chip = @map[sy][sx]
         end
         @bitmap_list[chip].draw(x*16+@offset_x ,y*16+@offset_y)
       end
