@@ -3,15 +3,15 @@ require_relative './task_queue'
 
 class RGB222
     attr_accessor :r,:g,:b,:a
-    def initialize(r,g,b,a=0)
+    def initialize(r,g,b,a=3)
         @r = r
         @g = g
         @b = b
-        @a = a
+        @a = a #a=0 : transparent
     end
 
     def is_a?
-        return true if @a>0
+        return true if @a==0
         false
     end
 
@@ -42,7 +42,7 @@ class ImageEditorApp
         @cw = @pix_unit_w*@vscale
         @ch = @pix_unit_h*@vscale
 
-        @picdata = Array.new(@pix_unit_w).map{Array.new(@pix_unit_h){RGB222.new(3,3,3)}}
+        @picdata = Array.new(@pix_unit_w).map{Array.new(@pix_unit_h){RGB222.new(3,3,3,0)}}
 
         @current_color = RGB222.new(0,0,0)
     end
@@ -89,7 +89,11 @@ class ImageEditorApp
         canvas = TkCanvas.new(f21, width: @cw, height: @ch, background: 'white')
         @cv = canvas
         update_canvas
-        canvas.bind('Button', proc{|x,y,b|click_on_canvas(x,y,b)}, '%x','%y','%b')
+        @mouse_btn = false
+        #canvas.bind('Button', proc{|x,y,b|click_on_canvas(x,y,b)}, '%x','%y','%b')
+        canvas.bind('ButtonPress', proc{|x,y,b| @mouse_btn = b;click_on_canvas(x,y,b)},'%x','%y','%b')
+        canvas.bind('Motion', proc{|x,y,b|click_on_canvas(x,y,b)}, '%x','%y','%b')
+        canvas.bind('ButtonRelease', proc{@mouse_btn=false})
 
         #=======================================
         lb22 = TkLabel.new(f22, text: 'Pallet Area')
@@ -189,6 +193,8 @@ class ImageEditorApp
     end
 
     def click_on_canvas(x,y,bn)
+        #puts "#{x},#{y},#{bn}"
+        bn = @mouse_btn if bn == "??"
         bx = x / @vscale
         by = y / @vscale
         return if bx < 0
@@ -201,7 +207,7 @@ class ImageEditorApp
         when 1
             @picdata[bx][by] = @current_color
         when 2
-            @picdata[bx][by] = RGB222.new(0,0,0,1)
+            @picdata[bx][by] = RGB222.new(0,0,0,0)
         end
         update_px(bx,by)
     end
@@ -237,8 +243,8 @@ class ImageEditorApp
                     a = @picdata[x][y].a
         
                     #val = (b << 4) | (g << 2) | r
-                    val = (b << 6) | (g << 4) | (r << 2) | a
-                    p val
+                    val = (a << 6) | (b << 4) | (g << 2) | (r << 0)
+                    #p val
                     fp.write([val].pack("C"))
                 end 
             end        
