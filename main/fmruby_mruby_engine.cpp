@@ -111,7 +111,7 @@ void* t_mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
   }
 }
 
-void mruby_test(char* code_string)
+void mruby_test(const char* code_string)
 {
   FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby script2>\n\n");
 
@@ -125,8 +125,8 @@ void mruby_test(char* code_string)
   //mrb_value val = mrb_load_string_cxt(mrb,code_string,cxt);
   mrb_value val = mrb_load_string(mrb,code_string);
   if (mrb->exc) {
-    //FMRB_DEBUG(FMRB_LOG::DEBUG,"Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
-    FMRB_DEBUG(FMRB_LOG::ERR,"<Exception occurred>\n");
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
+    //FMRB_DEBUG(FMRB_LOG::ERR,"<Exception occurred>\n");
     if (!mrb_undef_p(val)) {
       //check_backtrace(mrb);
     }

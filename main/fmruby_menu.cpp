@@ -138,12 +138,13 @@ const char* sample_script2 =
 #include "./mrb/entry_mrb.rb";
 #endif
 
-extern void mruby_test(char* code_string);
+extern void mruby_test(const char* code_string);
 
 FMRB_RCODE FmrbSystemApp::run()
 {
   #ifdef TEST_SCRIPT
   fabgl_mruby_mode_init();
+  FMRB_storage.init();
   //m_mruby_engine.run(sample_script2);
   mruby_test(sample_script2);
   FMRB_DEBUG(FMRB_LOG::DEBUG,"m_mruby_engine END\n");
@@ -198,12 +199,13 @@ FMRB_RCODE FmrbSystemApp::run()
 
 void menu_app()
 {
+#if 0
   char* buff = (char*)heap_caps_malloc(4,MALLOC_CAP_DMA);
   printf("MALLOC_CAP_DMA:%p\n",buff);
   free(buff);
   buff = (char*)fmrb_spi_malloc(4);
   printf("MALLOC_CAP_SPIRAM:%p\n",buff);
   free(buff);
-
+#endif
   SystemApp.run();
 }
