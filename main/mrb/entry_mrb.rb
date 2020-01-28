@@ -40,7 +40,8 @@ def load_balls
   balls
 end
 
-sp = Sprite.new
+bitmap = Bitmap.new.load("/man.img")
+sp = Sprite.new(bitmap)
 sp.move_to(100,100)
 
 balls = load_balls
@@ -72,7 +73,7 @@ loop do
       break
     end
   end
-  sp.move(mx,my)
+  sp.move(mx*1,my*1)
   
   Display::swap
 end
