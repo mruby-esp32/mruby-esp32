@@ -221,6 +221,61 @@ int FmrbEditor::run(char* input_script){
 
   update();
 
+#if 0  
+  auto keyboard = m_term->keyboard();
+  while(true){
+    if(keyboard->virtualKeyAvailable()<=0) continue;
+    VirtualKey vkey = keyboard->getNextVirtualKey();
+    int key = keyboard->virtualKeyToASCII(vkey);
+    if(key>=0x20 && key<=0x7E){
+      insert_ch(key);
+    }else{
+      printf("> %02x\n",key);
+      switch(vkey){
+        case VirtualKey::VK_RETURN:
+        case VirtualKey::VK_KP_ENTER:
+          insert_ret();
+        break;
+        case VirtualKey::VK_DELETE:
+        case VirtualKey::VK_BACKSPACE:
+          delete_ch();
+        break;
+
+        case VirtualKey::VK_UP:
+          move_edit_cursor(0x41);
+        break;
+        case VirtualKey::VK_DOWN:
+          move_edit_cursor(0x42);
+        break;
+        case VirtualKey::VK_RIGHT:
+          move_edit_cursor(0x43);
+        break;
+        case VirtualKey::VK_LEFT:
+          move_edit_cursor(0x44);
+        break;
+
+        case VirtualKey::VK_F1:
+        break;
+        case VirtualKey::VK_F2:
+          save_file();
+        break;
+        case VirtualKey::VK_F3:
+          load_file();
+        break;
+        case VirtualKey::VK_F4:
+          return 0;
+        break;
+        case VirtualKey::VK_F5:
+          load_demo_file();
+        break;
+        default:
+        break;
+      }
+    }
+  }
+  return;
+#endif
+
   int escape = 0;
   char escape_c[4] = {0};
   while(true)
@@ -470,7 +525,7 @@ void FmrbEditor::print_csr_info(void)
 void FmrbEditor::move_edit_cursor(int dir)
 {
   int current_line_n = m_disp_head_line-1 + m_y;
-  //FMRB_DEBUG(FMRB_LOG::DEBUG,"current_line_n=%d\n",current_line_n);
+  EDT_DEBUG("current_line_n=%d\n",current_line_n);
   EditLine* line = seek_line(current_line_n);
   if(NULL==line){
     return;
@@ -519,7 +574,6 @@ void FmrbEditor::move_edit_cursor(int dir)
     default:
       break;
   }
-
 }
 
 void FmrbEditor::move_cursor(int x,int y)
@@ -575,9 +629,9 @@ void FmrbEditor::draw_line(int disp_y,EditLine* line)
 {
   move(1,disp_y);
   m_term->write("\e[2K"); // delete line
-
   m_term->printf("\e[34m%04d: \e[0m",line->lineno);
   m_term->write(line->text);
+
   //m_term->write("\r\n");
 }
 
@@ -588,6 +642,7 @@ void FmrbEditor::update()
   int cnt=1;
   while(NULL != line){
     draw_line(cnt,line);
+
     if(m_y == cnt){
       if( m_x >= line->length ){
         move(line->length, m_y);
@@ -615,6 +670,8 @@ void FmrbEditor::update()
   m_term->write("\e[30m\e[46m  DEMO  \e[0m");
 
   move(m_x,m_y);
+
+  m_term->flush(false);//Required to avoid freeze
 }
 
 void FmrbEditor::update_lineno(void)
