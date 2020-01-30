@@ -10,8 +10,8 @@
 const char* null_script = "\n";
 
 const char* sample_script = 
-#include "./mrb/rpg_test.rb"
-//#include "./mrb/entry_mrb.rb"
+//#include "./mrb/rpg_test.rb"
+#include "./mrb/entry_mrb.rb"
 //#include "./mrb/bitmap_test.rb"
 ;
 
@@ -177,11 +177,14 @@ FmrbEditor::FmrbEditor():
 int FmrbEditor::begin(fabgl::Terminal* terminal)
 {
   m_term = terminal;
+  m_line_lexer_p = (FmrbSimpleLineLexer*)fmrb_spi_malloc(sizeof(FmrbSimpleLineLexer));
+  if(m_line_lexer_p) m_line_lexer_p->init();
   return 0;
 }
 
 int FmrbEditor::release()
 {
+  if(m_line_lexer_p) fmrb_free( m_line_lexer_p );
   return 0;
 }
 
@@ -630,7 +633,21 @@ void FmrbEditor::draw_line(int disp_y,EditLine* line)
   move(1,disp_y);
   m_term->write("\e[2K"); // delete line
   m_term->printf("\e[34m%04d: \e[0m",line->lineno);
-  m_term->write(line->text);
+
+  if(m_line_lexer_p){
+    m_line_lexer_p->set_line(line->text);
+    while(true){
+      const char* buff;
+      int len=0;
+      m_line_lexer_p->itr_dump(&buff,&len);
+      if(buff==NULL)break;
+      //printf("[%.*s]",len,buff);
+      //printf("%.*s",len,buff);
+      m_term->write(buff,(size_t)len);
+    }
+  }else{
+    m_term->write(line->text);
+  }
 
   //m_term->write("\r\n");
 }
@@ -827,4 +844,227 @@ void FmrbEditor::save_file(){
     FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");
   }
   FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file done\n");
+}
+
+const char* highlight_words[] = 
+{"BEGIN","class","ensure","nil","self","when",
+"END","def","false","not","super","while",
+"alias","defined?","for","or","then","yield",
+"and","do","if","redo","true",//"__LINE__",
+"begin","else","in","rescue","undef",//"__FILE__",
+"break","elsif","module","retry","unless",//"__ENCODING__",
+"case","end","next","return","until"};
+
+void FmrbSimpleLineLexer::init(){
+    m_word_pos = 0;
+    m_total_words = 0;
+    m_dump_stat = 0;
+}
+
+void FmrbSimpleLineLexer::free(){
+
+}
+
+void FmrbSimpleLineLexer::move_head(){
+    m_word_pos = 0;
+    m_dump_stat = 0;
+}
+
+const char* FmrbSimpleLineLexer::last_word_tail(){
+    if(m_word_pos>0){
+        return m_word_p[m_word_pos-1]+m_word_len[m_word_pos-1]-1;
+    }
+    return m_string;
+}
+
+void FmrbSimpleLineLexer::push_word_prim(const char* word_head,int word_size){
+    if(m_total_words >= LEXER_WORDS_MAX){
+        printf("ERROR\n");
+    }
+    //printf("B(%d)[%.*s]\n",m_word_pos,word_size,word_head);
+    m_word_p[m_word_pos] = word_head;
+    m_word_len[m_word_pos] = word_size;
+    m_word_pos++;
+    m_total_words++;
+}
+
+void FmrbSimpleLineLexer::push_word(const char* word_head,int word_size){
+    //printf("A(%d)[%.*s]",m_word_pos,word_size,word_head);
+    //printf("\n");
+    if( last_word_tail()+1 < word_head){
+        push_word_prim(last_word_tail()+1, word_head - (last_word_tail()+1));
+    }
+    push_word_prim(word_head,word_size);
+}
+
+int FmrbSimpleLineLexer::is_highlight(const char* word_head,int word_size){
+    if(word_size<=0)return -1;
+    for(int i=0;i<sizeof(highlight_words)/sizeof(char*);i++){
+        if(strncmp(word_head,highlight_words[i],word_size)==0){
+            //printf("HIT[%.*s] ",word_size,word_head);
+            return i;
+        }
+    }
+    return -1;
+}
+
+const char* gheader_str = "\e[32m";
+const char* gfooter_str = "\e[0m";
+
+void FmrbSimpleLineLexer::itr_dump(const char** buff,int* len){
+    *buff = NULL;
+    *len = 0;
+    if(m_word_pos>=m_total_words){
+        return;
+    }
+    //printf("(%d:%d)\n",m_word_pos,m_total_words);
+    
+    if( m_dump_stat > 0 ){
+        switch(m_dump_stat){
+            case 1:
+                *buff = m_word_p[m_word_pos];
+                *len  = m_word_len[m_word_pos];
+                m_dump_stat++;
+            break;
+            case 2:
+                *buff = gfooter_str;
+                *len = strlen(gfooter_str);
+                m_dump_stat = 0;
+                m_word_pos++;
+            break;
+            default:
+            break;
+        }
+
+    }else{
+        int type = is_highlight(m_word_p[m_word_pos],m_word_len[m_word_pos]);
+        //printf("|%d|",type);
+        if(type>=0){ //insert header footer
+            *buff = gheader_str;
+            *len = strlen(gheader_str);
+            m_dump_stat = 1;
+        }else{
+            *buff = m_word_p[m_word_pos];
+            *len  = m_word_len[m_word_pos];
+            m_word_pos++;
+        }
+    }
+}
+
+bool FmrbSimpleLineLexer::is_delimiter(const char c){
+    switch(c){
+        case ' ':
+        case '(':
+        case ')':
+        case '\'':
+        case '\"':
+        case '{':
+        case '}':
+        case '|':
+        case '=':
+        case '-':
+        case '*':
+        case '+':
+        case '/':
+        case '<':
+        case '>':
+        case '#':
+        case '&':
+        case '[':
+        case ']':
+        case ';':
+        case ':':
+        case ',':
+        case '.':
+        case '!':
+        case '\0':
+        return true;
+        default:
+        return false;
+    }
+    return true;
+}
+
+void FmrbSimpleLineLexer::set_line(const char* line){
+    init();
+    m_string = line;
+
+    bool in_string = false;
+    int pos=0;
+    int stat = 0;//1:in word, 2:out word
+    const char* word_top = NULL;
+    const char* word_end = NULL;
+    char last_c = 0;
+
+    while(true){
+        char c = m_string[pos];
+        bool delimiter = is_delimiter(c);
+        if(!delimiter){
+            if(stat==0){
+                if(in_string){
+                    if(!word_top){
+                        word_top = &m_string[pos];
+                    }
+                }else{
+                    word_top = &m_string[pos];
+                }
+            }
+            stat = 1;
+        }else{
+            if(stat==1){
+                bool end_of_word = false;
+                if(in_string){
+                    if(c=='\"'){
+                        if(last_c!='\\'){ //escaped \" in string
+                            in_string = false;
+                            end_of_word = true;
+                        }
+                    }else{
+                        //continue string
+                    }
+                }else{
+                    if(c=='\"'){
+                        in_string = true;
+                    }
+                    end_of_word = true;
+                }
+
+                if(end_of_word){
+                    word_end = &m_string[pos];
+                    if(word_top){
+                        size_t size = word_end-word_top;
+                        push_word(word_top,size);
+                    }
+                    word_top = nullptr;
+                }
+            }else{
+                if(in_string){
+                    if(c=='\"'){
+                        if(last_c!='\\'){ //escaped \" in string
+                            in_string = false;
+                        }
+                    }else{
+                        //continue string
+                    }
+                }else{
+                    if(c=='\"'){
+                        in_string = true;
+                    }
+                }
+            }
+            stat = 0;
+        }
+        //printf("%c %d %d %p\n",c,stat,in_string,word_top);
+        if(m_string[pos]=='\0'){
+            const char* tail = last_word_tail();
+            if( tail < &m_string[pos]-1){
+                //printf("%p %p\n",tail,&m_string[pos]-1);
+                push_word(tail+1,(&m_string[pos]-1-tail));
+            }
+            break;
+        } 
+        last_c = c;
+        pos++;
+    }
+    move_head();
 }

@@ -2,6 +2,31 @@
 
 #include <stdint.h>
 
+
+#define LEXER_WORDS_MAX (200)
+class FmrbSimpleLineLexer{
+public:
+    void init();
+    void free();
+    void set_line(const char* line);
+    void move_head();
+    void itr_dump(const char** buff,int* len);
+private:
+    const char* m_string;
+    const char* m_head;
+    int m_total_words;
+    int m_word_pos;
+    const char* m_word_p[LEXER_WORDS_MAX];
+    unsigned char m_word_len[LEXER_WORDS_MAX];
+    int m_dump_stat;
+
+    bool is_delimiter(const char);
+    void push_word(const char*,int);
+    void push_word_prim(const char*,int);
+    const char* last_word_tail();
+    int is_highlight(const char* ,int);
+};
+
 #define EDITLINE_BLOCK_SIZE (16)
 
 struct EditLine {
@@ -48,6 +73,7 @@ private:
   int m_y;
   int m_disp_head_line;
   int m_total_line;
+  FmrbSimpleLineLexer* m_line_lexer_p;
   fabgl::Terminal* m_term;
   enum EDIT_STATUS m_error;
   
