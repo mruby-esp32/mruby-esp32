@@ -123,7 +123,7 @@ class Tetris
     @bs = 8 # Block Size
     @state = :init
     @last_time = 0
-    @update_speed = 300
+    @update_speed = 500
     @current_tet = nil
   end
 
@@ -200,7 +200,6 @@ class Tetris
     update = false
     if key>0
       move_tetrimino(key)
-      draw_field
       update = true
     end
     if current_time > @update_speed+@last_time
@@ -208,8 +207,10 @@ class Tetris
       @last_time = current_time
       update_tetrimino
       check_field
-      draw_field
       update = true
+    end
+    if update
+      draw_field
     end
     update
   end
@@ -319,19 +320,6 @@ class Tetris
 
 end
 
-def get_key
-  return 0 unless Input::available
-  k = Key::K_NONE
-  k = Key::K_DOWN  if Input::keydown?(Key::K_DOWN)
-  k = Key::K_LEFT  if Input::keydown?(Key::K_LEFT)
-  k = Key::K_RIGHT if Input::keydown?(Key::K_RIGHT)
-  k = Key::K_SPACE if Input::keydown?(Key::K_SPACE)
-  k = Key::K_a     if Input::keydown?(Key::K_a)
-  k = Key::K_s     if Input::keydown?(Key::K_s)
-  k = -1 if Input::keydown?(Key::K_ESCAPE)
-  return k
-end
-
 tetris = Tetris.new
 
 duble_buffer = true
@@ -345,14 +333,17 @@ if duble_buffer
 end
 
 loop do
-  k = get_key
-  break if k<0
+  k = Input::get_key
+  break if k == Key::K_ESCAPE
+  #puts "A--#{ESP32::System::tick_ms}--"
   if duble_buffer
-    Display::swap if tetris.update(k)
+    if tetris.update(k)
+      #puts "swap:#{ESP32::System::tick_ms}"
+      Display::swap
+    end
   else
     tetris.update(k)
   end
-  #ESP32::System::delay(10)
 end
 puts "End of Script"
 
