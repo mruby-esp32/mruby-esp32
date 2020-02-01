@@ -71,9 +71,9 @@ end
 
 class Tetris
   def initialize
-    @twidth = 10
-    @theight = 20
-    @field = Array.new(@theight).map{Array.new(@twidth ,0)}
+    @twidth = 10+2
+    @theight = 20+4
+    @field = Array.new(@theight).map{Array.new(@twidth ,:B)}
     @offx = 50 # Offset X
     @offy = 2  # Offset Y
     @bs = 8 # Block Size
@@ -88,18 +88,30 @@ class Tetris
     puts "#{@state.to_s}"
     case @state
     when :init
+      init_field
       draw_field
-      update = true
       @state = :start_game
+      update = true
     when :start_game
       @state = :run
       set_new_tetrimino
       @last_time = ESP32::System::tick_ms
+      draw_tetrimino(@current_tet)
+      update = true
     when :run
       update = run_game(key)
     when :end_game
     end
     update
+  end
+
+  def init_field
+    (0...@theight).each{|y|(0...@twidth).each{|x|@field[y][x]=:B}}
+    (0...4).each{|x| @field[2][x]=:W }
+    (8...@twidth).each{|x| @field[2][x]=:W }
+    (0...@twidth).each{|x| @field[@theight-1][x]=:W }
+    (1...@theight).each{|y| @field[y][0]=:W }
+    (1...@theight).each{|y| @field[y][@twidth-1]=:W }
   end
 
   def draw_tetrimino(t)
@@ -117,13 +129,18 @@ class Tetris
   end
 
   def draw_field
-    Display.draw_rect(@offx,@offy, @offx+@bs*(@twidth+3),@offy+@bs*(@theight+4),"BLACK","BLACK")
-
-    Display.draw_rect(@offx,@offy+@bs, @offx+@bs*4,@offy+@bs*2,"GREEN","GREEN")
-    Display.draw_rect(@offx,@offy+@bs, @offx+@bs,@offy+@bs*(@theight+4),"GREEN","GREEN")
-    Display.draw_rect(@offx,@offy+@bs*(@theight+3), @offx+@bs*(@twidth+3),@offy+@bs*(@theight+4),"GREEN","GREEN")
-    Display.draw_rect(@offx+@bs*(@twidth+2),@offy+@bs, @offx+@bs*(@twidth+3),@offy+@bs*(@theight+4),"GREEN","GREEN")
-    Display.draw_rect(@offx+@bs*(@twidth-1),@offy+@bs, @offx+@bs*(@twidth+3),@offy+@bs*2,"GREEN","GREEN")
+    #Display.draw_rect(@offx,@offy, @offx+@bs*(@twidth+3),@offy+@bs*(@theight+4),"BLACK","BLACK")
+    @field.each_with_index do |line,y|
+      line.each_with_index do |v,x|
+        color1 = color2 ="BLACK"
+        case v
+        when :W
+          color1 = color2 = "GREEN"
+        when :T
+        end
+        Display.draw_rect(@offx+@bs*x,@offy+@bs*y, @offx+@bs*(x+1)-1,@offy+@bs*(y+1)-1,color1,color2)        
+      end
+    end
     return if @state != :run
     draw_tetrimino(@current_tet)
   end
