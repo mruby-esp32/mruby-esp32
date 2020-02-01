@@ -80,7 +80,7 @@ private:
   void wait_key(char);
   void load_file();
   void save_file();
-  void load_demo_file();
+  void load_demo_file(int);
   void clear_buffer();
 
   void load(const char* buf);

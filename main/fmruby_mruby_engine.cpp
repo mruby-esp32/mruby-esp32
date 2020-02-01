@@ -65,7 +65,7 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
 
 void FmrbMrubyEngine::run(char* code_string)
 {
-  FMRB_DEBUG(FMRB_LOG::INFO,"\n<Execute mruby script>\n\n");
+  FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby script>\n\n");
 
   m_exec_result = 0;
   if(m_error_msg) fmrb_free(m_error_msg);

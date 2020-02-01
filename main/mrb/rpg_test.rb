@@ -30,12 +30,12 @@ class WalkMap
      @max_y = @map.size
      puts "max>#{@max_x},#{@max_y}"
      @bitmap_list = []
-     @bitmap_list << Bitmap.new.load("/grass.img")  # 0
-     @bitmap_list << Bitmap.new.load("/road.img")   # 1
-     @bitmap_list << Bitmap.new.load("/water.img")  # 2
-     @bitmap_list << Bitmap.new.load("/castle.img") # 3
+     @bitmap_list << Bitmap.new.load("/sample/grass.img")  # 0
+     @bitmap_list << Bitmap.new.load("/sample/road.img")   # 1
+     @bitmap_list << Bitmap.new.load("/sample/water.img")  # 2
+     @bitmap_list << Bitmap.new.load("/sample/castle.img") # 3
      @character_list = []
-     @character_list << Bitmap.new.load("/man.img")
+     @character_list << Bitmap.new.load("/sample/man.img")
 
      @offset_x = 40
      @offset_y = 20
@@ -88,12 +88,11 @@ world_map = WalkMap.new
 def get_key
   return 0 unless Input::available
   k = 0
-  #151 UP, 153 DOWN, 155 LEFT, 157 RIGHT
-  k = 1 if Input::keydown?(151)
-  k = 2 if Input::keydown?(153)
-  k = 3 if Input::keydown?(155)
-  k = 4 if Input::keydown?(157)
-  k = -1 if Input::keydown?(125) #ESC
+  k = 1  if Input::keydown?(Key::K_UP)
+  k = 2  if Input::keydown?(Key::K_DOWN)
+  k = 3  if Input::keydown?(Key::K_LEFT)
+  k = 4  if Input::keydown?(Key::K_RIGHT)
+  k = -1 if Input::keydown?(Key::K_ESCAPE)
   return k
 end
 

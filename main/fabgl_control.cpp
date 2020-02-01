@@ -35,7 +35,7 @@ void fabgl_terminal_mode_init(void)
   
   VGAController.setResolution(VGA_640x350_70HzAlt1, 640, 350, false);
   //VGAController.setResolution(VGA_512x384_60Hz, 512, 384,false);
-  VGAController.moveScreen(20, 0);
+  //VGAController.moveScreen(20, 0);
   FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_terminal_mode_init done\n");
 }
 

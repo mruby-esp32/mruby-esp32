@@ -2,7 +2,7 @@ R"( #"
 include Narya
 
 def test
-  Display.draw_picture(0,0,"/bk_small.img")
+  Display.draw_picture(0,0,"/assets/topimage.img")
   Display.swap
 end
 
@@ -27,7 +27,7 @@ end
 
 Display::clear
 img = Bitmap.new
-img.load("/test.img")
+img.load("/sample/test.img")
 p img.width
 p img.height
 img.draw(20,20)

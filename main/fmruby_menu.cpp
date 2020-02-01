@@ -80,18 +80,27 @@ FMRB_RCODE FmrbSystemApp::print_system_info()
   return FMRB_RCODE::OK;
 }
 
-static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data){
+static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data,int mode){
   const int header = 4;
   uint16_t width  = (data[header]) + (data[header+1]<<8);
   uint16_t height = (data[header+2]) + (data[header+3]<<8);
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"img:%d,%d\n",width,height);
-
+  
+  int dl = 15;
+  if(mode==2) dl = 3;
   uint8_t* p = data+header+4;
   for(uint16_t y=0;y<height;y++){
+    bool skip=false;
+    if(mode>0){
+      if(rand()%dl != 0){
+        skip = true;
+      }
+    }
     for(uint16_t x=0;x<width;x++){
-      if(((*p)&0xC0) == 0 ){ //check alpha
-        VGAController.setRawPixel(x0+x,y0+y,
-          VGAController.createRawPixel(RGB222((*p)&0x03, ((*p)&0x0C) >> 2, ((*p)&0x30) >> 4)));
+      if(!skip){
+        if(((*p)&0xC0) == 0 ){ //check alpha
+          VGAController.setRawPixel(x0+x,y0+y,
+            VGAController.createRawPixel(RGB222((*p)&0x03, ((*p)&0x0C) >> 2, ((*p)&0x30) >> 4)));
+        }
       }
       p++;
     }
@@ -99,17 +108,43 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data){
 }
 
 FMRB_RCODE FmrbSystemApp::show_splash(){
+  FMRB_canvas.setBrushColor(Color::Black);
+  FMRB_canvas.clear();
+  vTaskDelay(500);
+
   uint32_t fsize;
-  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bktest.img",fsize,false,false);
+  //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bktest.img",fsize,false,false);
   //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bk_small.img",fsize,false,false);
+  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/assets/topimage.img",fsize,false,false);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"img:%d,%d\n",width,height);
+  
   if(img_data){
-    draw_img(0,0,img_data);
+    for(int i=0;i<15;i++){
+      if(i<10){
+        draw_img(0,0,img_data,1);
+      }else{
+        draw_img(0,0,img_data,2);
+      }
+      vTaskDelay(30);
+    }
+    draw_img(0,0,img_data,0);
+
     fmrb_free(img_data);
   }
-  print_system_info();
+  //print_system_info();
   return FMRB_RCODE::OK;
 }
 
+FMRB_RCODE FmrbSystemApp::clear_splash(){
+  int w = VGAController.getScreenWidth();
+  int h = VGAController.getScreenHeight();
+  FMRB_canvas.setBrushColor(Color::Black);
+  for(int i=0;i<h;i++){
+    FMRB_canvas.fillRectangle(0,i,w-1,i);
+    vTaskDelay(1);
+  }
+  return FMRB_RCODE::OK;
+}
 
 FMRB_RCODE FmrbSystemApp::run_editor(){
     m_editor.begin(&m_terminal);
@@ -162,6 +197,7 @@ FMRB_RCODE FmrbSystemApp::run()
         FMRB_storage.init();
         show_splash();
         wait_key(0x0D);
+        clear_splash();
         m_state = FMRB_SYS_STATE::SHOW_MENU;
         break;
       }

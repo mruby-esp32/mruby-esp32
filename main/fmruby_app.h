@@ -55,6 +55,7 @@ private:
   FMRB_RCODE close_terminal();
   FMRB_RCODE print_system_info();
   FMRB_RCODE show_splash();
+  FMRB_RCODE clear_splash();
   FMRB_RCODE run_editor();
   FMRB_RCODE run_mruby();
 

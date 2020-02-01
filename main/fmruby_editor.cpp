@@ -10,10 +10,14 @@
 const char* null_script = "\n";
 
 const char* sample_script = 
-//#include "./mrb/rpg_test.rb"
 #include "./mrb/entry_mrb.rb"
 //#include "./mrb/bitmap_test.rb"
 ;
+
+const char* sample_script2 = 
+#include "./mrb/rpg_test.rb"
+;
+
 
 //#define EDT_DEBUG(...)  printf(__VA_ARGS__)
 #define EDT_DEBUG(...)
@@ -386,10 +390,15 @@ int FmrbEditor::run(char* input_script){
               case 0x35: // ESC[15 : ..  F5
                 m_term->read();
                 EDT_DEBUG("F5\n");
-                load_demo_file();
+                load_demo_file(0);
                 escape = 0;
                 break;
               case 0x37: // ESC[17 : ..  F6
+                m_term->read();
+                EDT_DEBUG("F6\n");
+                load_demo_file(1);
+                escape = 0;
+                break;
               case 0x38: // ESC[18 : ..  F7
               case 0x39: // ESC[19 : ..  F8
                 escape_c[2] = c;
@@ -685,6 +694,8 @@ void FmrbEditor::update()
   m_term->write("\e[30m\e[46m  RUN   \e[0m");
   move(41,bottom);
   m_term->write("\e[30m\e[46m  DEMO  \e[0m");
+  move(51,bottom);
+  m_term->write("\e[30m\e[46m  DEMO2 \e[0m");
 
   move(m_x,m_y);
 
@@ -826,11 +837,15 @@ void FmrbEditor::load_file(){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file done\n");
 }
 
-void FmrbEditor::load_demo_file(){
+void FmrbEditor::load_demo_file(int type){
   //clear current buffer
   clear_buffer();
   move_cursor(m_lineno_shift+1,1);
-  load(sample_script);
+  if(type==0){
+    load(sample_script);
+  }else{
+    load(sample_script2);
+  }
   update();
 }
 
@@ -854,6 +869,30 @@ const char* highlight_words[] =
 "begin","else","in","rescue","undef",//"__FILE__",
 "break","elsif","module","retry","unless",//"__ENCODING__",
 "case","end","next","return","until"};
+
+const uint8_t highlight_words_color[] = 
+{1,1,1,1,1,1,
+ 1,1,1,1,1,1,
+ 1,1,1,1,1,1,
+ 1,1,1,1,1,//1,
+ 1,1,1,1,1,//1,
+ 1,1,1,1,1,//1,
+ 1,1,1,1,1};
+
+ /*
+\e[30m	Black
+\e[31m	Red
+\e[32m	Green
+\e[33m	Yellow
+\e[34m	Blue
+\e[35m	Magenta
+\e[36m	Cyan
+\e[37m	White
+ */
+
+const char* color_string_list[] = {"\e[31m","\e[35m","\e[32m","\e[36m"};
+const char* gfooter_str = "\e[0m";
+
 
 void FmrbSimpleLineLexer::init(){
     m_word_pos = 0;
@@ -900,16 +939,15 @@ void FmrbSimpleLineLexer::push_word(const char* word_head,int word_size){
 int FmrbSimpleLineLexer::is_highlight(const char* word_head,int word_size){
     if(word_size<=0)return -1;
     for(int i=0;i<sizeof(highlight_words)/sizeof(char*);i++){
-        if(strncmp(word_head,highlight_words[i],word_size)==0){
+        if(strncmp(word_head,highlight_words[i],strlen(highlight_words[i]))==0){
             //printf("HIT[%.*s] ",word_size,word_head);
             return i;
         }
     }
+    if(*word_head == '@') return 100; //@xxx
+    if(0x5A >= *word_head && *word_head >= 0x41 ) return 101; //upper case
     return -1;
 }
-
-const char* gheader_str = "\e[32m";
-const char* gfooter_str = "\e[0m";
 
 void FmrbSimpleLineLexer::itr_dump(const char** buff,int* len){
     *buff = NULL;
@@ -940,8 +978,13 @@ void FmrbSimpleLineLexer::itr_dump(const char** buff,int* len){
         int type = is_highlight(m_word_p[m_word_pos],m_word_len[m_word_pos]);
         //printf("|%d|",type);
         if(type>=0){ //insert header footer
-            *buff = gheader_str;
-            *len = strlen(gheader_str);
+            if(type<100){
+              *buff = color_string_list[highlight_words_color[type]];
+            }else{
+              if(type==100) *buff = color_string_list[3];
+              if(type==101) *buff = color_string_list[2];
+            }
+            *len = strlen(*buff);
             m_dump_stat = 1;
         }else{
             *buff = m_word_p[m_word_pos];
