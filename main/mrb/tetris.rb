@@ -178,9 +178,13 @@ class Tetris
   end
 
   def draw_field
-    #Display.draw_rect(@offx,@offy, @offx+@bs*(@twidth+3),@offy+@bs*(@theight+4),"BLACK","BLACK")
+    #puts "--dr1:#{ESP32::System::tick_ms}"
+    Display.draw_rect(@offx,@offy, @offx+@bs*@twidth-1,@offy+@bs*@theight-1,"BLACK","BLACK")
     @field.each_with_index do |line,y|
       line.each_with_index do |v,x|
+        if v == :E
+          next
+        end
         color1 = color2 ="BLACK"
         case v
         when :W
@@ -192,7 +196,9 @@ class Tetris
         Display.draw_rect(@offx+@bs*x,@offy+@bs*y, @offx+@bs*(x+1)-1,@offy+@bs*(y+1)-1,color1,color2)        
       end
     end
+    #puts "--dr2:#{ESP32::System::tick_ms}"
     draw_tetrimino(@current_tet) if @current_tet
+    #puts "--dr3:#{ESP32::System::tick_ms}"
   end
 
   def run_game(key)
@@ -287,9 +293,8 @@ class Tetris
       else
         fix_tetrimino(@current_tet)
         set_new_tetrimino
+        GC.start
       end
-    else
-
     end
   end
 
