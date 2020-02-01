@@ -2,26 +2,22 @@ R"(  #"
 include Narya
 
 class Tetrimino
-  attr_accessor :x,:y,:field
+  attr_accessor :x,:y
+  attr_accessor :field,:type
   def initialize(type)
     @x = 4
     @y = 0
-    @bs = 8
     @type = type
+    @r = 0
     case type
     when :I
-      @field = [
-        [0,0,0,0],
-        [1,1,1,1],
-        [0,0,0,0],
-        [0,0,0,0]
-      ]
+      set_I
+      @field = @array_I[@r]
       @color = "002"
     when :O
       @field = [
         [1,1,0],
         [1,1,0],
-        [0,0,0],
         [0,0,0]
       ]
       @color = "002"
@@ -61,11 +57,59 @@ class Tetrimino
       ]
       @color = "002"
     end
-    #@h = @field.size
-    #@w = @field.first.size
   end
-  def exist?(x,y)
-    false
+
+  def set_I
+    @array_I = []
+    @array_I << [
+      [0,0,0,0],
+      [1,1,1,1],
+      [0,0,0,0],
+      [0,0,0,0]
+    ]
+    @array_I << [
+      [0,0,1,0],
+      [0,0,1,0],
+      [0,0,1,0],
+      [0,0,1,0]
+    ]
+    @array_I << [
+      [0,0,0,0],
+      [0,0,0,0],
+      [1,1,1,1],
+      [0,0,0,0]
+    ]
+    @array_I << [
+      [0,1,0,0],
+      [0,1,0,0],
+      [0,1,0,0],
+      [0,1,0,0]
+    ]
+  end
+
+  def rotate(dir)
+    case type
+    when :I
+      if dir>0
+        @r += 1
+      else
+        @r -= 1
+      end
+      @r = 0 if @r > 3
+      @r = 3 if @r < 0
+      @field = @array_I[@r]
+    when :S,:Z,:J,:L,:T
+      temp = @field.map(&:dup)
+      @field[0][0] = temp[2][0]
+      @field[0][1] = temp[1][0]
+      @field[0][2] = temp[0][0]
+      @field[1][2] = temp[0][1]
+      @field[2][2] = temp[0][2]
+      @field[2][1] = temp[1][2]
+      @field[2][0] = temp[2][2]
+      @field[1][0] = temp[2][1]
+    when :O
+    end
   end
 end
 
@@ -73,19 +117,18 @@ class Tetris
   def initialize
     @twidth = 10+2
     @theight = 20+4
-    @field = Array.new(@theight).map{Array.new(@twidth ,:B)}
+    @field = Array.new(@theight).map{Array.new(@twidth ,:E)}
     @offx = 50 # Offset X
     @offy = 2  # Offset Y
     @bs = 8 # Block Size
     @state = :init
     @last_time = 0
-    @update_speed = 1000
+    @update_speed = 300
     @current_tet = nil
   end
 
   def update(key)
     update = false
-    puts "#{@state.to_s}"
     case @state
     when :init
       init_field
@@ -100,13 +143,19 @@ class Tetris
       update = true
     when :run
       update = run_game(key)
-    when :end_game
+    when :close_game
+      init_field
+      draw_field
+      @state = :start_game
+      update = true
     end
     update
   end
 
   def init_field
-    (0...@theight).each{|y|(0...@twidth).each{|x|@field[y][x]=:B}}
+    # E: Empty
+    # W: Wall
+    (0...@theight).each{|y|(0...@twidth).each{|x|@field[y][x]=:E}}
     (0...4).each{|x| @field[2][x]=:W }
     (8...@twidth).each{|x| @field[2][x]=:W }
     (0...@twidth).each{|x| @field[@theight-1][x]=:W }
@@ -136,20 +185,23 @@ class Tetris
         case v
         when :W
           color1 = color2 = "GREEN"
-        when :T
+        when :I,:O,:S,:Z,:J,:L,:T
+          color1 = "BLUE"
+          color2 = "CYAN"
         end
         Display.draw_rect(@offx+@bs*x,@offy+@bs*y, @offx+@bs*(x+1)-1,@offy+@bs*(y+1)-1,color1,color2)        
       end
     end
-    return if @state != :run
-    draw_tetrimino(@current_tet)
+    draw_tetrimino(@current_tet) if @current_tet
   end
 
   def run_game(key)
     current_time = ESP32::System::tick_ms
     update = false
     if key>0
-      move_tetrimino(key,@bs)
+      move_tetrimino(key)
+      draw_field
+      update = true
     end
     if current_time > @update_speed+@last_time
       #update tetrimino position
@@ -182,16 +234,87 @@ class Tetris
   end
 
   def move_tetrimino(key)
+    return if @current_tet.y < 3
+    case key
+    when Key::K_LEFT
+      @current_tet.x -= 1
+      @current_tet.x += 1 if check_collision(@current_tet)
+    when Key::K_RIGHT
+      @current_tet.x += 1
+      @current_tet.x -= 1 if check_collision(@current_tet)
+    when Key::K_DOWN
+      loop do
+        @current_tet.y += 1
+        if check_collision(@current_tet)
+          @current_tet.y -= 1
+          break
+        end
+      end
+    when Key::K_SPACE
+      @current_tet.rotate(1)
+      @current_tet.rotate(-1) if check_collision(@current_tet)
+    end
+  end
 
+  def check_collision(t)
+    t.field.each_with_index do |line,y|
+      line.each_with_index do |v,x|
+        if v==1
+          return true if @field[t.y+y][t.x+x] != :E
+        end
+      end
+    end
+    false
+  end
+
+  def fix_tetrimino(t)
+    t.field.each_with_index do |line,y|
+      line.each_with_index do |v,x|
+        if v==1
+          @field[t.y+y][t.x+x] = t.type
+        end
+      end
+    end
   end
 
   def update_tetrimino
     @current_tet.y += 1
-    puts "Tet:#{@current_tet.x},#{@current_tet.y}"
+    if check_collision(@current_tet)
+      @current_tet.y -= 1
+      if @current_tet.y <= 1
+        @state = :close_game
+      else
+        fix_tetrimino(@current_tet)
+        set_new_tetrimino
+      end
+    else
+
+    end
+  end
+
+  def shift_lines(i)
+    loop do
+      break if i < 4
+      (0...10).each do |x|
+        @field[3+i][1+x] = @field[3+i-1][1+x]
+      end
+      i -= 1
+    end
   end
 
   def check_field
-
+    (0...20).each do |y|
+      all_set = true
+      (0...10).each do |x|
+        if @field[3+y][1+x] == :E
+          all_set = false
+          break
+        end
+      end
+      if all_set
+        shift_lines(y)
+      end
+    end
   end
 
 end
@@ -211,18 +334,25 @@ end
 
 tetris = Tetris.new
 
+duble_buffer = true
 #BG
 Display.clear
 Display.draw_picture(0,0,"/sample/moscow_320_200.img")
-Display::swap
-Display.draw_picture(0,0,"/sample/moscow_320_200.img")
-Display::swap
+if duble_buffer
+ Display::swap
+ Display.draw_picture(0,0,"/sample/moscow_320_200.img")
+ Display::swap
+end
 
 loop do
   k = get_key
   break if k<0
-  Display::swap if tetris.update(k)
-  ESP32::System::delay(1000)
+  if duble_buffer
+    Display::swap if tetris.update(k)
+  else
+    tetris.update(k)
+  end
+  #ESP32::System::delay(10)
 end
 puts "End of Script"
 
