@@ -150,11 +150,6 @@ FMRB_RCODE FmrbSystemApp::clear_splash(){
   return FMRB_RCODE::OK;
 }
 
-FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
-{
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"callback fid:%d\n",fid);
-  return FMRB_RCODE::OK;
-}
 
 char* alloc_menu_text_mem(const char* input)
 {
@@ -164,6 +159,21 @@ char* alloc_menu_text_mem(const char* input)
   strcpy(buff,input);
   return buff;
 }
+
+
+
+FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
+{
+  FMRB_RCODE ret = FMRB_RCODE::OK;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,">menu callback fid:%d\n",fid);
+
+  if(fid==13){//resolution test
+    ret = fmrb_subapp_resolution_test(menu);
+  }
+
+  return ret;
+}
+
 
 FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
   FmrbMenuItem *top = FmrbMenuItem::create_item(alloc_menu_text_mem("<System menu>"),1,menu_callback,FmrbMenuItemType::TITLE);
@@ -176,8 +186,8 @@ FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
   //Sub Config
   m2 = FmrbMenuItem::add_child_item(m1,alloc_menu_text_mem("<Configuration>"),10,menu_callback,FmrbMenuItemType::TITLE);
        FmrbMenuItem::add_item_tail(m2 ,alloc_menu_text_mem(" Editor Resolution "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_menu_text_mem(" mruby Resolution  "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_menu_text_mem(" Resolution Test   "),12,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_menu_text_mem(" mruby Resolution  "),12,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_menu_text_mem(" Resolution Test   "),13,menu_callback,FmrbMenuItemType::SELECTABLE);
 
   return top;
 }

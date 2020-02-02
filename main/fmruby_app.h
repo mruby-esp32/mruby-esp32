@@ -106,6 +106,7 @@ class FmrbSystemApp {
 public:
   FmrbSystemApp();
   FMRB_RCODE run();
+
 private:
   char* m_script;
   FMRB_SYS_STATE m_state;
@@ -129,3 +130,6 @@ private:
 };
 
 extern FmrbFileService FMRB_storage;
+
+FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu);
+
