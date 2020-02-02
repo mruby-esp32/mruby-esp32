@@ -3,6 +3,10 @@
 #include "fmruby_editor.h"
 #include "mruby.h"
 
+/**
+ * File service
+ **/
+
 class FmrbFileService {
 public:
   FmrbFileService();
@@ -15,13 +19,23 @@ private:
   bool m_sd_opened;
 };
 
+/**
+ * Menu 
+ **/
+
 class FmrbMenuModule;
 typedef FMRB_RCODE (*FmrbMenuCallback)(uint32_t fid,FmrbMenuModule* menu);  
 
+enum class FmrbMenuItemType{
+  TITLE,
+  SELECTABLE,
+  UNSELECTABLE,
+};
 struct FmrbMenuItem{
   char* description;
   uint32_t fid;
   FmrbMenuCallback func;
+  FmrbMenuItemType type;
 
   FmrbMenuItem* m_prev;
   FmrbMenuItem* m_next;
@@ -29,32 +43,39 @@ struct FmrbMenuItem{
   FmrbMenuItem* m_child;
 
   static FmrbMenuItem* create_item(void);
-  static FmrbMenuItem* create_item(char* desc, uint32_t fid,FmrbMenuCallback cfunc);
-  static FmrbMenuItem* add_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc);
-  static FmrbMenuItem* add_child_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc);
+  static FmrbMenuItem* create_item(char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type);
+  static FmrbMenuItem* add_item_tail(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type);
+  static FmrbMenuItem* add_child_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type);
+  static FmrbMenuItem* retrieve_item(FmrbMenuItem* head_item,int line);
   static void free(FmrbMenuItem*);
 };
 
 class FmrbMenuModule {
 public:
+  fabgl::Canvas* m_canvas;
+  fabgl::Terminal* m_terminal;
+
   FmrbMenuModule();
-  void init(fabgl::Canvas* canvas,FmrbMenuItem *item);
+  void init(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem *item);
   void begin();
   void clear();
 
 private:
-  fabgl::Canvas* m_canvas;
   FmrbMenuItem* m_top;
-  int m_cpos;
+
+  int m_offset_x;
+  int m_offset_y;
+  int m_mergin;
+
+  void draw_item(FmrbMenuItem* head_item,int line,bool invert);
+  int draw_menu(FmrbMenuItem* head_item);
+  void clear_draw_area(void);
+  void exec_menu(FmrbMenuItem* head_item);
 };
 
-enum class FMRB_SYS_STATE{
-  INIT=0,
-  SHOW_MENU,
-  DO_EDIT,
-  EXEC_FROM_EDIT,
-  EXEC_FROM_FILE,
-};
+/**
+ * mruby engine
+ **/
 
 class FmrbMrubyEngine {
 public:
@@ -69,6 +90,17 @@ private:
   void check_backtrace(mrb_state *mrb);
 };
 
+/**
+ * System app
+ **/
+
+enum class FMRB_SYS_STATE{
+  INIT=0,
+  SHOW_MENU,
+  DO_EDIT,
+  EXEC_FROM_EDIT,
+  EXEC_FROM_FILE,
+};
 
 class FmrbSystemApp {
 public:

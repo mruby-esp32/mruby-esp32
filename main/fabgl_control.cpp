@@ -47,7 +47,5 @@ void fabgl_mruby_mode_init(void)
   //VGAController.setResolution(QVGA_320x240_60Hz);
   VGAController.moveScreen(20, 0);
 
-  //Canvas.selectFont(Canvas.getPresetFontInfo(40, 14)); // get a font for about 40x14 text screen
-  //Canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
   FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_mruby_mode_init done\n");
 }
