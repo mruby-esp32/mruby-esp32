@@ -129,5 +129,3 @@ private:
 };
 
 extern FmrbFileService FMRB_storage;
-
-void menu_app(void);

@@ -228,6 +228,8 @@ void setup(){
 
 TaskHandle_t mainTaskHandle = NULL;
 
+FmrbSystemApp SystemApp;
+
 void mainTask(void *pvParameters)
 {
   FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");
@@ -243,7 +245,18 @@ void mainTask(void *pvParameters)
 #ifdef TEST_SD
   sdcard_test();
 #endif
-  menu_app();
+
+#if 0
+  char* buff = (char*)heap_caps_malloc(4,MALLOC_CAP_DMA);
+  printf("MALLOC_CAP_DMA:%p\n",buff);
+  free(buff);
+  buff = (char*)fmrb_spi_malloc(4);
+  printf("MALLOC_CAP_SPIRAM:%p\n",buff);
+  free(buff);
+#endif
+  SystemApp.run();
+
+
   while(true){
 	  vTaskDelay(1000);
   }

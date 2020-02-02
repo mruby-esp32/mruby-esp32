@@ -2,9 +2,9 @@
 #include "fmruby_app.h"
 #include "fmruby_fabgl.h"
 
-
-FmrbSystemApp SystemApp;
-
+/**
+ * FmrbSystemApp
+ **/
 FmrbSystemApp::FmrbSystemApp()
 {
   m_state = FMRB_SYS_STATE::INIT;
@@ -282,19 +282,10 @@ FMRB_RCODE FmrbSystemApp::run()
   return FMRB_RCODE::OK;
 }
 
-void menu_app()
-{
-#if 0
-  char* buff = (char*)heap_caps_malloc(4,MALLOC_CAP_DMA);
-  printf("MALLOC_CAP_DMA:%p\n",buff);
-  free(buff);
-  buff = (char*)fmrb_spi_malloc(4);
-  printf("MALLOC_CAP_SPIRAM:%p\n",buff);
-  free(buff);
-#endif
-  SystemApp.run();
-}
 
+/**
+ * FmrbMenuItem
+ **/
 
 FmrbMenuItem* FmrbMenuItem::create_item(void)
 {
@@ -361,7 +352,7 @@ FmrbMenuItem* FmrbMenuItem::retrieve_item(FmrbMenuItem* head_item,int line){
 
 
 /*****
- *  Menu Class
+ *  FmrbMenuModule
  *****/
 FmrbMenuModule::FmrbMenuModule(){
 
