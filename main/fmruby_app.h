@@ -57,7 +57,8 @@ public:
 
   FmrbMenuModule();
   void init(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem *item);
-  void begin();
+  void begin(uint32_t *param);
+  void set_param(uint32_t param);
   void clear();
 
 private:
@@ -66,6 +67,7 @@ private:
   int m_offset_x;
   int m_offset_y;
   int m_mergin;
+  uint32_t *m_param;
 
   void draw_item(FmrbMenuItem* head_item,int line,bool invert);
   int draw_menu(FmrbMenuItem* head_item);

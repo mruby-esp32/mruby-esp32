@@ -103,7 +103,7 @@ FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu)
 
   //Message and wait
 
-  localMenu->begin();
+  localMenu->begin(nullptr);
 
   //end of sub app
   localMenu->clear();

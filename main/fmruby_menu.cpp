@@ -167,6 +167,11 @@ FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
   FMRB_RCODE ret = FMRB_RCODE::OK;
   FMRB_DEBUG(FMRB_LOG::DEBUG,">menu callback fid:%d\n",fid);
 
+
+  if(fid==2){//begin editor
+    menu->set_param(1);
+    ret = FMRB_RCODE::OK_DONE;
+  }
   if(fid==13){//resolution test
     ret = fmrb_subapp_resolution_test(menu);
   }
@@ -193,9 +198,12 @@ FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
 }
 
 FMRB_RCODE FmrbSystemApp::run_main_menu(){
-  m_main_menu.begin();
-  wait_key(0x0D,0);
-  m_main_menu.clear();
+  uint32_t return_info=0;
+  m_main_menu.begin(&return_info);
+  //m_main_menu.clear();
+  if(return_info==1){
+    m_state = FMRB_SYS_STATE::DO_EDIT;
+  }
   return FMRB_RCODE::OK;
 }
 
@@ -265,7 +273,6 @@ FMRB_RCODE FmrbSystemApp::run()
           init_terminal();
         }
         run_main_menu();
-        m_state = FMRB_SYS_STATE::DO_EDIT;
         break;
       }
       case FMRB_SYS_STATE::DO_EDIT:
@@ -346,6 +353,7 @@ void FmrbMenuItem::free(FmrbMenuItem* item){
 
   while(item != nullptr){
     if(item->description) fmrb_free(item->description);
+    if(item->m_child) FmrbMenuItem::free(item->m_child);
     fmrb_free(item);
     item = item->m_next;
   }
@@ -421,7 +429,7 @@ static char get_cursor_dir(fabgl::Terminal *term){
 
 }
 
-void FmrbMenuModule::begin(){
+void FmrbMenuModule::begin(uint32_t *param){
   uint32_t fsize=0;
   uint8_t* img_data = (uint8_t*)FMRB_storage.load("/assets/2bit_logo.img",fsize,false,false);
   if(img_data) draw_img(400,50,img_data,0);
@@ -429,10 +437,17 @@ void FmrbMenuModule::begin(){
   //m_canvas->selectFont(&fabgl::FONT_8x8);
   m_canvas->selectFont(fabgl::getPresetFixedFont(8,14));
   m_canvas->setGlyphOptions(GlyphOptions().FillBackground(true));
+  m_param = param;
 
   clear_draw_area();
   exec_menu(m_top);
   clear_draw_area();
+}
+
+void FmrbMenuModule::set_param(uint32_t param){
+  if(m_param){
+    *m_param = param;
+  }
 }
 
 void FmrbMenuModule::clear_draw_area(void){
@@ -448,7 +463,7 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
     pos = 1;
     pos_min = 1;
   }
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"Pos(%d,%d-%d)\n",pos,pos_min,pos_max);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"Pos(%d,%d-%d)\n",pos,pos_min,pos_max);
   draw_item(head_item,pos,true);
 
   //bool selected = false;
@@ -459,7 +474,7 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
       switch(c){
         case 1: //RETURN
         {
-          FMRB_DEBUG(FMRB_LOG::DEBUG,"Select(%d)\n",pos);
+          FMRB_DEBUG(FMRB_LOG::DEBUG,"Menu:Select(%d)\n",pos);
           FmrbMenuItem* item = FmrbMenuItem::retrieve_item(head_item,pos);
           if(item){
             if(item->type==FmrbMenuItemType::SELECTABLE){
