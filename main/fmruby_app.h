@@ -15,7 +15,38 @@ private:
   bool m_sd_opened;
 };
 
-extern FmrbFileService FMRB_storage;
+class FmrbMenuModule;
+typedef FMRB_RCODE (*FmrbMenuCallback)(uint32_t fid,FmrbMenuModule* menu);  
+
+struct FmrbMenuItem{
+  char* description;
+  uint32_t fid;
+  FmrbMenuCallback func;
+
+  FmrbMenuItem* m_prev;
+  FmrbMenuItem* m_next;
+  FmrbMenuItem* m_parent;
+  FmrbMenuItem* m_child;
+
+  static FmrbMenuItem* create_item(void);
+  static FmrbMenuItem* create_item(char* desc, uint32_t fid,FmrbMenuCallback cfunc);
+  static FmrbMenuItem* add_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc);
+  static FmrbMenuItem* add_child_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc);
+  static void free(FmrbMenuItem*);
+};
+
+class FmrbMenuModule {
+public:
+  FmrbMenuModule();
+  void init(fabgl::Canvas* canvas,FmrbMenuItem *item);
+  void begin();
+  void clear();
+
+private:
+  fabgl::Canvas* m_canvas;
+  FmrbMenuItem* m_top;
+  int m_cpos;
+};
 
 enum class FMRB_SYS_STATE{
   INIT=0,
@@ -49,16 +80,22 @@ private:
   FmrbEditor m_editor;
   bool m_terminal_available;
   fabgl::Terminal m_terminal;
+  FmrbMenuModule m_main_menu;
   FmrbMrubyEngine m_mruby_engine;
-  void wait_key(char target);
+
+  void wait_key(char target,int timeout);
   FMRB_RCODE init_terminal();
   FMRB_RCODE close_terminal();
   FMRB_RCODE print_system_info();
   FMRB_RCODE show_splash();
   FMRB_RCODE clear_splash();
+  FmrbMenuItem* prepare_top_menu();
+  FMRB_RCODE run_main_menu();
   FMRB_RCODE run_editor();
   FMRB_RCODE run_mruby();
 
 };
+
+extern FmrbFileService FMRB_storage;
 
 void menu_app(void);

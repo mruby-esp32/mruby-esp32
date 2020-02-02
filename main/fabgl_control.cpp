@@ -35,7 +35,7 @@ void fabgl_terminal_mode_init(void)
   
   VGAController.setResolution(VGA_640x350_70HzAlt1, 640, 350, false);
   //VGAController.setResolution(VGA_512x384_60Hz, 512, 384,false);
-  //VGAController.moveScreen(20, 0);
+  VGAController.moveScreen(20, 0);
   FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_terminal_mode_init done\n");
 }
 
@@ -43,7 +43,9 @@ void fabgl_mruby_mode_init(void)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_mruby_mode_init\n");
   VGAController.setResolution(VGA_320x200_75Hz, -1, -1, true);
+  //VGAController.setResolution(VGA_320x200_75Hz, -1, -1, false);
   //VGAController.setResolution(QVGA_320x240_60Hz);
+  VGAController.moveScreen(20, 0);
 
   //Canvas.selectFont(Canvas.getPresetFontInfo(40, 14)); // get a font for about 40x14 text screen
   //Canvas.setGlyphOptions(GlyphOptions().FillBackground(true));

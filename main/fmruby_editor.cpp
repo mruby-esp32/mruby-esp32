@@ -10,7 +10,8 @@
 const char* null_script = "\n";
 
 const char* sample_script = 
-#include "./mrb/entry_mrb.rb"
+//#include "./mrb/entry_mrb.rb"
+#include "./mrb/tetris.rb"
 //#include "./mrb/bitmap_test.rb"
 ;
 

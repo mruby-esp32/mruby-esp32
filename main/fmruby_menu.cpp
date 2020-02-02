@@ -47,12 +47,18 @@ FMRB_RCODE FmrbSystemApp::close_terminal(void)
   return FMRB_RCODE::OK;
 }
 
-void FmrbSystemApp::wait_key(char target)
+void FmrbSystemApp::wait_key(char target,int timeout)
 {
   if(!m_terminal_available) return;
+  
+  uint32_t start_time = xTaskGetTickCount()*portTICK_RATE_MS;
 
   while(true)
   {
+    uint32_t current_time = xTaskGetTickCount()*portTICK_RATE_MS;
+    if(timeout>0 && current_time > start_time + timeout){
+      return;
+    }
     if (m_terminal.available())
     {
       char c = m_terminal.read();
@@ -141,8 +147,34 @@ FMRB_RCODE FmrbSystemApp::clear_splash(){
   FMRB_canvas.setBrushColor(Color::Black);
   for(int i=0;i<h;i++){
     FMRB_canvas.fillRectangle(0,i,w-1,i);
-    vTaskDelay(1);
+    //vTaskDelay(1);
   }
+  return FMRB_RCODE::OK;
+}
+
+FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
+{
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"callback fid:%d\n",fid);
+  return FMRB_RCODE::OK;
+}
+
+char* alloc_menu_text_mem(const char* input)
+{
+  if(!input) return nullptr;
+  if(strlen(input)>100)return nullptr; //Too long
+  char* buff = (char*)fmrb_spi_malloc(strlen(input)+1);
+  strcpy(buff,input);
+  return buff;
+}
+
+FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
+  FmrbMenuItem* top = FmrbMenuItem::create_item(alloc_menu_text_mem("Menu 1"),1,menu_callback);
+  return top;
+}
+
+FMRB_RCODE FmrbSystemApp::run_main_menu(){
+  m_main_menu.begin();
+  m_main_menu.clear();
   return FMRB_RCODE::OK;
 }
 
@@ -195,8 +227,9 @@ FMRB_RCODE FmrbSystemApp::run()
         init_terminal();
         m_script = NULL;
         FMRB_storage.init();
+        m_main_menu.init(&FMRB_canvas,prepare_top_menu());
         show_splash();
-        wait_key(0x0D);
+        wait_key(0x0D,3000);
         clear_splash();
         m_state = FMRB_SYS_STATE::SHOW_MENU;
         break;
@@ -206,6 +239,7 @@ FMRB_RCODE FmrbSystemApp::run()
         if(!m_terminal_available){
           init_terminal();
         }
+        run_main_menu();
         m_state = FMRB_SYS_STATE::DO_EDIT;
         break;
       }
@@ -244,4 +278,73 @@ void menu_app()
   free(buff);
 #endif
   SystemApp.run();
+}
+
+
+FmrbMenuItem* FmrbMenuItem::create_item(void)
+{
+  FmrbMenuItem* new_item = (FmrbMenuItem*)fmrb_spi_malloc(sizeof(FmrbMenuItem));
+  if(new_item==nullptr) return nullptr;
+  memset(new_item,0,sizeof(FmrbMenuItem));
+  return new_item;
+}
+FmrbMenuItem* FmrbMenuItem::create_item(char* desc, uint32_t fid,FmrbMenuCallback cfunc)
+{
+  FmrbMenuItem* new_item = create_item();
+  if(new_item==nullptr) return nullptr;
+  new_item->description = desc;
+  new_item->fid = fid;
+  new_item->func = cfunc;
+  return new_item;
+}
+
+FmrbMenuItem* FmrbMenuItem::add_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc)
+{
+  if(!target)return nullptr;
+  FmrbMenuItem* new_item = create_item(desc,fid,cfunc);
+  if(new_item==nullptr) return nullptr;
+
+  target->m_next = new_item;
+  new_item->m_prev = target;
+  return new_item;
+}
+
+FmrbMenuItem* FmrbMenuItem::add_child_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc)
+{
+  if(!target)return nullptr;
+  FmrbMenuItem* new_item = create_item(desc,fid,cfunc);
+  if(new_item==nullptr) return nullptr;
+  target->m_child = new_item;
+  return new_item;
+}
+
+
+void FmrbMenuItem::free(FmrbMenuItem* item){
+  while(item != nullptr){
+    if(item->description) fmrb_free(item->description);
+    fmrb_free(item);
+    item = item->m_next;
+  }
+}
+
+/*****
+ *  Menu Class
+ * */
+FmrbMenuModule::FmrbMenuModule(){
+
+}
+
+void FmrbMenuModule::init(fabgl::Canvas* canvas,FmrbMenuItem* item){
+  m_canvas = canvas;
+  m_cpos = 0;
+  m_top = item;
+}
+
+void FmrbMenuModule::begin(){
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Menu > %s\n",m_top->description);
+  m_top->func(m_top->fid,this);
+}
+
+void FmrbMenuModule::clear(){
+  FmrbMenuItem::free(m_top);
 }

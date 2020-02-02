@@ -331,7 +331,7 @@ duble_buffer = true
 #BG
 Display.clear
 Display.draw_picture(0,0,"/sample/moscow_320_200.img")
-if duble_buffer
+if double_buffer
  Display::swap
  Display.draw_picture(0,0,"/sample/moscow_320_200.img")
  Display::swap
@@ -341,7 +341,7 @@ loop do
   k = Input::get_key
   break if k == Key::K_ESCAPE
   #puts "A--#{ESP32::System::tick_ms}--"
-  if duble_buffer
+  if double_buffer
     if tetris.update(k)
       #puts "swap:#{ESP32::System::tick_ms}"
       Display::swap
