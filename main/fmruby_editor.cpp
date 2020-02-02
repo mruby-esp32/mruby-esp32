@@ -20,18 +20,21 @@ const char* sample_script2 =
 ;
 
 
-//#define EDT_DEBUG(...)  printf(__VA_ARGS__)
-#define EDT_DEBUG(...)
+#define EDT_DEBUG(...)  printf(__VA_ARGS__)
+//#define EDT_DEBUG(...)
 
 
 EditLine* EditLine::create_line(void)
 {
   EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
   if(line){
-    if(line->init(NULL) < 0){
+    if(line->init(nullptr) < 0){
       fmrb_free(line);
-      return NULL;
+      FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
+      return nullptr;
     }    
+  }else{
+    FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
   }
   return line;
 }
@@ -39,11 +42,15 @@ EditLine* EditLine::create_line(void)
 EditLine* EditLine::create_line(char* input)
 {
   EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
-  if(NULL==line)return NULL;
+  if(nullptr==line){
+    FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
+    return nullptr;
+  }
   
   if(line->init(input) < 0){
     fmrb_free(line);
-    return NULL;
+    FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
+    return nullptr;
   }
   return line;
 }
@@ -51,9 +58,9 @@ EditLine* EditLine::create_line(char* input)
 
 int EditLine::init(char* input)
 {
-  if(NULL==input){
+  if(nullptr==input){
     text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
-    if(text == NULL) return -1;
+    if(text == nullptr) return -1;
     memset(text,0,EDITLINE_BLOCK_SIZE);
     text[0] = '\0';
     length = 0;
@@ -63,15 +70,15 @@ int EditLine::init(char* input)
     int block_size = (input_len+1)/EDITLINE_BLOCK_SIZE + 1;
     buff_size = EDITLINE_BLOCK_SIZE * block_size;
     text = (char*)fmrb_spi_malloc(buff_size);
-    if(text == NULL) return -1;
+    if(text == nullptr) return -1;
     memset(text,0,buff_size);
     strcpy(text,input);
     length = input_len;
   }
   flag = 0;
   lineno = 0;
-  prev = NULL;
-  next = NULL;
+  prev = nullptr;
+  next = nullptr;
   return 0;
 }
 

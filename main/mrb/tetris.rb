@@ -327,11 +327,11 @@ end
 
 tetris = Tetris.new
 
-duble_buffer = true
+double_buffer = true
 #BG
 Display.clear
 Display.draw_picture(0,0,"/sample/moscow_320_200.img")
-if double_buffer
+if double_bufferX
  Display::swap
  Display.draw_picture(0,0,"/sample/moscow_320_200.img")
  Display::swap
