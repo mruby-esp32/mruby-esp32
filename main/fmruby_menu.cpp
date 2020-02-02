@@ -463,7 +463,14 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
           FmrbMenuItem* item = FmrbMenuItem::retrieve_item(head_item,pos);
           if(item){
             if(item->type==FmrbMenuItemType::SELECTABLE){
-              item->func(item->fid,this); // callback
+              if(item->func){
+                FMRB_RCODE ret = item->func(item->fid,this); // callback if set
+                draw_menu(head_item);
+                draw_item(head_item,pos,true);
+                if(ret==FMRB_RCODE::OK_DONE){
+                  cancelled=true;
+                }
+              }
               if(item->m_child){
                 clear_draw_area();
                 exec_menu(item->m_child); // > sub menu
@@ -548,6 +555,8 @@ void FmrbMenuModule::draw_item(FmrbMenuItem* head_item,int line,bool invert){
     m_canvas->setPenColor(Color::White);
     m_canvas->setBrushColor(Color::Black);
   }else{
+    m_canvas->setPenColor(Color::White);
+    m_canvas->setBrushColor(Color::Black);
     m_canvas->drawText(m_offset_x+offs,m_offset_y+line*(height+m_mergin),item->description);
   }
 }

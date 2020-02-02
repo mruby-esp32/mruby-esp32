@@ -131,5 +131,6 @@ private:
 
 extern FmrbFileService FMRB_storage;
 
+char* alloc_menu_text_mem(const char* input);
 FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu);
 

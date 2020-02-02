@@ -28,6 +28,7 @@ enum class FMRB_RCODE{
   MEMALLOC_ERROR,
   ERROR=-1,
   OK=0,
+  OK_DONE,
 };
 
 void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line,...);
