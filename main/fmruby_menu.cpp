@@ -25,6 +25,7 @@ FMRB_RCODE FmrbSystemApp::init_terminal(void)
     m_terminal.clear();
     //FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal_init() done\n");
     m_terminal_available = true;
+    //print_system_info();
   }else{
     FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal is already initialized\n");
   }
@@ -209,9 +210,11 @@ FMRB_RCODE FmrbSystemApp::run_main_menu(){
 
 FMRB_RCODE FmrbSystemApp::run_editor(){
     m_terminal.enableCursor(true);
+
     m_editor.begin(&m_terminal);
-    m_terminal.enableCursor(false);
     int err = m_editor.run(m_script);
+
+    m_terminal.enableCursor(false);
     m_script = NULL;
     if(err >= 0){
       m_script = m_editor.dump_script();
@@ -247,6 +250,9 @@ FMRB_RCODE FmrbSystemApp::run()
   mruby_test(sample_script2);
   FMRB_DEBUG(FMRB_LOG::DEBUG,"m_mruby_engine END\n");
   #endif
+
+  bool skip_splash = true;
+  bool skip_menu = true;
   
   while(true){
     FMRB_DEBUG(FMRB_LOG::MSG,"[AppState:%d]\n",m_state);
@@ -260,11 +266,14 @@ FMRB_RCODE FmrbSystemApp::run()
         init_terminal();
         m_script = NULL;
         m_main_menu.init(&FMRB_canvas,&m_terminal,prepare_top_menu());
-        show_splash();
-        wait_key(0x0D,3000);
-        clear_splash();
+        if(!skip_splash){
+          show_splash();
+          wait_key(0x0D,3000);
+          clear_splash();
+        }
         //check_keyboard();PS2Controller.keyboard()->isKeyboardAvailable()
         m_state = FMRB_SYS_STATE::SHOW_MENU;
+        if(skip_menu) m_state = FMRB_SYS_STATE::DO_EDIT;
         break;
       }
       case FMRB_SYS_STATE::SHOW_MENU:

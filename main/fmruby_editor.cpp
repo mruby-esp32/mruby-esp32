@@ -182,8 +182,11 @@ FmrbEditor::FmrbEditor():
 int FmrbEditor::begin(fabgl::Terminal* terminal)
 {
   m_term = terminal;
+  m_line_lexer_p = nullptr;
+#if 0
   m_line_lexer_p = (FmrbSimpleLineLexer*)fmrb_spi_malloc(sizeof(FmrbSimpleLineLexer));
   if(m_line_lexer_p) m_line_lexer_p->init();
+#endif
   return 0;
 }
 
@@ -213,7 +216,7 @@ int FmrbEditor::run(char* input_script){
   m_disp_height = m_height - 1;
   m_disp_width = m_width;
 
-  FMRB_DEBUG(FMRB_LOG::INFO,"Editor begin\n");
+  FMRB_DEBUG(FMRB_LOG::INFO,"Editor begin(%d,%d)\n",m_width,m_height);
 
   m_term->clear();
   move_cursor(m_lineno_shift+1,1);
