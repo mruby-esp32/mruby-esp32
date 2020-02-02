@@ -256,7 +256,7 @@ void mainTask(void *pvParameters)
 #endif
   SystemApp.run();
 
-
+  //Never comes here
   while(true){
 	  vTaskDelay(1000);
   }
@@ -264,7 +264,8 @@ void mainTask(void *pvParameters)
 
 extern "C" void app_main()
 {
-    initArduino();
-    xTaskCreateUniversal(mainTask, "mainTask", 8192*2, NULL, 1, &mainTaskHandle, CONFIG_ARDUINO_RUNNING_CORE);
+  //Follow Arduino manner
+  initArduino();
+  xTaskCreateUniversal(mainTask, "mainTask", FMRB_MAIN_TASK_STACK_SIZE, NULL, 1, &mainTaskHandle, CONFIG_ARDUINO_RUNNING_CORE);
 }
 
