@@ -21,30 +21,23 @@ fabgl::Canvas        FMRB_canvas(&VGAController);
 
 void fabgl_init(void)
 {
-
   PS2Controller.begin(PS2Preset::KeyboardPort0);
   VGAController.begin(VGA_RED1, VGA_RED0, VGA_GREEN1, VGA_GREEN0, VGA_BLUE1, VGA_BLUE0, VGA_HSYNC, VGA_VSYNC);
-  
-  //VGAController.setResolution(VGA_320x200_75Hz, 320, 200);
-  //VGAController.setResolution(VGA_512x384_60Hz, 512, 384,false);
 }
 
-void fabgl_terminal_mode_init(void)
+void fabgl_terminal_mode_init(FmrbConfig* config)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_terminal_mode_init\n");
   
-  VGAController.setResolution(VGA_640x350_70HzAlt1, 640, 350, false);
-  //VGAController.setResolution(VGA_512x384_60Hz, 512, 384,false);
+  VGAController.setResolution(config->main_mode_line, -1, -1, false);
   VGAController.moveScreen(20, 0);
   FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_terminal_mode_init done\n");
 }
 
-void fabgl_mruby_mode_init(void)
+void fabgl_mruby_mode_init(FmrbConfig* config)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_mruby_mode_init\n");
-  VGAController.setResolution(VGA_320x200_75Hz, -1, -1, true);
-  //VGAController.setResolution(VGA_320x200_75Hz, -1, -1, false);
-  //VGAController.setResolution(QVGA_320x240_60Hz);
+  VGAController.setResolution(config->mruby_mode_line, -1, -1, true);
   VGAController.moveScreen(20, 0);
 
   FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_mruby_mode_init done\n");

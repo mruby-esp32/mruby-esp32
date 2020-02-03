@@ -11,11 +11,19 @@ FmrbSystemApp::FmrbSystemApp()
   m_terminal_available = false;
 }
 
+void FmrbSystemApp::init(){
+  m_config = (FmrbConfig*)fmrb_spi_malloc(sizeof(FmrbConfig));
+  memset(m_config,0,sizeof(FmrbConfig));
+  FMRB_storage.init();
+  strncpy(m_config->main_mode_line,VGA_640x350_70HzAlt1,256);
+  strncpy(m_config->mruby_mode_line,VGA_320x200_75Hz,256);
+}
+
 FMRB_RCODE FmrbSystemApp::init_terminal(void)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"start terminal_init\n");
   if(!m_terminal_available){
-    fabgl_terminal_mode_init();
+    fabgl_terminal_mode_init(m_config);
 
     m_terminal.begin(&VGAController);
     m_terminal.connectLocally();
@@ -212,6 +220,7 @@ FMRB_RCODE FmrbSystemApp::run_editor(){
     m_terminal.enableCursor(true);
 
     m_editor.begin(&m_terminal);
+    fmrb_dump_mem_stat();
     int err = m_editor.run(m_script);
 
     m_terminal.enableCursor(false);
@@ -225,7 +234,8 @@ FMRB_RCODE FmrbSystemApp::run_editor(){
 
 FMRB_RCODE FmrbSystemApp::run_mruby(){
   if(m_script){
-    fabgl_mruby_mode_init();
+    fabgl_mruby_mode_init(m_config);
+    fmrb_dump_mem_stat();
     m_mruby_engine.run(m_script);
     FMRB_DEBUG(FMRB_LOG::DEBUG,"m_mruby_engine END\n");
   }
@@ -252,7 +262,7 @@ FMRB_RCODE FmrbSystemApp::run()
   #endif
 
   bool skip_splash = true;
-  bool skip_menu = true;
+  bool skip_menu = false;
   
   while(true){
     FMRB_DEBUG(FMRB_LOG::MSG,"[AppState:%d]\n",m_state);
@@ -261,7 +271,6 @@ FMRB_RCODE FmrbSystemApp::run()
     switch(m_state){
       case FMRB_SYS_STATE::INIT:
       {
-        FMRB_storage.init();
         //load config
         init_terminal();
         m_script = NULL;

@@ -20,6 +20,25 @@ private:
 };
 
 /**
+ * Config
+ **/
+struct FmrbConfig {
+public:
+  char main_mode_line[256];
+  char mruby_mode_line[256];
+  int main_screen_shift_x;
+  int main_screen_shift_y;
+  int mruby_screen_shift_x;
+  int mruby_screen_shift_y;
+
+  FmrbConfig(FmrbFileService* file_service);
+  FMRB_RCODE load();
+  FMRB_RCODE save();
+private:
+
+};
+
+/**
  * Menu 
  **/
 
@@ -107,9 +126,11 @@ enum class FMRB_SYS_STATE{
 class FmrbSystemApp {
 public:
   FmrbSystemApp();
+  void init();
   FMRB_RCODE run();
 
 private:
+  FmrbConfig *m_config;
   char* m_script;
   FMRB_SYS_STATE m_state;
   FmrbEditor m_editor;

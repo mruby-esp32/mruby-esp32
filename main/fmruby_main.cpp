@@ -237,7 +237,6 @@ void mainTask(void *pvParameters)
   FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");
   fmrb_dump_mem_stat();
   setup();
-  fmrb_dump_mem_stat();
 
 #ifdef TEST_AUDIO
   sound_test();
@@ -254,6 +253,7 @@ void mainTask(void *pvParameters)
   printf("MALLOC_CAP_SPIRAM:%p\n",buff);
   free(buff);
 #endif
+  SystemApp.init();
   SystemApp.run();
 
   //Never comes here
