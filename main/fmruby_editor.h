@@ -1,7 +1,7 @@
 #pragma once
 
+#include "fmruby.h"
 #include <stdint.h>
-
 
 #define LEXER_WORDS_MAX (200)
 class FmrbSimpleLineLexer{
@@ -38,6 +38,9 @@ struct EditLine {
   EditLine* prev;
   EditLine* next;
 
+  OVERLOAD_SPI_ALLOCATOR
+  EditLine();
+  ~EditLine();
   static EditLine* create_line(void);
   static EditLine* create_line(char*);
   int init(char* input);

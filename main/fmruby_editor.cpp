@@ -23,29 +23,33 @@ const char* sample_script2 =
 #define EDT_DEBUG(...)  printf(__VA_ARGS__)
 //#define EDT_DEBUG(...)
 
+EditLine::EditLine(){
+
+}
+EditLine::~EditLine(){
+  this->next = nullptr;
+  this->prev = nullptr;
+  if(this->text){
+    fmrb_free(this->text);
+  }
+}
 
 EditLine* EditLine::create_line(void)
 {
-  EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
-  if(line){
-    if(line->init(nullptr) < 0){
-      fmrb_free(line);
-      FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
-      return nullptr;
-    }    
-  }else{
+  //EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
+  EditLine* line = new EditLine();
+  if(line->init(nullptr) < 0){
+    delete line;
     FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
+    return nullptr;
   }
   return line;
 }
 
 EditLine* EditLine::create_line(char* input)
 {
-  EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
-  if(nullptr==line){
-    FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
-    return nullptr;
-  }
+  //EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
+  EditLine* line = new EditLine();
   
   if(line->init(input) < 0){
     fmrb_free(line);
@@ -200,6 +204,8 @@ int FmrbEditor::begin(fabgl::Terminal* terminal)
 int FmrbEditor::release()
 {
   if(m_line_lexer_p) fmrb_free( m_line_lexer_p );
+  clear_buffer();
+  m_buff_head = nullptr;
   return 0;
 }
 
@@ -293,7 +299,6 @@ int FmrbEditor::run(char* input_script){
   }
   return;
 #endif
-
   int escape = 0;
   char escape_c[4] = {0};
   while(true)
@@ -485,7 +490,7 @@ EditLine* FmrbEditor::load_line(const char* in)
       if (NULL==fmrb_spi_realloc(line_p->text,csr+EDITLINE_BLOCK_SIZE))
       {
         fmrb_free(line_p->text);
-        fmrb_free(line_p);
+        delete line_p;
         return NULL;
       }
       line_p->buff_size = line_p->buff_size+EDITLINE_BLOCK_SIZE;
@@ -821,12 +826,9 @@ void FmrbEditor::clear_buffer(){
   EditLine* line = m_buff_head;
   while(line)
   {
-    if(line->text){
-      fmrb_free(line->text);
-    }
     EditLine* old = line;
     line = line->next;
-    fmrb_free(old);
+    delete old;
   }
   m_buff_head = NULL;
 }

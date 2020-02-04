@@ -226,8 +226,21 @@ void setup(){
 
 #endif
 
-TaskHandle_t mainTaskHandle = NULL;
+static void show_fatal_error(const char* msg,const char* detail){
+  VGAController.setResolution(VGA_640x350_70Hz);
+  VGAController.moveScreen(0, 0);
+  FMRB_canvas.setPenColor(Color::White);
+  FMRB_canvas.setBrushColor(Color::Black);
+  FMRB_canvas.clear();
+  if(msg){
+    FMRB_canvas.drawText(30,40,msg);
+  }
+  if(detail){
+    FMRB_canvas.drawText(30,60,detail);
+  }
+}
 
+TaskHandle_t mainTaskHandle = NULL;
 FmrbSystemApp SystemApp;
 
 void mainTask(void *pvParameters)
@@ -253,10 +266,15 @@ void mainTask(void *pvParameters)
   printf("MALLOC_CAP_SPIRAM:%p\n",buff);
   free(buff);
 #endif
-  SystemApp.init();
-  SystemApp.run();
+  try{
+    SystemApp.init();
+    SystemApp.run();
+  }catch(std::bad_alloc& e) {
+    show_fatal_error("bad_alloc exception!",e.what());
+  }catch(...){
+    show_fatal_error("exception!",nullptr);
+  }
 
-  //Never comes here
   while(true){
 	  vTaskDelay(1000);
   }

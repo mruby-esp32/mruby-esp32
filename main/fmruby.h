@@ -11,6 +11,15 @@ void* fmrb_spi_malloc(size_t size);
 void* fmrb_spi_realloc(void* ptr, size_t size);
 void fmrb_free(void* ptr);
 
+#define OVERLOAD_SPI_ALLOCATOR \
+  void* operator new(std::size_t size){\
+  void* ptr = fmrb_spi_malloc(size);\
+    if(ptr == nullptr) { throw std::bad_alloc(); }\
+    return ptr; }\
+  void operator delete(void* ptr){ fmrb_free(ptr); }
+
+
+
 #define FMRB_BITMAP_HEADER_SIZE (4)
 
 #define ENABLE_FMRB_LOG
