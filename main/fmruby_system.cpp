@@ -12,9 +12,8 @@ FmrbSystemApp::FmrbSystemApp()
 }
 
 void FmrbSystemApp::init(){
-  m_config = (FmrbConfig*)fmrb_spi_malloc(sizeof(FmrbConfig));
-  memset(m_config,0,sizeof(FmrbConfig));
   FMRB_storage.init();
+  m_config = new FmrbConfig(&FMRB_storage);
   strncpy(m_config->main_mode_line,VGA_640x350_70HzAlt1,256);
   strncpy(m_config->mruby_mode_line,VGA_320x200_75Hz,256);
 }

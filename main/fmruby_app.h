@@ -2,6 +2,7 @@
 
 #include "fmruby_editor.h"
 #include "mruby.h"
+#include <cstdlib>
 
 /**
  * File service
@@ -22,7 +23,7 @@ private:
 /**
  * Config
  **/
-struct FmrbConfig {
+class FmrbConfig  {
 public:
   char main_mode_line[256];
   char mruby_mode_line[256];
@@ -31,6 +32,8 @@ public:
   int mruby_screen_shift_x;
   int mruby_screen_shift_y;
 
+  void* operator new (std::size_t size);
+  void operator delete (void* ptr);
   FmrbConfig(FmrbFileService* file_service);
   FMRB_RCODE load();
   FMRB_RCODE save();
