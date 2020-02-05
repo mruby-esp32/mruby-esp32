@@ -271,6 +271,8 @@ void mainTask(void *pvParameters)
     SystemApp.run();
   }catch(std::bad_alloc& e) {
     show_fatal_error("bad_alloc exception!",e.what());
+  }catch(char* msg){
+    show_fatal_error("exception!",msg);
   }catch(...){
     show_fatal_error("exception!",nullptr);
   }

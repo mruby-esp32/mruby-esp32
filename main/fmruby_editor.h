@@ -42,9 +42,6 @@ struct EditLine {
   EditLine(void);
   EditLine(char*);
   ~EditLine();
-  static EditLine* create_line(void);
-  static EditLine* create_line(char*);
-  int init(char* input);
   int insert(char c);  
   int insert(uint16_t pos,char c);
   int backdelete(uint16_t pos);
@@ -60,7 +57,9 @@ enum EDIT_STATUS{
 
 class FmrbEditor {
 public:
+  OVERLOAD_SPI_ALLOCATOR
   FmrbEditor();
+  ~FmrbEditor();
   int begin(fabgl::Terminal* terminal);
   int run(char* input_script);
   int release(void);

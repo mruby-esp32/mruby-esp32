@@ -23,7 +23,8 @@ const char* sample_script2 =
 #define EDT_DEBUG(...)  printf(__VA_ARGS__)
 //#define EDT_DEBUG(...)
 
-EditLine::EditLine(){
+EditLine::EditLine()
+{
   text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
   if(text == nullptr) throw std::bad_alloc();;
   memset(text,0,EDITLINE_BLOCK_SIZE);
@@ -46,6 +47,7 @@ EditLine::EditLine(char* input){
   memset(text,0,buff_size);
   strcpy(text,input);
   length = input_len;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"input_len:%d, buff_size:%d\n",input_len,buff_size);
 
   flag = 0;
   lineno = 0;
@@ -60,46 +62,6 @@ EditLine::~EditLine(){
     fmrb_free(this->text);
   }
 }
-
-EditLine* EditLine::create_line(void)
-{
-  EditLine* line = new EditLine();
-  return line;
-}
-
-EditLine* EditLine::create_line(char* input)
-{
-  EditLine* line = new EditLine(input);
-  return line;
-}
-
-
-int EditLine::init(char* input)
-{
-  if(nullptr==input){
-    text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
-    if(text == nullptr) return -1;
-    memset(text,0,EDITLINE_BLOCK_SIZE);
-    text[0] = '\0';
-    length = 0;
-    buff_size = EDITLINE_BLOCK_SIZE;
-  }else{
-    int input_len = strlen(input);
-    int block_size = (input_len+1)/EDITLINE_BLOCK_SIZE + 1;
-    buff_size = EDITLINE_BLOCK_SIZE * block_size;
-    text = (char*)fmrb_spi_malloc(buff_size);
-    if(text == nullptr) return -1;
-    memset(text,0,buff_size);
-    strcpy(text,input);
-    length = input_len;
-  }
-  flag = 0;
-  lineno = 0;
-  prev = nullptr;
-  next = nullptr;
-  return 0;
-}
-
 
 int EditLine::insert(uint16_t pos,char c)
 {
@@ -197,13 +159,26 @@ char* EditLine::cut(uint16_t start_pos, uint16_t end_pos)
  *   An editor for mruby code
  ***********************************/
 FmrbEditor::FmrbEditor():
-  m_buff_head(NULL),
+  m_buff_head(nullptr),
+  m_height(0),
+  m_disp_height(0),
+  m_width(0),
+  m_disp_width(0),
   m_lineno_shift(6),
+  m_x(0),
+  m_y(0),
   m_disp_head_line(1),
-  m_term(NULL) 
+  m_total_line(0),
+  m_line_lexer_p(nullptr),
+  m_term(nullptr),
+  m_error(EDIT_STATUS::EDIT_NO_ERROR)
 {
 
 }
+FmrbEditor::~FmrbEditor(){
+
+}
+
 int FmrbEditor::begin(fabgl::Terminal* terminal)
 {
   m_term = terminal;
@@ -490,22 +465,19 @@ void FmrbEditor::finalize(void){
 
 EditLine* FmrbEditor::load_line(const char* in)
 {
-  EditLine* line_p = EditLine::create_line();
-  if(NULL==line_p){
-    m_error = EDIT_MEM_ERROR;
-    return NULL;
-  }
+  EditLine* line_p = new EditLine();
   int csr=0;
   bool end_flag=false;
   while(!end_flag)
   {
 #if 1
     if( (csr+1) % EDITLINE_BLOCK_SIZE == 0){
-      if (NULL==fmrb_spi_realloc(line_p->text,csr+EDITLINE_BLOCK_SIZE))
+      if (nullptr==fmrb_spi_realloc(line_p->text,csr+EDITLINE_BLOCK_SIZE))
       {
         fmrb_free(line_p->text);
         delete line_p;
-        return NULL;
+        throw "realloc error!";
+        //return NULL;
       }
       line_p->buff_size = line_p->buff_size+EDITLINE_BLOCK_SIZE;
     }
@@ -531,17 +503,13 @@ void FmrbEditor::load(const char* buf)
   m_error = EDIT_NO_ERROR;
   int csr=0;
   m_total_line = 0;
-  EditLine* fist_line = EditLine::create_line();
-  if(NULL==fist_line){
-    m_error = EDIT_MEM_ERROR;
-    return;
-  }
-  fist_line->prev=NULL;
+  EditLine* fist_line = new EditLine();
+  fist_line->prev=nullptr;
   EditLine* last_line = fist_line;
   while(buf[csr]!='\0')
   {
     EditLine* line = load_line(&buf[csr]);
-    if(NULL==line){
+    if(nullptr==line){
       m_error = EDIT_MEM_ERROR;
       return;
     }
@@ -555,7 +523,7 @@ void FmrbEditor::load(const char* buf)
     csr++;
     last_line = line;
   }
-  last_line->next=NULL;
+  last_line->next=nullptr;
   m_buff_head = fist_line;
 }
 
@@ -635,7 +603,8 @@ void FmrbEditor::move(int x,int y)
   if(x<1)x=1;
   if(y>m_height)y=m_height;
   if(y<1)y=1;
-  char buf[10];
+  char buf[20];
+  memset(buf,0,sizeof(buf));
   sprintf(buf,"\e[%d;%dH",y,x);
   m_term->write(buf);
 }
@@ -763,11 +732,7 @@ void FmrbEditor::insert_ret()
   if(NULL==line)return;
   char* cut_test = line->cut(m_x-m_lineno_shift-1,line->length);
   if(NULL==cut_test)return;
-  EditLine* new_line = EditLine::create_line(cut_test);
-  if(NULL==new_line){
-    fmrb_free(cut_test);
-    return;
-  }
+  EditLine* new_line = new EditLine(cut_test);
   new_line->prev = line;
   new_line->next = line->next;
   line->next = new_line;
@@ -842,6 +807,7 @@ void FmrbEditor::clear_buffer(){
   {
     EditLine* old = line;
     line = line->next;
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"delete %p\n",old);
     delete old;
   }
   m_buff_head = NULL;

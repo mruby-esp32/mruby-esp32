@@ -144,7 +144,7 @@ private:
   FmrbConfig *m_config;
   char* m_script;
   FMRB_SYS_STATE m_state;
-  FmrbEditor m_editor;
+  FmrbEditor *m_editor;
   bool m_terminal_available;
   fabgl::Terminal m_terminal;
   FmrbMenuModule *m_main_menu;

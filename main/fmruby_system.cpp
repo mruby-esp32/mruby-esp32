@@ -9,6 +9,7 @@ FmrbSystemApp::FmrbSystemApp()
 {
   m_state = FMRB_SYS_STATE::INIT;
   m_terminal_available = false;
+  m_editor = new FmrbEditor();
 }
 
 void FmrbSystemApp::init(){
@@ -218,16 +219,16 @@ FMRB_RCODE FmrbSystemApp::run_main_menu(){
 FMRB_RCODE FmrbSystemApp::run_editor(){
     m_terminal.enableCursor(true);
 
-    m_editor.begin(&m_terminal);
+    m_editor->begin(&m_terminal);
     fmrb_dump_mem_stat();
-    int err = m_editor.run(m_script);
+    int err = m_editor->run(m_script);
 
     m_terminal.enableCursor(false);
     m_script = NULL;
     if(err >= 0){
-      m_script = m_editor.dump_script();
+      m_script = m_editor->dump_script();
     }
-    m_editor.release();
+    m_editor->release();
   return FMRB_RCODE::OK;
 }
 
