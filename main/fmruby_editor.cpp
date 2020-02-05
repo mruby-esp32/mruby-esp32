@@ -470,24 +470,18 @@ EditLine* FmrbEditor::load_line(const char* in)
   bool end_flag=false;
   while(!end_flag)
   {
-#if 1
     if( (csr+1) % EDITLINE_BLOCK_SIZE == 0){
-      if (nullptr==fmrb_spi_realloc(line_p->text,csr+EDITLINE_BLOCK_SIZE))
-      {
-        fmrb_free(line_p->text);
-        delete line_p;
-        throw "realloc error!";
-        //return NULL;
-      }
       line_p->buff_size = line_p->buff_size+EDITLINE_BLOCK_SIZE;
+      line_p->text = (char*)fmrb_spi_realloc(line_p->text,line_p->buff_size);
+      if(line_p->text == nullptr) throw "load_line:realloc error!";
     }
     line_p->text[csr] = in[csr];
-#else
-    line_p->insert(in[csr]);
-#endif
-    //if(in[csr]==0x0A)
+
     if(in[csr]=='\r' || in[csr]=='\n')
     {
+      if(csr>=line_p->buff_size){
+        FMRB_DEBUG(FMRB_LOG::ERR,"load_line:bad alloc csr:%d buffsieze:%d\n",csr,line_p->buff_size);
+      }
       line_p->text[csr] = '\0';
       line_p->length = csr;
       end_flag = true;
@@ -807,7 +801,7 @@ void FmrbEditor::clear_buffer(){
   {
     EditLine* old = line;
     line = line->next;
-    FMRB_DEBUG(FMRB_LOG::DEBUG,"delete %p\n",old);
+    //FMRB_DEBUG(FMRB_LOG::DEBUG,"delete %p\n",old);
     delete old;
   }
   m_buff_head = NULL;
