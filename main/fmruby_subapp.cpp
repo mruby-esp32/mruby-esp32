@@ -79,7 +79,7 @@ FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu)
 
   FMRB_canvas.clear();
 
-  FmrbMenuItem *top = FmrbMenuItem::create_item(alloc_menu_text_mem("<Select resolution>"),0,select_resolution,FmrbMenuItemType::TITLE);
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select resolution>"),0,select_resolution,FmrbMenuItemType::TITLE);
   //Main
   FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Quit                  "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
 

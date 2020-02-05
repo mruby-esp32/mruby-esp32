@@ -49,11 +49,13 @@ class FmrbMenuModule;
 typedef FMRB_RCODE (*FmrbMenuCallback)(uint32_t fid,FmrbMenuModule* menu);  
 
 enum class FmrbMenuItemType{
+  NONE,
   TITLE,
   SELECTABLE,
   UNSELECTABLE,
 };
-struct FmrbMenuItem{
+class FmrbMenuItem{
+public:
   char* description;
   uint32_t fid;
   FmrbMenuCallback func;
@@ -64,12 +66,15 @@ struct FmrbMenuItem{
   FmrbMenuItem* m_parent;
   FmrbMenuItem* m_child;
 
-  static FmrbMenuItem* create_item(void);
-  static FmrbMenuItem* create_item(char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type);
+//func
+  OVERLOAD_SPI_ALLOCATOR
+  FmrbMenuItem();
+  FmrbMenuItem(char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type);
+  ~FmrbMenuItem();
+
   static FmrbMenuItem* add_item_tail(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type);
   static FmrbMenuItem* add_child_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type);
   static FmrbMenuItem* retrieve_item(FmrbMenuItem* head_item,int line);
-  static void free(FmrbMenuItem*);
 };
 
 class FmrbMenuModule {

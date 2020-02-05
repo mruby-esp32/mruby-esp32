@@ -24,8 +24,35 @@ const char* sample_script2 =
 //#define EDT_DEBUG(...)
 
 EditLine::EditLine(){
+  text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
+  if(text == nullptr) throw std::bad_alloc();;
+  memset(text,0,EDITLINE_BLOCK_SIZE);
+  text[0] = '\0';
+  length = 0;
+  buff_size = EDITLINE_BLOCK_SIZE;
+
+  flag = 0;
+  lineno = 0;
+  prev = nullptr;
+  next = nullptr;
 
 }
+EditLine::EditLine(char* input){
+  int input_len = strlen(input);
+  int block_size = (input_len+1)/EDITLINE_BLOCK_SIZE + 1;
+  buff_size = EDITLINE_BLOCK_SIZE * block_size;
+  text = (char*)fmrb_spi_malloc(buff_size);
+  if(text == nullptr) throw std::bad_alloc();;
+  memset(text,0,buff_size);
+  strcpy(text,input);
+  length = input_len;
+
+  flag = 0;
+  lineno = 0;
+  prev = nullptr;
+  next = nullptr;
+}
+
 EditLine::~EditLine(){
   this->next = nullptr;
   this->prev = nullptr;
@@ -36,26 +63,13 @@ EditLine::~EditLine(){
 
 EditLine* EditLine::create_line(void)
 {
-  //EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
   EditLine* line = new EditLine();
-  if(line->init(nullptr) < 0){
-    delete line;
-    FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
-    return nullptr;
-  }
   return line;
 }
 
 EditLine* EditLine::create_line(char* input)
 {
-  //EditLine* line = (EditLine*)fmrb_spi_malloc(sizeof(EditLine));
-  EditLine* line = new EditLine();
-  
-  if(line->init(input) < 0){
-    fmrb_free(line);
-    FMRB_DEBUG(FMRB_LOG::ERR,"create_line error\n");
-    return nullptr;
-  }
+  EditLine* line = new EditLine(input);
   return line;
 }
 

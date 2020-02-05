@@ -189,7 +189,7 @@ FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
 
 
 FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
-  FmrbMenuItem *top = FmrbMenuItem::create_item(alloc_menu_text_mem("<System menu>"),1,menu_callback,FmrbMenuItemType::TITLE);
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<System menu>"),1,menu_callback,FmrbMenuItemType::TITLE);
   FmrbMenuItem *m1,*m2;
   //Main
        FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Open Editor "),2 ,menu_callback,FmrbMenuItemType::SELECTABLE);
@@ -321,29 +321,45 @@ FMRB_RCODE FmrbSystemApp::run()
  * FmrbMenuItem
  **/
 
-FmrbMenuItem* FmrbMenuItem::create_item(void)
+FmrbMenuItem::FmrbMenuItem(void):
+description(nullptr),
+fid(0),
+func(nullptr),
+type(FmrbMenuItemType::NONE),
+m_prev(nullptr),
+m_next(nullptr),
+m_parent(nullptr),
+m_child(nullptr)
 {
-  FmrbMenuItem* new_item = (FmrbMenuItem*)fmrb_spi_malloc(sizeof(FmrbMenuItem));
-  if(new_item==nullptr) return nullptr;
-  memset(new_item,0,sizeof(FmrbMenuItem));
-  return new_item;
 }
-FmrbMenuItem* FmrbMenuItem::create_item(char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type)
+
+FmrbMenuItem::FmrbMenuItem(char* desc, uint32_t _fid,FmrbMenuCallback _func,FmrbMenuItemType _type):
+description(desc),
+fid(_fid),
+func(_func),
+type(_type),
+m_prev(nullptr),
+m_next(nullptr),
+m_parent(nullptr),
+m_child(nullptr)
 {
-  FmrbMenuItem* new_item = create_item();
-  if(new_item==nullptr) return nullptr;
-  new_item->description = desc;
-  new_item->fid = fid;
-  new_item->func = cfunc;
-  new_item->type = type;
-  return new_item;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"FmrbMenuItem::new : %d\n",_fid);
+}
+
+FmrbMenuItem::~FmrbMenuItem(){
+  FmrbMenuItem* item = this;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"FmrbMenuItem::free : %p\n",item);
+  while(item != nullptr){
+    if(item->description) fmrb_free(item->description);
+    if(item->m_child) delete (item->m_child);
+    item = item->m_next;
+  }
 }
 
 FmrbMenuItem* FmrbMenuItem::add_item_tail(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type)
 {
   if(!target)return nullptr;
-  FmrbMenuItem* new_item = create_item(desc,fid,cfunc,type);
-  if(new_item==nullptr) return nullptr;
+  FmrbMenuItem* new_item = new FmrbMenuItem(desc,fid,cfunc,type);
 
   while(target->m_next != nullptr){ //find a tail
     target = target->m_next;
@@ -357,24 +373,12 @@ FmrbMenuItem* FmrbMenuItem::add_item_tail(FmrbMenuItem* target, char* desc, uint
 FmrbMenuItem* FmrbMenuItem::add_child_item(FmrbMenuItem* target, char* desc, uint32_t fid,FmrbMenuCallback cfunc,FmrbMenuItemType type)
 {
   if(!target)return nullptr;
-  FmrbMenuItem* new_item = create_item(desc,fid,cfunc,type);
-  if(new_item==nullptr) return nullptr;
+  FmrbMenuItem* new_item = new FmrbMenuItem(desc,fid,cfunc,type);
   target->m_child = new_item;
   new_item->m_parent = target;
   return new_item;
 }
 
-
-void FmrbMenuItem::free(FmrbMenuItem* item){
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"FmrbMenuItem::free : %p\n",item);
-
-  while(item != nullptr){
-    if(item->description) fmrb_free(item->description);
-    if(item->m_child) FmrbMenuItem::free(item->m_child);
-    fmrb_free(item);
-    item = item->m_next;
-  }
-}
 
 FmrbMenuItem* FmrbMenuItem::retrieve_item(FmrbMenuItem* head_item,int line){
   FmrbMenuItem* item = head_item;
@@ -411,7 +415,7 @@ static char get_cursor_dir(fabgl::Terminal *term){
     if (term->available())
     {
       char c = term->read();
-      //printf("> %02x\n",c);
+      printf("> %02x\n",c);
       if(!escape)
       {
         if(c == 0x0D){
@@ -480,7 +484,7 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
     pos = 1;
     pos_min = 1;
   }
-  //FMRB_DEBUG(FMRB_LOG::DEBUG,"Pos(%d,%d-%d)\n",pos,pos_min,pos_max);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Pos(%d,%d-%d)\n",pos,pos_min,pos_max);
   draw_item(head_item,pos,true);
 
   //bool selected = false;
@@ -560,7 +564,7 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
 
 
 void FmrbMenuModule::clear(){
-  FmrbMenuItem::free(m_top);
+  delete (m_top);
 }
 
 

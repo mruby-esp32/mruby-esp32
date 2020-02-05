@@ -39,7 +39,8 @@ struct EditLine {
   EditLine* next;
 
   OVERLOAD_SPI_ALLOCATOR
-  EditLine();
+  EditLine(void);
+  EditLine(char*);
   ~EditLine();
   static EditLine* create_line(void);
   static EditLine* create_line(char*);
