@@ -37,6 +37,10 @@ public:
   FmrbConfig(FmrbFileService* file_service);
   FMRB_RCODE load();
   FMRB_RCODE save();
+
+private:
+  FmrbFileService *m_fservice;
+
 private:
 
 };
@@ -82,15 +86,14 @@ public:
   fabgl::Canvas* m_canvas;
   fabgl::Terminal* m_terminal;
 
-  FmrbMenuModule();
-  void init(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem *item);
+  OVERLOAD_SPI_ALLOCATOR
+  FmrbMenuModule(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem *item);
+  ~FmrbMenuModule();
   void begin(uint32_t *param);
   void set_param(uint32_t param);
-  void clear();
 
 private:
   FmrbMenuItem* m_top;
-
   int m_offset_x;
   int m_offset_y;
   int m_mergin;
@@ -144,7 +147,7 @@ private:
   FmrbEditor m_editor;
   bool m_terminal_available;
   fabgl::Terminal m_terminal;
-  FmrbMenuModule m_main_menu;
+  FmrbMenuModule *m_main_menu;
   FmrbMrubyEngine m_mruby_engine;
 
   void wait_key(char target,int timeout);

@@ -74,11 +74,6 @@ FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"esolution test\n");
 
-  FmrbMenuModule* localMenu = (FmrbMenuModule*)fmrb_spi_malloc(sizeof(FmrbMenuModule));
-  memset(localMenu,0,sizeof(FmrbMenuModule));
-
-  FMRB_canvas.clear();
-
   FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select resolution>"),0,select_resolution,FmrbMenuItemType::TITLE);
   //Main
   FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Quit                  "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
@@ -99,16 +94,16 @@ FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu)
   FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_73Hz      "),13,select_resolution,FmrbMenuItemType::SELECTABLE);
   FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VESA_640x480_75Hz     "),14,select_resolution,FmrbMenuItemType::SELECTABLE);
 
-  localMenu->init(menu->m_canvas,menu->m_terminal,top);
+  FMRB_canvas.clear();
+  FmrbMenuModule *localMenu = new FmrbMenuModule(menu->m_canvas,menu->m_terminal,top);
 
   //Message and wait
 
   localMenu->begin(nullptr);
 
   //end of sub app
-  localMenu->clear();
-  fmrb_free(localMenu);
-
+  delete localMenu;
+  
   return FMRB_RCODE::OK;
 }
 

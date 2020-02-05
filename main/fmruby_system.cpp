@@ -207,7 +207,7 @@ FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
 
 FMRB_RCODE FmrbSystemApp::run_main_menu(){
   uint32_t return_info=0;
-  m_main_menu.begin(&return_info);
+  m_main_menu->begin(&return_info);
   //m_main_menu.clear();
   if(return_info==1){
     m_state = FMRB_SYS_STATE::DO_EDIT;
@@ -273,7 +273,7 @@ FMRB_RCODE FmrbSystemApp::run()
         //load config
         init_terminal();
         m_script = NULL;
-        m_main_menu.init(&FMRB_canvas,&m_terminal,prepare_top_menu());
+        m_main_menu = new FmrbMenuModule(&FMRB_canvas,&m_terminal,prepare_top_menu());
         if(!skip_splash){
           show_splash();
           wait_key(0x0D,3000);
@@ -343,12 +343,10 @@ m_next(nullptr),
 m_parent(nullptr),
 m_child(nullptr)
 {
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"FmrbMenuItem::new : %d\n",_fid);
 }
 
 FmrbMenuItem::~FmrbMenuItem(){
   FmrbMenuItem* item = this;
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"FmrbMenuItem::free : %p\n",item);
   while(item != nullptr){
     if(item->description) fmrb_free(item->description);
     if(item->m_child) delete (item->m_child);
@@ -393,19 +391,22 @@ FmrbMenuItem* FmrbMenuItem::retrieve_item(FmrbMenuItem* head_item,int line){
 /*****
  *  FmrbMenuModule
  *****/
-FmrbMenuModule::FmrbMenuModule(){
 
+FmrbMenuModule::FmrbMenuModule(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem* item):
+m_canvas(canvas),
+m_terminal(terminal),
+m_top(item),
+m_offset_x(30),
+m_offset_y(10),
+m_mergin(3),
+m_param(nullptr)
+{
 }
 
-void FmrbMenuModule::init(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem* item){
-  m_canvas = canvas;
-  m_terminal = terminal;
-  m_top = item;
-
-  m_offset_x = 30;
-  m_offset_y = 10;
-  m_mergin = 3;
+FmrbMenuModule::~FmrbMenuModule(){
+  delete (m_top);
 }
+
 
 static char get_cursor_dir(fabgl::Terminal *term){
   int escape = 0;
@@ -415,7 +416,7 @@ static char get_cursor_dir(fabgl::Terminal *term){
     if (term->available())
     {
       char c = term->read();
-      printf("> %02x\n",c);
+      //printf("> %02x\n",c);
       if(!escape)
       {
         if(c == 0x0D){
@@ -484,7 +485,7 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
     pos = 1;
     pos_min = 1;
   }
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"Pos(%d,%d-%d)\n",pos,pos_min,pos_max);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"Pos(%d,%d-%d)\n",pos,pos_min,pos_max);
   draw_item(head_item,pos,true);
 
   //bool selected = false;
@@ -562,10 +563,6 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
 
 }
 
-
-void FmrbMenuModule::clear(){
-  delete (m_top);
-}
 
 
 void FmrbMenuModule::draw_item(FmrbMenuItem* head_item,int line,bool invert){

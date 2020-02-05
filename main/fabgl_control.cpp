@@ -12,7 +12,7 @@
 #define VGA_HSYNC  GPIO_NUM_23
 #define VGA_VSYNC  GPIO_NUM_27
 
-#define DOUBLEBUFFERING 1
+#define DOUBLEBUFFERING true
 
 // Shared with mgem
 fabgl::VGAController VGAController;
@@ -27,18 +27,14 @@ void fabgl_init(void)
 
 void fabgl_terminal_mode_init(FmrbConfig* config)
 {
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_terminal_mode_init\n");
-  
-  VGAController.setResolution(config->main_mode_line, -1, -1, false);
-  VGAController.moveScreen(20, 0);
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_terminal_mode_init done\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Main screen: %s\n",config->main_mode_line);
+  VGAController.setResolution(config->main_mode_line);
+  VGAController.moveScreen(config->main_screen_shift_x, config->main_screen_shift_y);
 }
 
 void fabgl_mruby_mode_init(FmrbConfig* config)
 {
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_mruby_mode_init\n");
-  VGAController.setResolution(config->mruby_mode_line, -1, -1, true);
-  VGAController.moveScreen(20, 0);
-
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"fabgl_mruby_mode_init done\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Mruby screen: %s\n",config->mruby_mode_line);
+  VGAController.setResolution(config->mruby_mode_line, -1, -1, DOUBLEBUFFERING);
+  VGAController.moveScreen(config->mruby_screen_shift_x, config->mruby_screen_shift_y);
 }
