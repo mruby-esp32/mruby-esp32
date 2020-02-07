@@ -153,6 +153,14 @@ char* EditLine::cut(uint16_t start_pos, uint16_t end_pos)
   return buff;
 }
 
+void EditLine::clear(void)
+{
+  text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
+  memset(text,0,EDITLINE_BLOCK_SIZE);
+  strcpy(text,"\n");
+  length = strlen(text);
+  buff_size = EDITLINE_BLOCK_SIZE;
+}
 
 /***********************************
  * FmrbEditor
@@ -295,7 +303,7 @@ int FmrbEditor::run(char* input_script){
     if (m_term->available())
     {
       char c = m_term->read();
-      printf("> %02x\n",c);
+      //printf("> %02x\n",c);
 
       if(!escape)
       {
@@ -326,6 +334,7 @@ int FmrbEditor::run(char* input_script){
               break;
             case 0x04: // Ctrl-d
               EDT_DEBUG("Ctrl-d\n");
+              delete_line();
               break;
             case 0x1B: // ESC
               escape = 1;
@@ -567,8 +576,11 @@ void FmrbEditor::move_edit_cursor(int dir)
         }
       }else if(m_y < m_disp_height ){
         m_y = m_y + 1;
-        if( m_x > m_lineno_shift + line->next->length + 1 ){
-          m_x = m_lineno_shift + line->next->length + 1;
+        if(m_disp_head_line+m_y-1 > m_total_line) m_y -= 1;
+        if(line->next){
+          if( m_x > m_lineno_shift + line->next->length + 1 ){
+            m_x = m_lineno_shift + line->next->length + 1;
+          }
         }
         move_cursor(m_x, m_y);
       }
@@ -642,7 +654,8 @@ void FmrbEditor::draw_line(int disp_y,EditLine* line)
 {
   move(1,disp_y);
   m_term->write("\e[2K"); // delete line
-  m_term->printf("\e[34m%04d: \e[0m",line->lineno);
+  if(!line) return;
+  m_term->printf("\e[34m%04d: \e[0m",line->lineno);// line number
 
   if(m_line_lexer_p){
     m_line_lexer_p->set_line(line->text);
@@ -667,19 +680,15 @@ void FmrbEditor::update()
 {
   EditLine* line = seek_line(m_disp_head_line);
   int cnt=1;
-  while(NULL != line){
+  for(int cnt=1; cnt<=m_disp_height; cnt++){
     draw_line(cnt,line);
-
-    if(m_y == cnt){
-      if( m_x >= line->length ){
-        move(line->length, m_y);
+    if(line){
+      if(m_y == cnt){
+        if( m_x >= line->length ){
+          move(line->length, m_y);
+        }
       }
-    }
-    line = line->next;
-    cnt++;
-    if(cnt > m_disp_height)
-    {
-      break;
+      line = line->next;
     }
   }
 
@@ -792,7 +801,35 @@ void FmrbEditor::page_down()
   print_csr_info();
 }
 
+void FmrbEditor::delete_line()
+{
+  EditLine* line = seek_line(m_disp_head_line+m_y-1);
+  print_csr_info();
+  printf("line:%p\n",line);
 
+  if(NULL==line)return;
+  if(m_total_line>1){
+    EditLine* prev = line->prev;
+    EditLine* next = line->next;
+    prev->next = next;
+    if(next){
+      next->prev = prev;
+    }
+    delete line;
+    m_total_line -= 1;
+    if(!next){
+      m_y = m_y - 1;
+      if(m_y<1) m_y = 1;
+      move_cursor(m_x, m_y);
+    }
+    update_lineno();
+  }else{
+    line->clear();
+    m_x = m_lineno_shift;
+    move_cursor(m_x, m_y);
+  }
+  update();
+}
 
 
 char* FmrbEditor::dump_script(void)

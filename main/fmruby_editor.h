@@ -46,6 +46,8 @@ struct EditLine {
   int insert(uint16_t pos,char c);
   int backdelete(uint16_t pos);
   char* cut(uint16_t start_pos, uint16_t end_pos);
+  void clear(void);
+
 private:
 
 };
@@ -103,6 +105,7 @@ private:
   void delete_ch();
   void page_up();
   void page_down();
+  void delete_line();
 
   void print_csr_info(void);
 };
