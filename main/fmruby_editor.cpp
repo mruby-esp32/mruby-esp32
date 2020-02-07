@@ -436,12 +436,12 @@ int FmrbEditor::run(char* input_script){
             escape=0;
           }else if(escape_c[1]==0x35){
             if(c==0x7E){ // ESC[5~ : PageUp
-
+              page_up();
             }
             escape=0;
           }else if(escape_c[1]==0x36){
             if(c==0x7E){ // ESC[6~ : PageUp
-
+              page_down();
             }
             escape=0;
           }else{
@@ -469,10 +469,6 @@ int FmrbEditor::run(char* input_script){
       }
     }
   }
-}
-
-void FmrbEditor::finalize(void){
-
 }
 
 EditLine* FmrbEditor::load_line(const char* in)
@@ -774,6 +770,28 @@ void FmrbEditor::delete_ch()
     move(m_x,m_y);
   }
 }
+
+void FmrbEditor::page_up()
+{
+  m_disp_head_line -= m_disp_height;
+  if(m_disp_head_line < 1 ){
+    m_disp_head_line = 1;
+  }
+  update();
+  print_csr_info();
+}
+
+void FmrbEditor::page_down()
+{
+  m_disp_head_line += m_disp_height;
+  if(m_disp_head_line + m_disp_height >= m_total_line){
+    m_disp_head_line = m_total_line - m_disp_height;
+    if(m_disp_head_line<1)m_disp_head_line = 1;
+  }
+  update();
+  print_csr_info();
+}
+
 
 
 

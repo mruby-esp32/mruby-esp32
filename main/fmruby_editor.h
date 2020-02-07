@@ -101,8 +101,9 @@ private:
   void insert_ch(char c);
   void insert_ret();
   void delete_ch();
+  void page_up();
+  void page_down();
 
-  void finalize(void);
   void print_csr_info(void);
 };
 
