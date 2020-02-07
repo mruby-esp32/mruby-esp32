@@ -86,13 +86,20 @@ end
 world_map = WalkMap.new
 
 def get_key
-  return 0 unless Input::available
+  #return 0 unless Input::available
   k = 0
-  k = 1  if Input::keydown?(Key::K_UP)
-  k = 2  if Input::keydown?(Key::K_DOWN)
-  k = 3  if Input::keydown?(Key::K_LEFT)
-  k = 4  if Input::keydown?(Key::K_RIGHT)
-  k = -1 if Input::keydown?(Key::K_ESCAPE)
+  #k = 1  if Input::keydown?(Key::K_UP)
+  #k = 2  if Input::keydown?(Key::K_DOWN)
+  #k = 3  if Input::keydown?(Key::K_LEFT)
+  #k = 4  if Input::keydown?(Key::K_RIGHT)
+  #k = -1 if Input::keydown?(Key::K_ESCAPE)
+
+  k = 1  if Input::paddown?(Pad::UP)
+  k = 2  if Input::paddown?(Pad::DOWN)
+  k = 3  if Input::paddown?(Pad::LEFT)
+  k = 4  if Input::paddown?(Pad::RIGHT)
+  k = -1 if Input::paddown?(Pad::SELECT)
+
   return k
 end
 
@@ -114,5 +121,6 @@ loop do
   break if k<0
   ESP32::System::delay 10
 end
+puts "End of demo"
 
 )";

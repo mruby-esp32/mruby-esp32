@@ -12,8 +12,14 @@
 #include "fmruby_app.h"
 
 
-FmrbMrubyEngine::FmrbMrubyEngine(){
-
+FmrbMrubyEngine::FmrbMrubyEngine()
+{
+  m_joypad_map = (uint8_t*)fmrb_spi_malloc(FMRB_JOYPAD_MAP_LENGTH);
+  memset(m_joypad_map,0,FMRB_JOYPAD_MAP_LENGTH);
+}
+FmrbMrubyEngine::~FmrbMrubyEngine()
+{
+  fmrb_free( m_joypad_map );
 }
 
 void* FmrbMrubyEngine::mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
@@ -63,9 +69,66 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
 
 }
 
+TaskHandle_t uartTaskHandle = NULL;
+void uartTask(void *pvParameters)
+{
+  uint8_t *map = (uint8_t*)pvParameters;
+  FMRB_DEBUG(FMRB_LOG::INFO,"start uartTask\n");
+  memset(map,0,FMRB_JOYPAD_MAP_LENGTH);
+  
+  while(true){
+    while(Serial2.available() > 0){
+      uint8_t inChar = Serial2.read();
+      //FMRB_DEBUG(FMRB_LOG::DEBUG,"%02X\n",inChar);
+      if(inChar==0xFF){
+        memset(map,0,FMRB_JOYPAD_MAP_LENGTH);
+      }else{
+        switch(inChar&0x7F){
+          case (int)FMRB_JPAD_KEY::A : map[(int)FMRB_JPAD_KEY::A] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::B : map[(int)FMRB_JPAD_KEY::B] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::X : map[(int)FMRB_JPAD_KEY::X] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::Y : map[(int)FMRB_JPAD_KEY::Y] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::L : map[(int)FMRB_JPAD_KEY::L] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::R : map[(int)FMRB_JPAD_KEY::R] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::START  : map[(int)FMRB_JPAD_KEY::START] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::SELECT : map[(int)FMRB_JPAD_KEY::SELECT] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::UP     : map[(int)FMRB_JPAD_KEY::UP] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::DOWN   : map[(int)FMRB_JPAD_KEY::DOWN] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::LEFT   : map[(int)FMRB_JPAD_KEY::LEFT] = inChar&0x80 ? 0 : 1; break;
+          case (int)FMRB_JPAD_KEY::RIGHT  : map[(int)FMRB_JPAD_KEY::RIGHT] = inChar&0x80 ? 0 : 1; break;
+          default: break;
+        }
+      }
+    }
+    vTaskDelay(fabgl::msToTicks(15));
+  }
+}
+
+uint8_t *FmrbMrubyEngine::get_joypad_map()
+{
+  return m_joypad_map;
+}
+
+void FmrbMrubyEngine::prepare_env()
+{
+  //create a task for UART input
+  xTaskCreateUniversal(uartTask, "uartTask", FMRB_UART_TASK_STACK_SIZE, m_joypad_map, FMRB_UART_TASK_PRIORITY, &uartTaskHandle, CONFIG_ARDUINO_RUNNING_CORE);
+  //create sound module
+}
+void FmrbMrubyEngine::cleanup_env()
+{
+  if(uartTaskHandle){
+    FMRB_DEBUG(FMRB_LOG::INFO,"delete uartTask\n");
+    vTaskDelete(uartTaskHandle);
+    uartTaskHandle=NULL;
+  }
+  //remove sound module
+}
+
 void FmrbMrubyEngine::run(char* code_string)
 {
   FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby script>\n\n");
+  prepare_env();
 
   m_exec_result = 0;
   if(m_error_msg) fmrb_free(m_error_msg);
@@ -97,6 +160,7 @@ void FmrbMrubyEngine::run(char* code_string)
   mrb_close(mrb);
 
   FMRB_DEBUG(FMRB_LOG::DEBUG,"End of mruby engine\n");
+  cleanup_env();
   return;
 }
 

@@ -295,7 +295,7 @@ int FmrbEditor::run(char* input_script){
     if (m_term->available())
     {
       char c = m_term->read();
-      //printf("> %02x\n",c);
+      printf("> %02x\n",c);
 
       if(!escape)
       {
@@ -360,6 +360,8 @@ int FmrbEditor::run(char* input_script){
               case 0x31:  // ESC[1 : ...
               case 0x32:  // ESC[2 : ...
               case 0x33:  // ESC[3 : ...
+              case 0x35:  // ESC[5 : ...
+              case 0x36:  // ESC[6 : ...
                 escape_c[1] = c;
                 escape = 3;
                 break;
@@ -430,6 +432,16 @@ int FmrbEditor::run(char* input_script){
             if(c==0x7E){ // ESC[3~ : DEL
               EDT_DEBUG("DEL\n");
               delete_ch();
+            }
+            escape=0;
+          }else if(escape_c[1]==0x35){
+            if(c==0x7E){ // ESC[5~ : PageUp
+
+            }
+            escape=0;
+          }else if(escape_c[1]==0x36){
+            if(c==0x7E){ // ESC[6~ : PageUp
+
             }
             escape=0;
           }else{
@@ -689,6 +701,9 @@ void FmrbEditor::update()
   m_term->write("\e[30m\e[46m  DEMO  \e[0m");
   move(51,bottom);
   m_term->write("\e[30m\e[46m  DEMO2 \e[0m");
+  move(61,bottom);
+  size_t ramsize = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+  m_term->printf("%d",ramsize);
 
   move(m_x,m_y);
 

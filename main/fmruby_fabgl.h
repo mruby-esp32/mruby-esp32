@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fabgl.h"
+#include "fabutils.h"
 #include "fmruby_app.h"
 
 void fabgl_init(void);

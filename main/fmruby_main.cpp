@@ -12,6 +12,7 @@
 //#define TEST_AUDIO
 //#define TEST_SD
 //#define TEST_SPIFFS
+//#define TEST_UART
 
 #include "fmruby.h"
 #include "fmruby_fabgl.h"
@@ -34,10 +35,13 @@ void fmrb_free(void* ptr){
 
 void fmrb_dump_mem_stat(){
 
-  FMRB_DEBUG(FMRB_LOG::INFO,"-- mem dump ------------------------\n");
-  FMRB_DEBUG(FMRB_LOG::INFO,"| Free size(DMA)     = %d\n",heap_caps_get_free_size(MALLOC_CAP_DMA));
-  FMRB_DEBUG(FMRB_LOG::INFO,"| Free size(32bit)   = %d\n",heap_caps_get_free_size(MALLOC_CAP_32BIT));
-  FMRB_DEBUG(FMRB_LOG::INFO,"| Max free size(DMA) = %d\n",heap_caps_get_largest_free_block(MALLOC_CAP_DMA));
+  FMRB_DEBUG(FMRB_LOG::INFO," -- mem dump ------------------------\n");
+  FMRB_DEBUG(FMRB_LOG::INFO," | Free size(DMA)     = %d\n",heap_caps_get_free_size(MALLOC_CAP_DMA));
+  FMRB_DEBUG(FMRB_LOG::INFO," | Max free size(DMA) = %d\n",heap_caps_get_largest_free_block(MALLOC_CAP_DMA));
+  FMRB_DEBUG(FMRB_LOG::INFO," | Free size(32bit)   = %d\n",heap_caps_get_free_size(MALLOC_CAP_32BIT));
+  FMRB_DEBUG(FMRB_LOG::INFO," | Free size(SPI)     = %d\n",heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+  FMRB_DEBUG(FMRB_LOG::INFO," | Free size(INTERNAL)= %d\n",heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  FMRB_DEBUG(FMRB_LOG::INFO," ------------------------------------\n");
   //heap_caps_print_heap_info(MALLOC_CAP_DMA);
 }
 
@@ -200,6 +204,30 @@ static void test_spiffs(){
 }
 #endif
 
+#ifdef TEST_UART
+static void uart_test()
+{
+  //rx,tx
+  printf("UART test\n");
+  Serial2.begin(9600,SERIAL_8N1,34,26,false,20000UL);
+  vTaskDelay(300);
+
+  while(true){
+    bool update = false;
+    while(Serial2.available() > 0){
+      uint8_t inChar = Serial2.read();
+      printf("%02X ",inChar);
+      update = true;
+    }
+    if(update){
+      printf("\n");
+    }
+    //Serial2.write("Test\n");
+  }
+}
+#endif
+
+
 #ifdef RUN_MAIN
 void setup(){
 #ifndef TEST_SD
@@ -212,6 +240,9 @@ void setup(){
   gpio_pullup_en(GPIO_NUM_12); //=> 12 must be low during BOOT
   //hspi.begin(14,12,13,15); 
 #endif
+
+  //for Grove UART
+  Serial2.begin(9600,SERIAL_8N1,GPIO_NUM_34,GPIO_NUM_26,false,20000UL);
 
   nvs_flash_init();
   FMRB_DEBUG(FMRB_LOG::INFO,"nvs_flash_init() done\n");
@@ -251,6 +282,10 @@ void mainTask(void *pvParameters)
   fmrb_dump_mem_stat();
   setup();
 
+#ifdef TEST_UART
+  uart_test2();
+#endif
+
 #ifdef TEST_AUDIO
   sound_test();
 #endif
@@ -266,6 +301,7 @@ void mainTask(void *pvParameters)
   printf("MALLOC_CAP_SPIRAM:%p\n",buff);
   free(buff);
 #endif
+
   try{
     SystemApp.init();
     SystemApp.run();

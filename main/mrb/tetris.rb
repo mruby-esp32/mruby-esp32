@@ -331,14 +331,26 @@ double_buffer = true
 #BG
 Display.clear
 Display.draw_picture(0,0,"/sample/moscow_320_200.img")
-if double_bufferX
+if double_buffer
  Display::swap
  Display.draw_picture(0,0,"/sample/moscow_320_200.img")
  Display::swap
 end
 
+
+def get_pad_key
+  k = Key::K_NONE
+  k = Key::K_DOWN  if Input::paddown?(Pad::DOWN)
+  k = Key::K_LEFT  if Input::paddown?(Pad::LEFT)
+  k = Key::K_RIGHT  if Input::paddown?(Pad::RIGHT)
+  k = Key::K_SPACE  if Input::paddown?(Pad::A)
+  k = Key::K_ESCAPE if Input::paddown?(Pad::SELECT)
+  return k
+end
+
 loop do
-  k = Input::get_key
+  #k = Input::get_key
+  k = get_pad_key
   break if k == Key::K_ESCAPE
   #puts "A--#{ESP32::System::tick_ms}--"
   if double_buffer

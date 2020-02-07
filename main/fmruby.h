@@ -5,7 +5,11 @@
 #define FMRB_VERSION "0.6.0"
 #define FMRB_RELEASE "2020/02/15"
 
-#define FMRB_MAIN_TASK_STACK_SIZE (8192*2)
+#define FMRB_MAIN_TASK_PRIORITY 1
+#define FMRB_UART_TASK_PRIORITY 2
+
+#define FMRB_MAIN_TASK_STACK_SIZE (1024*16)
+#define FMRB_UART_TASK_STACK_SIZE (1024*2)
 
 void* fmrb_spi_malloc(size_t size);
 void* fmrb_spi_realloc(void* ptr, size_t size);
@@ -17,8 +21,6 @@ void fmrb_free(void* ptr);
     if(ptr == nullptr) { throw std::bad_alloc(); }\
     return ptr; }\
   void operator delete(void* ptr){ fmrb_free(ptr); }
-
-
 
 #define FMRB_BITMAP_HEADER_SIZE (4)
 

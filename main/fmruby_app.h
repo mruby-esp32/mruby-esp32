@@ -108,18 +108,30 @@ private:
 /**
  * mruby engine
  **/
+#define FMRB_JOYPAD_MAP_LENGTH (13)
+enum class FMRB_JPAD_KEY{
+  NONE=0,A,B,X,Y,L,R,START,SELECT,
+  UP,DOWN,LEFT,RIGHT,
+};
 
 class FmrbMrubyEngine {
 public:
   FmrbMrubyEngine();
+  ~FmrbMrubyEngine();
   void run(char* code_string);
+  uint8_t *get_joypad_map();
+
 private:
   static constexpr int DBG_MSG_MAX_LEN = 128;
   int m_exec_result;
   char* m_error_msg;
   int m_error_line;
+  uint8_t *m_joypad_map;
+
   static void* mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud);
   void check_backtrace(mrb_state *mrb);
+  void prepare_env();
+  void cleanup_env();
 };
 
 /**
@@ -139,6 +151,7 @@ public:
   FmrbSystemApp();
   void init();
   FMRB_RCODE run();
+  FmrbMrubyEngine *mruby_engign();
 
 private:
   FmrbConfig *m_config;

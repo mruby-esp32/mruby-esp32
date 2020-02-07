@@ -317,6 +317,11 @@ FMRB_RCODE FmrbSystemApp::run()
   return FMRB_RCODE::OK;
 }
 
+FmrbMrubyEngine *FmrbSystemApp::mruby_engign()
+{
+  return &m_mruby_engine;
+}
+
 
 /**
  * FmrbMenuItem
