@@ -349,8 +349,8 @@ def get_pad_key
 end
 
 loop do
-  #k = Input::get_key
-  k = get_pad_key
+  k = Input::get_key
+  #k = get_pad_key
   break if k == Key::K_ESCAPE
   #puts "A--#{ESP32::System::tick_ms}--"
   if double_buffer

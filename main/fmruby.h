@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fabgl.h"
+#include "fmruby_virtual_key.h"
 
 #define FMRB_VERSION "0.6.0"
 #define FMRB_RELEASE "2020/02/15"
@@ -42,6 +43,7 @@ enum class FMRB_RCODE{
   OK_DONE,
 };
 
+
 class FmrbTerminalInput{
 public:
   FmrbTerminalInput(fabgl::Terminal *t);
@@ -49,8 +51,13 @@ public:
   fabgl::Terminal *m_terminal;
 
   OVERLOAD_SPI_ALLOCATOR
-  VirtualKey read_vkey();
-  void wait_vkey(VirtualKey k);
+  FmrbVkey read_vkey();
+  void wait_vkey(FmrbVkey k);
+  void wait_vkey(FmrbVkey target,int timeout);
+
+  static bool is_visible(FmrbVkey k);
+  static char to_ascii(FmrbVkey k);
+
 };
 
 void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line,...);

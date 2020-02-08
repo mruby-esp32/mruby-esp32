@@ -166,7 +166,8 @@ void EditLine::clear(void)
  * FmrbEditor
  *   An editor for mruby code
  ***********************************/
-FmrbEditor::FmrbEditor():
+FmrbEditor::FmrbEditor(fabgl::Terminal* terminal):
+  FmrbTerminalInput(terminal),
   m_buff_head(nullptr),
   m_height(0),
   m_disp_height(0),
@@ -178,7 +179,7 @@ FmrbEditor::FmrbEditor():
   m_disp_head_line(1),
   m_total_line(0),
   m_line_lexer_p(nullptr),
-  m_term(nullptr),
+  m_term(terminal),
   m_error(EDIT_STATUS::EDIT_NO_ERROR)
 {
 
@@ -187,40 +188,27 @@ FmrbEditor::~FmrbEditor(){
 
 }
 
-int FmrbEditor::begin(fabgl::Terminal* terminal)
+FMRB_RCODE FmrbEditor::begin()
 {
-  m_term = terminal;
   m_line_lexer_p = nullptr;
 #if 0
   m_line_lexer_p = (FmrbSimpleLineLexer*)fmrb_spi_malloc(sizeof(FmrbSimpleLineLexer));
   if(m_line_lexer_p) m_line_lexer_p->init();
 #endif
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
-int FmrbEditor::release()
+FMRB_RCODE FmrbEditor::release()
 {
   if(m_line_lexer_p) fmrb_free( m_line_lexer_p );
   clear_buffer();
   m_buff_head = nullptr;
-  return 0;
+  return FMRB_RCODE::OK;
 }
 
-void FmrbEditor::wait_key(char target){
-  while(true)
-  {
-    if (m_term->available())
-    {
-      char c = m_term->read();
-      if(c == target){
-        return;
-      }
-    }
-  }
-}
 
-int FmrbEditor::run(char* input_script){
-  if(!m_term) return -1;
+FMRB_RCODE FmrbEditor::run(char* input_script){
+  if(!m_term) return FMRB_RCODE::ERROR;
   m_height = m_term->getRows();
   m_width  = m_term->getColumns();
   m_disp_height = m_height - 1;
@@ -242,242 +230,72 @@ int FmrbEditor::run(char* input_script){
 
   update();
 
-#if 0  
-  auto keyboard = m_term->keyboard();
   while(true){
-    if(keyboard->virtualKeyAvailable()<=0) continue;
-    VirtualKey vkey = keyboard->getNextVirtualKey();
-    int key = keyboard->virtualKeyToASCII(vkey);
-    if(key>=0x20 && key<=0x7E){
-      insert_ch(key);
+    FmrbVkey vkey = read_vkey();
+    if(FmrbTerminalInput::is_visible(vkey)){
+      int akey = FmrbTerminalInput::to_ascii(vkey);
+      printf("V> %d\n",(int)vkey);
+      printf("A> 0x%02x\n",(int)akey);
+      insert_ch(akey);
     }else{
-      printf("> %02x\n",key);
+      printf("V> %d\n",(int)vkey);
       switch(vkey){
-        case VirtualKey::VK_RETURN:
-        case VirtualKey::VK_KP_ENTER:
+        case FmrbVkey::VK_RETURN:
+        case FmrbVkey::VK_KP_ENTER:
           insert_ret();
         break;
-        case VirtualKey::VK_DELETE:
-        case VirtualKey::VK_BACKSPACE:
+        case FmrbVkey::VK_DELETE:
+        case FmrbVkey::VK_BACKSPACE:
           delete_ch();
         break;
+        case FmrbVkey::VK_CTRL_D:
+          delete_line();
+        break;
 
-        case VirtualKey::VK_UP:
+        case FmrbVkey::VK_UP:
           move_edit_cursor(0x41);
         break;
-        case VirtualKey::VK_DOWN:
+        case FmrbVkey::VK_DOWN:
           move_edit_cursor(0x42);
         break;
-        case VirtualKey::VK_RIGHT:
+        case FmrbVkey::VK_RIGHT:
           move_edit_cursor(0x43);
         break;
-        case VirtualKey::VK_LEFT:
+        case FmrbVkey::VK_LEFT:
           move_edit_cursor(0x44);
         break;
 
-        case VirtualKey::VK_F1:
+        case FmrbVkey::VK_KP_PAGEUP:
+          page_up();
         break;
-        case VirtualKey::VK_F2:
+        case FmrbVkey::VK_KP_PAGEDOWN:
+          page_down();
+        break;
+
+        case FmrbVkey::VK_F1:
+        break;
+        case FmrbVkey::VK_F2:
           save_file();
         break;
-        case VirtualKey::VK_F3:
+        case FmrbVkey::VK_F3:
           load_file();
         break;
-        case VirtualKey::VK_F4:
-          return 0;
+        case FmrbVkey::VK_F4:
+          return FMRB_RCODE::OK;
         break;
-        case VirtualKey::VK_F5:
-          load_demo_file();
+        case FmrbVkey::VK_F5:
+          load_demo_file(0);
         break;
+        case FmrbVkey::VK_F6:
+          load_demo_file(1);
+        break;
+
         default:
         break;
       }
     }
   }
-  return;
-#endif
-  int escape = 0;
-  char escape_c[4] = {0};
-  while(true)
-  {
-    if (m_term->available())
-    {
-      char c = m_term->read();
-      //printf("> %02x\n",c);
-
-      if(!escape)
-      {
-        if(c>=0x20 && c<=0x7E){
-          //Visible character
-          insert_ch(c);
-        }else{
-          switch(c){
-            case 0x7F: // BS
-              EDT_DEBUG("BS\n");
-              delete_ch();
-              break;
-            case 0x0D: // CR
-              EDT_DEBUG("RETURN\n");
-              insert_ret();
-              break;
-            case 0x1A: // Ctrl-z
-              EDT_DEBUG("Ctrl-z\n");
-              break;
-            case 0x18: // Ctrl-x
-              EDT_DEBUG("Ctrl-x\n");
-              break;
-            case 0x16: // Ctrl-v
-              EDT_DEBUG("Ctrl-v\n");
-              break;
-            case 0x03: // Ctrl-c
-              EDT_DEBUG("Ctrl-c\n");
-              break;
-            case 0x04: // Ctrl-d
-              EDT_DEBUG("Ctrl-d\n");
-              delete_line();
-              break;
-            case 0x1B: // ESC
-              escape = 1;
-              break;
-          }
-        }
-
-      }else{ // Escape
-
-        if(escape==1){
-          switch(c){
-            case 0x5B: // '[' : Cursor/ 
-            case 0x4F: // 'O' : Function key
-              escape_c[0] = c;
-              escape=2;
-              break;
-            default:
-              escape=0;
-              break;
-          }
-        }else if(escape==2){
-          if(escape_c[0]==0x5B){
-            switch(c){
-              case 0x41:  // ESC[A : UP
-              case 0x42:  // ESC[B : DOWN
-              case 0x43:  // ESC[C : RIGHT
-              case 0x44:  // ESC[D : LEFT
-                move_edit_cursor(c);
-                print_csr_info();
-                escape = 0;
-                break;
-              case 0x31:  // ESC[1 : ...
-              case 0x32:  // ESC[2 : ...
-              case 0x33:  // ESC[3 : ...
-              case 0x35:  // ESC[5 : ...
-              case 0x36:  // ESC[6 : ...
-                escape_c[1] = c;
-                escape = 3;
-                break;
-              default:
-                escape = 0;
-              break;
-            }
-          }else if(escape_c[0]==0x4F){
-            switch(c){
-              case 0x50: // ESC OP : F1
-                FMRB_DEBUG(FMRB_LOG::DEBUG,"F1\n");
-                break;
-              case 0x51: // ESC OP : F2
-                FMRB_DEBUG(FMRB_LOG::DEBUG,"F2\n");
-                save_file();
-                break;
-              case 0x52: // ESC OP : F3
-                FMRB_DEBUG(FMRB_LOG::DEBUG,"F3\n");
-                load_file();
-                break;
-              case 0x53: // ESC OP : F4
-                EDT_DEBUG("F4\n");
-                return 0;
-                break;
-            }
-            escape = 0;
-          }else{
-            escape = 0;
-          }
-        }else if(escape==3){
-          if(escape_c[1]==0x31){
-            switch(c){
-              case 0x35: // ESC[15 : ..  F5
-                m_term->read();
-                EDT_DEBUG("F5\n");
-                load_demo_file(0);
-                escape = 0;
-                break;
-              case 0x37: // ESC[17 : ..  F6
-                m_term->read();
-                EDT_DEBUG("F6\n");
-                load_demo_file(1);
-                escape = 0;
-                break;
-              case 0x38: // ESC[18 : ..  F7
-              case 0x39: // ESC[19 : ..  F8
-                escape_c[2] = c;
-                escape = 4;
-                break;
-              default:
-                escape = 0;
-                break;
-            }
-          }else if(escape_c[1]==0x32){
-            switch(c){
-              case 0x30: // ESC[20 : ..  F9
-              case 0x31: // ESC[21 : ..  F10
-              case 0x33: // ESC[23 : ..  F11
-              case 0x34: // ESC[24 : ..  F12
-                escape_c[2] = c;
-                escape = 4;
-                break;
-              default:
-                escape = 0;
-                break;
-            }
-          }else if(escape_c[1]==0x33){
-            if(c==0x7E){ // ESC[3~ : DEL
-              EDT_DEBUG("DEL\n");
-              delete_ch();
-            }
-            escape=0;
-          }else if(escape_c[1]==0x35){
-            if(c==0x7E){ // ESC[5~ : PageUp
-              page_up();
-            }
-            escape=0;
-          }else if(escape_c[1]==0x36){
-            if(c==0x7E){ // ESC[6~ : PageUp
-              page_down();
-            }
-            escape=0;
-          }else{
-            escape=0;
-          }
-        }else if(escape==4){
-          switch(c){
-            case 0x7E: //  ESC[1*~ : FN
-              EDT_DEBUG("FN\n");
-              break;
-            default:
-              break;
-          }
-          escape=0;
-        }else{ //escape > 4
-          escape=0;
-        }
-
-        if(escape==0){
-          escape_c[0] = 0;
-          escape_c[1] = 0;
-          escape_c[2] = 0;
-          escape_c[3] = 0;
-        }
-      }
-    }
-  }
+  return FMRB_RCODE::ERROR;
 }
 
 EditLine* FmrbEditor::load_line(const char* in)
@@ -679,7 +497,6 @@ void FmrbEditor::draw_line(int disp_y,EditLine* line)
 void FmrbEditor::update()
 {
   EditLine* line = seek_line(m_disp_head_line);
-  int cnt=1;
   for(int cnt=1; cnt<=m_disp_height; cnt++){
     draw_line(cnt,line);
     if(line){

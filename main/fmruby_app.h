@@ -109,7 +109,7 @@ public:
   static FmrbMenuItem* retrieve_item(FmrbMenuItem* head_item,int line);
 };
 
-class FmrbMenuModule {
+class FmrbMenuModule : public FmrbTerminalInput {
 public:
   fabgl::Canvas* m_canvas;
   fabgl::Terminal* m_terminal;

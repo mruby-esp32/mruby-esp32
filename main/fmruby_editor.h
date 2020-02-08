@@ -57,14 +57,14 @@ enum EDIT_STATUS{
   EDIT_MEM_ERROR
 };
 
-class FmrbEditor {
+class FmrbEditor : public FmrbTerminalInput {
 public:
   OVERLOAD_SPI_ALLOCATOR
-  FmrbEditor();
+  FmrbEditor(fabgl::Terminal* terminal);
   ~FmrbEditor();
-  int begin(fabgl::Terminal* terminal);
-  int run(char* input_script);
-  int release(void);
+  FMRB_RCODE begin();
+  FMRB_RCODE run(char* input_script);
+  FMRB_RCODE release(void);
   char* dump_script(void);
 
 private:

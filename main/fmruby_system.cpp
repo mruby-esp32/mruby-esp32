@@ -9,14 +9,17 @@ FmrbSystemApp::FmrbSystemApp()
 {
   m_state = FMRB_SYS_STATE::INIT;
   m_terminal_available = false;
-  m_editor = new FmrbEditor();
+  m_editor = nullptr;
+  m_main_menu = nullptr;
 }
 
 void FmrbSystemApp::init(){
   FMRB_storage.init();
   m_config = new FmrbConfig(&FMRB_storage);
+  //load config
   strncpy(m_config->main_mode_line,VGA_640x350_70HzAlt1,256);
   strncpy(m_config->mruby_mode_line,VGA_320x200_75Hz,256);
+
 }
 
 FMRB_RCODE FmrbSystemApp::init_terminal(void)
@@ -52,29 +55,6 @@ FMRB_RCODE FmrbSystemApp::close_terminal(void)
     return FMRB_RCODE::ERROR;
   }
   return FMRB_RCODE::OK;
-}
-
-void FmrbSystemApp::wait_key(char target,int timeout)
-{
-  if(!m_terminal_available) return;
-  
-  uint32_t start_time = xTaskGetTickCount()*portTICK_RATE_MS;
-
-  while(true)
-  {
-    uint32_t current_time = xTaskGetTickCount()*portTICK_RATE_MS;
-    if(timeout>0 && current_time > start_time + timeout){
-      return;
-    }
-    if (m_terminal.available())
-    {
-      char c = m_terminal.read();
-      if(c == target){
-        return;
-      }
-    }
-    vTaskDelay(10);
-  }
 }
 
 FMRB_RCODE FmrbSystemApp::print_system_info()
@@ -120,7 +100,7 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data,int mode){
       p++;
     }
   }
-  vTaskDelay(fabgl::msToTicks(34));
+  vTaskDelay(fabgl::msToTicks(34));//wait for 1 frame
 }
 
 FMRB_RCODE FmrbSystemApp::show_splash(){
@@ -176,7 +156,6 @@ FMRB_RCODE message_callback(uint32_t fid,FmrbMenuModule* menu)
 {
   FmrbDialog* dialog = new FmrbDialog(menu->m_canvas,menu->m_terminal);
   dialog->open_message_dialog("Not supported.",0);
-  vTaskDelay(1000);
   delete dialog;
   return FMRB_RCODE::OK;
 }
@@ -229,17 +208,17 @@ FMRB_RCODE FmrbSystemApp::run_main_menu(){
 FMRB_RCODE FmrbSystemApp::run_editor(){
     m_terminal.enableCursor(true);
 
-    m_editor->begin(&m_terminal);
+    m_editor->begin();
     fmrb_dump_mem_stat();
-    int err = m_editor->run(m_script);
+    FMRB_RCODE err = m_editor->run(m_script);
 
     m_terminal.enableCursor(false);
     m_script = NULL;
-    if(err >= 0){
+    if(err == FMRB_RCODE::OK){
       m_script = m_editor->dump_script();
     }
     m_editor->release();
-  return FMRB_RCODE::OK;
+  return err;
 }
 
 FMRB_RCODE FmrbSystemApp::run_mruby(){
@@ -281,13 +260,14 @@ FMRB_RCODE FmrbSystemApp::run()
     switch(m_state){
       case FMRB_SYS_STATE::INIT:
       {
-        //load config
         init_terminal();
         m_script = NULL;
-        m_main_menu = new FmrbMenuModule(&FMRB_canvas,&m_terminal,prepare_top_menu());
+        if(!m_editor) m_editor = new FmrbEditor(&m_terminal);
+        if(!m_main_menu) m_main_menu = new FmrbMenuModule(&FMRB_canvas,&m_terminal,prepare_top_menu());
+
         if(!skip_splash){
           show_splash();
-          wait_key(0x0D,3000);
+          m_main_menu->wait_vkey(FmrbVkey::VK_RETURN,3000);
           clear_splash();
         }
         //check_keyboard();PS2Controller.keyboard()->isKeyboardAvailable()
@@ -308,8 +288,13 @@ FMRB_RCODE FmrbSystemApp::run()
         if(!m_terminal_available){
           init_terminal();
         }
-        run_editor();
-        m_state = FMRB_SYS_STATE::EXEC_FROM_EDIT;
+        FMRB_RCODE err = run_editor();
+        if(err==FMRB_RCODE::OK)
+        {
+          m_state = FMRB_SYS_STATE::EXEC_FROM_EDIT;
+        }else{
+          FMRB_DEBUG(FMRB_LOG::ERR,"Editor error!\n");
+        }
         break;
       }
       case FMRB_SYS_STATE::EXEC_FROM_EDIT:
@@ -409,6 +394,7 @@ FmrbMenuItem* FmrbMenuItem::retrieve_item(FmrbMenuItem* head_item,int line){
  *****/
 
 FmrbMenuModule::FmrbMenuModule(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem* item):
+FmrbTerminalInput(terminal),
 m_canvas(canvas),
 m_terminal(terminal),
 m_top(item),
@@ -421,50 +407,6 @@ m_param(nullptr)
 
 FmrbMenuModule::~FmrbMenuModule(){
   delete (m_top);
-}
-
-
-static char get_cursor_dir(fabgl::Terminal *term){
-  int escape = 0;
-  char escape_c[4] = {0};
-  while(true)
-  {
-    if (term->available())
-    {
-      char c = term->read();
-      //printf("> %02x\n",c);
-      if(!escape)
-      {
-        if(c == 0x0D){
-          return 1;
-        }else if(c == 0x1B){ //ESC
-          escape = 1;
-        }
-      }else if(escape==1){ //[
-        if(c==0x5B){
-          escape = 2;
-        }else{
-          escape = 0;
-        }
-      }else if(escape==2){
-        switch(c){
-          case 0x41:  // ESC[A : UP
-          return 2;
-          case 0x42:  // ESC[B : DOWN
-          return 3;
-          case 0x43:  // ESC[C : RIGHT
-          return 4;
-          case 0x44:  // ESC[D : LEFT
-          return 5;
-          default:
-          escape = 0;
-        }
-      }else{
-        escape = 0;
-      }
-    }
-  }
-
 }
 
 void FmrbMenuModule::begin(uint32_t *param){
@@ -492,7 +434,10 @@ void FmrbMenuModule::clear_draw_area(void){
   m_canvas->clear();
   uint32_t fsize=0;
   uint8_t* img_data = (uint8_t*)FMRB_storage.load("/assets/2bit_logo.img",fsize,false,false);
-  if(img_data) draw_img(400,50,img_data,0);
+  if(img_data){
+    draw_img(400,50,img_data,0);
+    fmrb_free(img_data);
+  }
 }
 
 void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
@@ -510,10 +455,9 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
   //bool selected = false;
   bool cancelled = false;
   while(!cancelled){
-    int c = get_cursor_dir(m_terminal);
-    if(c>0){
-      switch(c){
-        case 1: //RETURN
+    FmrbVkey k = read_vkey();
+    switch(k){
+        case FmrbVkey::VK_RETURN: //RETURN
         {
           FMRB_DEBUG(FMRB_LOG::DEBUG,"Menu:Select(%d)\n",pos);
           FmrbMenuItem* item = FmrbMenuItem::retrieve_item(head_item,pos);
@@ -542,7 +486,7 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
           break;
         }
 
-        case 2: //UP
+        case FmrbVkey::VK_UP: //UP
         {
           if(pos<=pos_min){
             break;
@@ -553,7 +497,7 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
           break;
         }
 
-        case 3: //DOWN
+        case FmrbVkey::VK_DOWN: //DOWN
         {
           if(pos>=pos_max-1){
             break;
@@ -563,11 +507,11 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
           draw_item(head_item,pos,true);
           break;
         }
-        case 4: //RIGHT
+        case FmrbVkey::VK_RIGHT: //RIGHT
         {
           break; 
         }
-        case 5: //LEFT
+        case FmrbVkey::VK_LEFT: //LEFT
         {
           if(head_item->m_parent){
             FMRB_DEBUG(FMRB_LOG::DEBUG,"cancelled\n");
@@ -578,7 +522,6 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
         default:
         break;
       }
-    }
   }
 
 }
@@ -597,7 +540,7 @@ void FmrbMenuModule::draw_item(FmrbMenuItem* head_item,int line,bool invert){
   if(item->type!=FmrbMenuItemType::TITLE) offs = 8;
 
   const fabgl::FontInfo *fontinfo = m_canvas->getFontInfo();
-  uint8_t width = fontinfo->width;
+  //uint8_t width = fontinfo->width;
   uint8_t height = fontinfo->height;
  
   //FMRB_DEBUG(FMRB_LOG::DEBUG,"Menu(%d) > %s\n",line,item->description);
@@ -698,7 +641,7 @@ void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
     message);
 
   //wait_key;
-  wait_vkey(VirtualKey::VK_RETURN);
+  wait_vkey(FmrbVkey::VK_RETURN);
 }
 
 
@@ -709,150 +652,230 @@ m_terminal(t)
 
 FmrbTerminalInput::~FmrbTerminalInput(){}
 
-void FmrbTerminalInput::wait_vkey(VirtualKey k)
+void FmrbTerminalInput::wait_vkey(FmrbVkey k)
 {  
   while(true)
   {
-    VirtualKey rk = read_vkey();
+    FmrbVkey rk = read_vkey();
     if(rk == k){
         return;
     }
+    vTaskDelay(10);
   }
 }
 
-const VirtualKey _ascii_to_vkey_map[] = {
-/*	0x00	*/	VirtualKey::VK_NONE,	
-/*	0x01	*/	VirtualKey::VK_NONE,	
-/*	0x02	*/	VirtualKey::VK_NONE,	
-/*	0x03	*/	VirtualKey::VK_NONE,	
-/*	0x04	*/	VirtualKey::VK_NONE,	
-/*	0x05	*/	VirtualKey::VK_NONE,	
-/*	0x06	*/	VirtualKey::VK_NONE,	
-/*	0x07	*/	VirtualKey::VK_NONE,	
-/*	0x08	*/	VirtualKey::VK_NONE,	
-/*	0x09	*/	VirtualKey::VK_NONE,	
-/*	0x0a	*/	VirtualKey::VK_NONE,	
-/*	0x0b	*/	VirtualKey::VK_NONE,	
-/*	0x0c	*/	VirtualKey::VK_NONE,	
-/*	0x0d	*/	VirtualKey::VK_NONE,	
-/*	0x0e	*/	VirtualKey::VK_NONE,	
-/*	0x0f	*/	VirtualKey::VK_NONE,	
-/*	0x10	*/	VirtualKey::VK_NONE,	
-/*	0x11	*/	VirtualKey::VK_NONE,	
-/*	0x12	*/	VirtualKey::VK_NONE,	
-/*	0x13	*/	VirtualKey::VK_NONE,	
-/*	0x14	*/	VirtualKey::VK_NONE,	
-/*	0x15	*/	VirtualKey::VK_NONE,	
-/*	0x16	*/	VirtualKey::VK_NONE,	
-/*	0x17	*/	VirtualKey::VK_NONE,	
-/*	0x18	*/	VirtualKey::VK_NONE,	
-/*	0x19	*/	VirtualKey::VK_NONE,	
-/*	0x1a	*/	VirtualKey::VK_NONE,	
-/*	0x1b	*/	VirtualKey::VK_NONE,	
-/*	0x1c	*/	VirtualKey::VK_NONE,	
-/*	0x1d	*/	VirtualKey::VK_NONE,	
-/*	0x1e	*/	VirtualKey::VK_NONE,	
-/*	0x1f	*/	VirtualKey::VK_NONE,	
-/*	0x20	*/	VirtualKey::VK_SPACE,	
-/*	0x21	*/	VirtualKey::VK_EXCLAIM,	
-/*	0x22	*/	VirtualKey::VK_QUOTEDBL,	
-/*	0x23	*/	VirtualKey::VK_HASH,	
-/*	0x24	*/	VirtualKey::VK_DOLLAR,
-/*	0x25	*/	VirtualKey::VK_PERCENT,	
-/*	0x26	*/	VirtualKey::VK_AMPERSAND,	
-/*	0x27	*/	VirtualKey::VK_ACUTEACCENT,	
-/*	0x28	*/	VirtualKey::VK_LEFTPAREN,	
-/*	0x29	*/	VirtualKey::VK_RIGHTPAREN,	
-/*	0x2a	*/	VirtualKey::VK_ASTERISK,	
-/*	0x2b	*/	VirtualKey::VK_PLUS,	
-/*	0x2c	*/	VirtualKey::VK_COMMA,	
-/*	0x2d	*/	VirtualKey::VK_MINUS,	
-/*	0x2e	*/	VirtualKey::VK_PERIOD,	
-/*	0x2f	*/	VirtualKey::VK_SLASH,	
-/*	0x30	*/	VirtualKey::VK_0,	
-/*	0x31	*/	VirtualKey::VK_1,	
-/*	0x32	*/	VirtualKey::VK_2,	
-/*	0x33	*/	VirtualKey::VK_3,	
-/*	0x34	*/	VirtualKey::VK_4,	
-/*	0x35	*/	VirtualKey::VK_5,	
-/*	0x36	*/	VirtualKey::VK_6,	
-/*	0x37	*/	VirtualKey::VK_7,	
-/*	0x38	*/	VirtualKey::VK_8,	
-/*	0x39	*/	VirtualKey::VK_9,	
-/*	0x3a	*/	VirtualKey::VK_COLON,	
-/*	0x3b	*/	VirtualKey::VK_SEMICOLON,	
-/*	0x3c	*/	VirtualKey::VK_LESS,	
-/*	0x3d	*/	VirtualKey::VK_EQUALS,	
-/*	0x3e	*/	VirtualKey::VK_GREATER,	
-/*	0x3f	*/	VirtualKey::VK_QUESTION,	
-/*	0x40	*/	VirtualKey::VK_AT,	
-/*	0x41	*/	VirtualKey::VK_A,	
-/*	0x42	*/	VirtualKey::VK_B,	
-/*	0x43	*/	VirtualKey::VK_C,
-/*	0x44	*/	VirtualKey::VK_D,	
-/*	0x45	*/	VirtualKey::VK_E,	
-/*	0x46	*/	VirtualKey::VK_F,	
-/*	0x47	*/	VirtualKey::VK_G,	
-/*	0x48	*/	VirtualKey::VK_H,	
-/*	0x49	*/	VirtualKey::VK_I,	
-/*	0x4a	*/	VirtualKey::VK_J,	
-/*	0x4b	*/	VirtualKey::VK_K,	
-/*	0x4c	*/	VirtualKey::VK_L,	
-/*	0x4d	*/	VirtualKey::VK_M,	
-/*	0x4e	*/	VirtualKey::VK_N,	
-/*	0x4f	*/	VirtualKey::VK_O,	
-/*	0x50	*/	VirtualKey::VK_P,	
-/*	0x51	*/	VirtualKey::VK_Q,	
-/*	0x52	*/	VirtualKey::VK_R,	
-/*	0x53	*/	VirtualKey::VK_S,	
-/*	0x54	*/	VirtualKey::VK_T,	
-/*	0x55	*/	VirtualKey::VK_U,	
-/*	0x56	*/	VirtualKey::VK_V,	
-/*	0x57	*/	VirtualKey::VK_W,	
-/*	0x58	*/	VirtualKey::VK_X,	
-/*	0x59	*/	VirtualKey::VK_Y,	
-/*	0x5a	*/	VirtualKey::VK_Z,	
-/*	0x5b	*/	VirtualKey::VK_LEFTBRACKET,	
-/*	0x5c	*/	VirtualKey::VK_BACKSLASH,	
-/*	0x5d	*/	VirtualKey::VK_RIGHTBRACKET,	
-/*	0x5e	*/	VirtualKey::VK_CARET,	
-/*	0x5f	*/	VirtualKey::VK_UNDERSCORE,	
-/*	0x60	*/	VirtualKey::VK_GRAVEACCENT,	
-/*	0x61	*/	VirtualKey::VK_a,	
-/*	0x62	*/	VirtualKey::VK_b,	
-/*	0x63	*/	VirtualKey::VK_c,	
-/*	0x64	*/	VirtualKey::VK_d,	
-/*	0x65	*/	VirtualKey::VK_e,	
-/*	0x66	*/	VirtualKey::VK_f,	
-/*	0x67	*/	VirtualKey::VK_g,	
-/*	0x68	*/	VirtualKey::VK_h,	
-/*	0x69	*/	VirtualKey::VK_i,	
-/*	0x6a	*/	VirtualKey::VK_j,	
-/*	0x6b	*/	VirtualKey::VK_k,	
-/*	0x6c	*/	VirtualKey::VK_l,	
-/*	0x6d	*/	VirtualKey::VK_m,	
-/*	0x6e	*/	VirtualKey::VK_n,	
-/*	0x6f	*/	VirtualKey::VK_o,	
-/*	0x70	*/	VirtualKey::VK_p,	
-/*	0x71	*/	VirtualKey::VK_q,	
-/*	0x72	*/	VirtualKey::VK_r,	
-/*	0x73	*/	VirtualKey::VK_s,	
-/*	0x74	*/	VirtualKey::VK_t,	
-/*	0x75	*/	VirtualKey::VK_u,	
-/*	0x76	*/	VirtualKey::VK_v,	
-/*	0x77	*/	VirtualKey::VK_w,	
-/*	0x78	*/	VirtualKey::VK_x,	
-/*	0x79	*/	VirtualKey::VK_y,	
-/*	0x7a	*/	VirtualKey::VK_z,	
-/*	0x7b	*/	VirtualKey::VK_LEFTBRACE,	
-/*	0x7c	*/	VirtualKey::VK_VERTICALBAR,	
-/*	0x7d	*/	VirtualKey::VK_RIGHTBRACE,	
-/*	0x7e	*/	VirtualKey::VK_TILDE,	
-/*	0x7f	*/	VirtualKey::VK_NONE,	
+void FmrbTerminalInput::wait_vkey(FmrbVkey target,int timeout)
+{
+  uint32_t start_time = xTaskGetTickCount()*portTICK_RATE_MS;
+
+  while(true)
+  {
+    uint32_t current_time = xTaskGetTickCount()*portTICK_RATE_MS;
+    if(timeout>0 && current_time > start_time + timeout){
+      return;
+    }
+    if (m_terminal->available())
+    {
+      FmrbVkey in = read_vkey();
+      if(in == target){
+        return;
+      }
+    }
+    vTaskDelay(10);
+  }
+}
+
+const FmrbVkey _ascii_to_vkey_map[] = {
+/*	0x00	*/	FmrbVkey::VK_NONE,	
+/*	0x01	*/	FmrbVkey::VK_NONE,	
+/*	0x02	*/	FmrbVkey::VK_NONE,	
+/*	0x03	*/	FmrbVkey::VK_NONE,	
+/*	0x04	*/	FmrbVkey::VK_NONE,	
+/*	0x05	*/	FmrbVkey::VK_NONE,	
+/*	0x06	*/	FmrbVkey::VK_NONE,	
+/*	0x07	*/	FmrbVkey::VK_NONE,	
+/*	0x08	*/	FmrbVkey::VK_NONE,	
+/*	0x09	*/	FmrbVkey::VK_NONE,	
+/*	0x0a	*/	FmrbVkey::VK_NONE,	
+/*	0x0b	*/	FmrbVkey::VK_NONE,	
+/*	0x0c	*/	FmrbVkey::VK_NONE,	
+/*	0x0d	*/	FmrbVkey::VK_NONE,	
+/*	0x0e	*/	FmrbVkey::VK_NONE,	
+/*	0x0f	*/	FmrbVkey::VK_NONE,	
+/*	0x10	*/	FmrbVkey::VK_NONE,	
+/*	0x11	*/	FmrbVkey::VK_NONE,	
+/*	0x12	*/	FmrbVkey::VK_NONE,	
+/*	0x13	*/	FmrbVkey::VK_NONE,	
+/*	0x14	*/	FmrbVkey::VK_NONE,	
+/*	0x15	*/	FmrbVkey::VK_NONE,	
+/*	0x16	*/	FmrbVkey::VK_NONE,	
+/*	0x17	*/	FmrbVkey::VK_NONE,	
+/*	0x18	*/	FmrbVkey::VK_NONE,	
+/*	0x19	*/	FmrbVkey::VK_NONE,	
+/*	0x1a	*/	FmrbVkey::VK_NONE,	
+/*	0x1b	*/	FmrbVkey::VK_NONE,	
+/*	0x1c	*/	FmrbVkey::VK_NONE,	
+/*	0x1d	*/	FmrbVkey::VK_NONE,	
+/*	0x1e	*/	FmrbVkey::VK_NONE,	
+/*	0x1f	*/	FmrbVkey::VK_NONE,	
+/*	0x20	*/	FmrbVkey::VK_SPACE,	
+/*	0x21	*/	FmrbVkey::VK_EXCLAIM,	
+/*	0x22	*/	FmrbVkey::VK_QUOTEDBL,	
+/*	0x23	*/	FmrbVkey::VK_HASH,	
+/*	0x24	*/	FmrbVkey::VK_DOLLAR,
+/*	0x25	*/	FmrbVkey::VK_PERCENT,	
+/*	0x26	*/	FmrbVkey::VK_AMPERSAND,	
+/*	0x27	*/	FmrbVkey::VK_ACUTEACCENT,	
+/*	0x28	*/	FmrbVkey::VK_LEFTPAREN,	
+/*	0x29	*/	FmrbVkey::VK_RIGHTPAREN,	
+/*	0x2a	*/	FmrbVkey::VK_ASTERISK,	
+/*	0x2b	*/	FmrbVkey::VK_PLUS,	
+/*	0x2c	*/	FmrbVkey::VK_COMMA,	
+/*	0x2d	*/	FmrbVkey::VK_MINUS,	
+/*	0x2e	*/	FmrbVkey::VK_PERIOD,	
+/*	0x2f	*/	FmrbVkey::VK_SLASH,	
+/*	0x30	*/	FmrbVkey::VK_0,	
+/*	0x31	*/	FmrbVkey::VK_1,	
+/*	0x32	*/	FmrbVkey::VK_2,	
+/*	0x33	*/	FmrbVkey::VK_3,	
+/*	0x34	*/	FmrbVkey::VK_4,	
+/*	0x35	*/	FmrbVkey::VK_5,	
+/*	0x36	*/	FmrbVkey::VK_6,	
+/*	0x37	*/	FmrbVkey::VK_7,	
+/*	0x38	*/	FmrbVkey::VK_8,	
+/*	0x39	*/	FmrbVkey::VK_9,	
+/*	0x3a	*/	FmrbVkey::VK_COLON,	
+/*	0x3b	*/	FmrbVkey::VK_SEMICOLON,	
+/*	0x3c	*/	FmrbVkey::VK_LESS,	
+/*	0x3d	*/	FmrbVkey::VK_EQUALS,	
+/*	0x3e	*/	FmrbVkey::VK_GREATER,	
+/*	0x3f	*/	FmrbVkey::VK_QUESTION,	
+/*	0x40	*/	FmrbVkey::VK_AT,	
+/*	0x41	*/	FmrbVkey::VK_A,	
+/*	0x42	*/	FmrbVkey::VK_B,	
+/*	0x43	*/	FmrbVkey::VK_C,
+/*	0x44	*/	FmrbVkey::VK_D,	
+/*	0x45	*/	FmrbVkey::VK_E,	
+/*	0x46	*/	FmrbVkey::VK_F,	
+/*	0x47	*/	FmrbVkey::VK_G,	
+/*	0x48	*/	FmrbVkey::VK_H,	
+/*	0x49	*/	FmrbVkey::VK_I,	
+/*	0x4a	*/	FmrbVkey::VK_J,	
+/*	0x4b	*/	FmrbVkey::VK_K,	
+/*	0x4c	*/	FmrbVkey::VK_L,	
+/*	0x4d	*/	FmrbVkey::VK_M,	
+/*	0x4e	*/	FmrbVkey::VK_N,	
+/*	0x4f	*/	FmrbVkey::VK_O,	
+/*	0x50	*/	FmrbVkey::VK_P,	
+/*	0x51	*/	FmrbVkey::VK_Q,	
+/*	0x52	*/	FmrbVkey::VK_R,	
+/*	0x53	*/	FmrbVkey::VK_S,	
+/*	0x54	*/	FmrbVkey::VK_T,	
+/*	0x55	*/	FmrbVkey::VK_U,	
+/*	0x56	*/	FmrbVkey::VK_V,	
+/*	0x57	*/	FmrbVkey::VK_W,	
+/*	0x58	*/	FmrbVkey::VK_X,	
+/*	0x59	*/	FmrbVkey::VK_Y,	
+/*	0x5a	*/	FmrbVkey::VK_Z,	
+/*	0x5b	*/	FmrbVkey::VK_LEFTBRACKET,	
+/*	0x5c	*/	FmrbVkey::VK_BACKSLASH,	
+/*	0x5d	*/	FmrbVkey::VK_RIGHTBRACKET,	
+/*	0x5e	*/	FmrbVkey::VK_CARET,	
+/*	0x5f	*/	FmrbVkey::VK_UNDERSCORE,	
+/*	0x60	*/	FmrbVkey::VK_GRAVEACCENT,	
+/*	0x61	*/	FmrbVkey::VK_a,	
+/*	0x62	*/	FmrbVkey::VK_b,	
+/*	0x63	*/	FmrbVkey::VK_c,	
+/*	0x64	*/	FmrbVkey::VK_d,	
+/*	0x65	*/	FmrbVkey::VK_e,	
+/*	0x66	*/	FmrbVkey::VK_f,	
+/*	0x67	*/	FmrbVkey::VK_g,	
+/*	0x68	*/	FmrbVkey::VK_h,	
+/*	0x69	*/	FmrbVkey::VK_i,	
+/*	0x6a	*/	FmrbVkey::VK_j,	
+/*	0x6b	*/	FmrbVkey::VK_k,	
+/*	0x6c	*/	FmrbVkey::VK_l,	
+/*	0x6d	*/	FmrbVkey::VK_m,	
+/*	0x6e	*/	FmrbVkey::VK_n,	
+/*	0x6f	*/	FmrbVkey::VK_o,	
+/*	0x70	*/	FmrbVkey::VK_p,	
+/*	0x71	*/	FmrbVkey::VK_q,	
+/*	0x72	*/	FmrbVkey::VK_r,	
+/*	0x73	*/	FmrbVkey::VK_s,	
+/*	0x74	*/	FmrbVkey::VK_t,	
+/*	0x75	*/	FmrbVkey::VK_u,	
+/*	0x76	*/	FmrbVkey::VK_v,	
+/*	0x77	*/	FmrbVkey::VK_w,	
+/*	0x78	*/	FmrbVkey::VK_x,	
+/*	0x79	*/	FmrbVkey::VK_y,	
+/*	0x7a	*/	FmrbVkey::VK_z,	
+/*	0x7b	*/	FmrbVkey::VK_LEFTBRACE,	
+/*	0x7c	*/	FmrbVkey::VK_VERTICALBAR,	
+/*	0x7d	*/	FmrbVkey::VK_RIGHTBRACE,	
+/*	0x7e	*/	FmrbVkey::VK_TILDE,	
+/*	0x7f	*/	FmrbVkey::VK_NONE,	
 };
 
+bool FmrbTerminalInput::is_visible(FmrbVkey k)
+{
+  if(k>=FmrbVkey::VK_SPACE && k<=FmrbVkey::VK_VISIBLE_MAX) return true;
+  return false;
+}
 
-VirtualKey FmrbTerminalInput::read_vkey()
+char FmrbTerminalInput::to_ascii(FmrbVkey k)
+{
+  switch(k){
+    case FmrbVkey::VK_SPACE:
+      return ' '; 
+
+    case FmrbVkey::VK_0 ... FmrbVkey::VK_9:
+      return ((int)k - (int)FmrbVkey::VK_0)+ '0';
+
+    case FmrbVkey::VK_a ... FmrbVkey::VK_z:
+      return ((int)k - (int)FmrbVkey::VK_a)+ 'a';
+
+    case FmrbVkey::VK_A ... FmrbVkey::VK_Z:
+      return ((int)k - (int)FmrbVkey::VK_A)+ 'A';
+
+    case FmrbVkey::VK_GRAVEACCENT: return 0x60;// "`"
+    case FmrbVkey::VK_ACUTEACCENT: return 0xB4;// "´"
+    case FmrbVkey::VK_QUOTE: return '\'';
+    case FmrbVkey::VK_QUOTEDBL: return '"';
+    case FmrbVkey::VK_EQUALS: return '=';
+    case FmrbVkey::VK_MINUS: return '-';
+    case FmrbVkey::VK_PLUS: return '+';
+    case FmrbVkey::VK_ASTERISK: return '*';
+    case FmrbVkey::VK_BACKSLASH: return '\\';
+    case FmrbVkey::VK_SLASH: return '/';
+    case FmrbVkey::VK_PERIOD: return '.';
+    case FmrbVkey::VK_COLON: return ':';
+    case FmrbVkey::VK_COMMA: return ',';
+    case FmrbVkey::VK_SEMICOLON: return ';';
+    case FmrbVkey::VK_AMPERSAND: return '&';
+    case FmrbVkey::VK_VERTICALBAR: return '|';
+    case FmrbVkey::VK_HASH: return '#';
+    case FmrbVkey::VK_AT: return '@';
+    case FmrbVkey::VK_CARET: return '^';
+    case FmrbVkey::VK_DOLLAR: return '$';
+    case FmrbVkey::VK_PERCENT: return '%';
+    case FmrbVkey::VK_EXCLAIM: return '!';
+    case FmrbVkey::VK_QUESTION: return '?';
+    case FmrbVkey::VK_LEFTBRACE: return '{';
+    case FmrbVkey::VK_RIGHTBRACE: return '}';
+    case FmrbVkey::VK_LEFTBRACKET: return '[';
+    case FmrbVkey::VK_RIGHTBRACKET: return ']';
+    case FmrbVkey::VK_LEFTPAREN: return '(';
+    case FmrbVkey::VK_RIGHTPAREN: return ')';
+    case FmrbVkey::VK_LESS: return '<';
+    case FmrbVkey::VK_GREATER: return '>';
+    case FmrbVkey::VK_UNDERSCORE: return '_';
+    case FmrbVkey::VK_TILDE: return '~';
+    default: return 0;
+  }
+  return 0;
+}
+
+FmrbVkey FmrbTerminalInput::read_vkey()
 {
   int escape = 0;
   char escape_c[4] = {0};
@@ -861,7 +884,7 @@ VirtualKey FmrbTerminalInput::read_vkey()
     if (m_terminal->available())
     {
       char c = m_terminal->read();
-      printf("> %02x\n",c);
+      FMRB_DEBUG(FMRB_LOG::DEBUG,"> %02x\n",c);
 
       if(!escape)
       {
@@ -871,11 +894,9 @@ VirtualKey FmrbTerminalInput::read_vkey()
         }else{
           switch(c){
             case 0x7F: // BS
-              return VirtualKey::VK_BACKSPACE;
-              break;
+              return FmrbVkey::VK_BACKSPACE;
             case 0x0D: // CR
-              return VirtualKey::VK_RETURN;
-              break;
+              return FmrbVkey::VK_RETURN;
             case 0x1A: // Ctrl-z
               break;
             case 0x18: // Ctrl-x
@@ -883,9 +904,9 @@ VirtualKey FmrbTerminalInput::read_vkey()
             case 0x16: // Ctrl-v
               break;
             case 0x03: // Ctrl-c
-              break;
+              return FmrbVkey::VK_CTRL_C;
             case 0x04: // Ctrl-d
-              break;
+              return FmrbVkey::VK_CTRL_D;
             case 0x1B: // ESC
               escape = 1;
               break;
@@ -909,13 +930,13 @@ VirtualKey FmrbTerminalInput::read_vkey()
           if(escape_c[0]==0x5B){
             switch(c){
               case 0x41:  // ESC[A : UP
-              return VirtualKey::VK_UP;
+              return FmrbVkey::VK_UP;
               case 0x42:  // ESC[B : DOWN
-              return VirtualKey::VK_DOWN;
+              return FmrbVkey::VK_DOWN;
               case 0x43:  // ESC[C : RIGHT
-              return VirtualKey::VK_RIGHT;
+              return FmrbVkey::VK_RIGHT;
               case 0x44:  // ESC[D : LEFT
-              return VirtualKey::VK_LEFT;
+              return FmrbVkey::VK_LEFT;
                 escape = 0;
                 break;
               case 0x31:  // ESC[1 : ...
@@ -933,13 +954,17 @@ VirtualKey FmrbTerminalInput::read_vkey()
           }else if(escape_c[0]==0x4F){
             switch(c){
               case 0x50: // ESC OP : F1
-                return VirtualKey::VK_F1;
+                //m_terminal->read();
+                return FmrbVkey::VK_F1;
               case 0x51: // ESC OP : F2
-                return VirtualKey::VK_F2;
+                //m_terminal->read();
+                return FmrbVkey::VK_F2;
               case 0x52: // ESC OP : F3
-                return VirtualKey::VK_F3;
+                //m_terminal->read();
+                return FmrbVkey::VK_F3;
               case 0x53: // ESC OP : F4
-                return VirtualKey::VK_F4;
+                //m_terminal->read();
+                return FmrbVkey::VK_F4;
             }
             escape = 0;
           }else{
@@ -949,13 +974,17 @@ VirtualKey FmrbTerminalInput::read_vkey()
           if(escape_c[1]==0x31){
             switch(c){
               case 0x35: // ESC[15 : ..  F5
-                return VirtualKey::VK_F5;
+                m_terminal->read();
+                return FmrbVkey::VK_F5;
               case 0x37: // ESC[17 : ..  F6
-                return VirtualKey::VK_F6;
+                m_terminal->read();
+                return FmrbVkey::VK_F6;
               case 0x38: // ESC[18 : ..  F7
-                return VirtualKey::VK_F7;
+                m_terminal->read();
+                return FmrbVkey::VK_F7;
               case 0x39: // ESC[19 : ..  F8
-                return VirtualKey::VK_F8;
+                m_terminal->read();
+                return FmrbVkey::VK_F8;
                 escape_c[2] = c;
                 escape = 4;
                 break;
@@ -966,13 +995,13 @@ VirtualKey FmrbTerminalInput::read_vkey()
           }else if(escape_c[1]==0x32){
             switch(c){
               case 0x30: // ESC[20 : ..  F9
-                return VirtualKey::VK_F9;
+                return FmrbVkey::VK_F9;
               case 0x31: // ESC[21 : ..  F10
-                return VirtualKey::VK_F10;
+                return FmrbVkey::VK_F10;
               case 0x33: // ESC[23 : ..  F11
-                return VirtualKey::VK_F11;
+                return FmrbVkey::VK_F11;
               case 0x34: // ESC[24 : ..  F12
-                return VirtualKey::VK_F12;
+                return FmrbVkey::VK_F12;
                 escape_c[2] = c;
                 escape = 4;
                 break;
@@ -982,17 +1011,17 @@ VirtualKey FmrbTerminalInput::read_vkey()
             }
           }else if(escape_c[1]==0x33){
             if(c==0x7E){ // ESC[3~ : DEL
-              return VirtualKey::VK_DELETE;
+              return FmrbVkey::VK_DELETE;
             }
             escape=0;
           }else if(escape_c[1]==0x35){
             if(c==0x7E){ // ESC[5~ : PageUp
-              return VirtualKey::VK_PAGEUP;
+              return FmrbVkey::VK_PAGEUP;
             }
             escape=0;
           }else if(escape_c[1]==0x36){
             if(c==0x7E){ // ESC[6~ : PageUp
-              return VirtualKey::VK_PAGEDOWN;
+              return FmrbVkey::VK_PAGEDOWN;
             }
             escape=0;
           }else{
