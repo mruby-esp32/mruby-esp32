@@ -105,6 +105,7 @@ private:
   void move_edit_cursor(int dir);
   void move_cursor(int x,int y);
   void move(int x,int y);
+  void move_pos(int line);
 
   void insert_ch(char c);
   void insert_ret();

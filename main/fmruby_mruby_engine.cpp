@@ -54,9 +54,31 @@ void* FmrbMrubyEngine::mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t si
 extern "C" mrb_value
 mrb_unpack_backtrace(mrb_state *mrb, mrb_value backtrace);
 
-void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
+void FmrbMrubyEngine::check_backtrace(mrb_state *mrb,mrb_value result_val) {
   mrb_value exc = mrb_obj_value(mrb->exc);
-  
+  if (mrb_undef_p(result_val)) {
+    //Syntax error ?
+    mrb_value msg = mrb_iv_get(mrb,exc,mrb_intern_lit(mrb,"mesg"));
+    msg = mrb_obj_as_string(mrb, msg);
+    if(RSTRING_LEN(msg)>0){
+      FMRB_DEBUG(FMRB_LOG::RAW,">> %s\n", RSTRING_PTR(msg));
+      snprintf(m_error_msg,FMRB_DBG_MSG_MAX_LEN-1,RSTRING_PTR(msg));
+      const char *head = RSTRING_PTR(msg)+5;
+      const char* div = strchr(head,(int)':');
+      printf("X:%s\n",head);
+      if(div && (div-head<9) ){
+        char num[10]={0};
+        memcpy(num,head,div-head);
+        m_error_line = atoi(num);
+        printf("m_error_line:%d\n",m_error_line);
+      }
+    }else{
+      sprintf(m_error_msg,"Error!");
+    }
+    return;
+  }
+
+  //Exception
   mrb_value backtrace = mrb_obj_iv_get(mrb, mrb->exc, mrb_intern_lit(mrb, "backtrace"));
   if (mrb_nil_p(backtrace)) return;
   if (!mrb_array_p(backtrace)) backtrace = mrb_unpack_backtrace(mrb, backtrace);
@@ -80,25 +102,31 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
       }
     }
   }
-  //printf("cst:%d:[%s]\n",csr,m_error_msg);
   if (mrb_string_p(*loc)) {
     log_len = (int)RSTRING_LEN(*loc);
+    const char *head = RSTRING_PTR(*loc)+5;
+    const char* div = strchr(head,(int)':');
+      printf("X:%s\n",head);
+    if(div && (div-head<9) ){
+      char num[10]={0};
+      memcpy(num,head,div-head);
+      m_error_line = atoi(num);
+      printf("m_error_line:%d\n",m_error_line);
+    }
+
     FMRB_DEBUG(FMRB_LOG::ERR,"%.*s> ", log_len, RSTRING_PTR(*loc));
     if(FMRB_DBG_MSG_MAX_LEN - csr >1){
       snprintf(m_error_msg+csr,FMRB_DBG_MSG_MAX_LEN-csr-1,"%.*s: ",
                 log_len, RSTRING_PTR(*loc));
       csr = strlen(m_error_msg);
     }
-  //printf("cst:%d:%s\n",csr,m_error_msg);
   }
 
-  //log_len += (int)RSTRING_LEN(s);
   FMRB_DEBUG(FMRB_LOG::RAW,"%s\n", RSTRING_PTR(s));
   if(FMRB_DBG_MSG_MAX_LEN - csr >1){
     log_len = (int)RSTRING_LEN(s);
     snprintf(m_error_msg+csr,FMRB_DBG_MSG_MAX_LEN-csr-1,"%s",RSTRING_PTR(s));
     csr = strlen(m_error_msg);
-    printf("cst:%d:%s\n",csr,m_error_msg);
   }
 
 }
@@ -166,7 +194,7 @@ void FmrbMrubyEngine::cleanup_env()
 
 void FmrbMrubyEngine::run(char* code_string)
 {
-  FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby script>\n\n");
+  FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby script>\n");
   prepare_env();
 
   mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
@@ -174,16 +202,17 @@ void FmrbMrubyEngine::run(char* code_string)
   int ai = mrb_gc_arena_save(mrb);
 
   mrbc_context *cxt = mrbc_context_new(mrb);
+  cxt->capture_errors = TRUE;
   mrbc_filename(mrb, cxt, "fmrb");
 
-  mrb_value val = mrb_load_string_cxt(mrb,code_string,cxt);
+  mrb_parser_state* parser = mrb_parse_nstring(mrb, code_string, strlen(code_string), cxt);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"capture_errors:%d\n",parser->capture_errors);
+  mrb_value result_val = mrb_load_exec(mrb, parser, cxt);
   //mrb_value val = mrb_load_string(mrb,code_string);
   if (mrb->exc) {
     //FMRB_DEBUG(FMRB_LOG::DEBUG,"Exception occurred: %s\n", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
     FMRB_DEBUG(FMRB_LOG::ERR,"<Exception occurred>\n");
-    if (!mrb_undef_p(val)) {
-      check_backtrace(mrb);
-    }
+    check_backtrace(mrb,result_val);
     mrb->exc = 0;
     m_exec_result = FMRB_RCODE::ERROR;
   } else {

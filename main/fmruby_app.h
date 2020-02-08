@@ -162,9 +162,9 @@ private:
   char* m_error_msg;
   int m_error_line;
   uint8_t *m_joypad_map;
-
+ 
   static void* mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud);
-  void check_backtrace(mrb_state *mrb);
+  void check_backtrace(mrb_state *mrb,mrb_value v);
   void prepare_env();
   void cleanup_env();
 };

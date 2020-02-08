@@ -236,16 +236,6 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
   m_term->clear();
   move_cursor(m_lineno_shift+1,1);
 
-  const FMRB_RCODE last_result = m_mruby_engine->get_result();
-  const char *err_msg = m_mruby_engine->get_error_msg();
-  if(last_result != FMRB_RCODE::OK){
-    FMRB_DEBUG(FMRB_LOG::MSG,">%s\n",err_msg);
-    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term);
-    dialog->open_message_dialog(err_msg,0);
-    delete dialog;
-    clear_screen();
-  }
-
   if(input_script)
   {
     load(input_script);
@@ -254,7 +244,20 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
     load(null_script);
     //load_demo_file();
   }
-  
+
+  const FMRB_RCODE last_result = m_mruby_engine->get_result();
+  const char *err_msg = m_mruby_engine->get_error_msg();
+  const int error_line = m_mruby_engine->get_error_line();
+  if(last_result != FMRB_RCODE::OK){
+    FMRB_DEBUG(FMRB_LOG::MSG,"[%d]>%s\n",error_line,err_msg);
+    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term);
+    dialog->open_message_dialog(err_msg,0);
+    delete dialog;
+    clear_screen();
+
+    move_pos(error_line);
+  }
+
   m_term->enableCursor(true);
 
   update();
@@ -469,6 +472,21 @@ void FmrbEditor::move(int x,int y)
   sprintf(buf,"\e[%d;%dH",y,x);
   m_term->write(buf);
 }
+
+void FmrbEditor::move_pos(int line)
+{
+  if(NULL==seek_line(line))return;
+  m_disp_head_line = line;
+
+  if(m_disp_head_line-3>1){
+    m_disp_head_line-=3;
+    move_cursor(m_lineno_shift+1,4);
+  }else{
+    m_x = 0;
+    move_cursor(m_lineno_shift+1,1);
+  }
+}
+
 
 
 EditLine* FmrbEditor::seek_line(int n)
