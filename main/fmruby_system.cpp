@@ -636,6 +636,7 @@ int FmrbMenuModule::draw_menu(FmrbMenuItem* head_item){
  * Dialog 
  **/
 FmrbDialog::FmrbDialog(fabgl::Canvas* canvas,fabgl::Terminal *t):
+  FmrbTerminalInput(t),
   m_terminal(t),
   m_canvas(canvas),
   m_swap_buff(nullptr),
@@ -697,4 +698,326 @@ void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
     message);
 
   //wait_key;
+  wait_vkey(VirtualKey::VK_RETURN);
 }
+
+
+FmrbTerminalInput::FmrbTerminalInput(fabgl::Terminal *t):
+m_terminal(t)
+{
+}
+
+FmrbTerminalInput::~FmrbTerminalInput(){}
+
+void FmrbTerminalInput::wait_vkey(VirtualKey k)
+{  
+  while(true)
+  {
+    VirtualKey rk = read_vkey();
+    if(rk == k){
+        return;
+    }
+  }
+}
+
+const VirtualKey _ascii_to_vkey_map[] = {
+/*	0x00	*/	VirtualKey::VK_NONE,	
+/*	0x01	*/	VirtualKey::VK_NONE,	
+/*	0x02	*/	VirtualKey::VK_NONE,	
+/*	0x03	*/	VirtualKey::VK_NONE,	
+/*	0x04	*/	VirtualKey::VK_NONE,	
+/*	0x05	*/	VirtualKey::VK_NONE,	
+/*	0x06	*/	VirtualKey::VK_NONE,	
+/*	0x07	*/	VirtualKey::VK_NONE,	
+/*	0x08	*/	VirtualKey::VK_NONE,	
+/*	0x09	*/	VirtualKey::VK_NONE,	
+/*	0x0a	*/	VirtualKey::VK_NONE,	
+/*	0x0b	*/	VirtualKey::VK_NONE,	
+/*	0x0c	*/	VirtualKey::VK_NONE,	
+/*	0x0d	*/	VirtualKey::VK_NONE,	
+/*	0x0e	*/	VirtualKey::VK_NONE,	
+/*	0x0f	*/	VirtualKey::VK_NONE,	
+/*	0x10	*/	VirtualKey::VK_NONE,	
+/*	0x11	*/	VirtualKey::VK_NONE,	
+/*	0x12	*/	VirtualKey::VK_NONE,	
+/*	0x13	*/	VirtualKey::VK_NONE,	
+/*	0x14	*/	VirtualKey::VK_NONE,	
+/*	0x15	*/	VirtualKey::VK_NONE,	
+/*	0x16	*/	VirtualKey::VK_NONE,	
+/*	0x17	*/	VirtualKey::VK_NONE,	
+/*	0x18	*/	VirtualKey::VK_NONE,	
+/*	0x19	*/	VirtualKey::VK_NONE,	
+/*	0x1a	*/	VirtualKey::VK_NONE,	
+/*	0x1b	*/	VirtualKey::VK_NONE,	
+/*	0x1c	*/	VirtualKey::VK_NONE,	
+/*	0x1d	*/	VirtualKey::VK_NONE,	
+/*	0x1e	*/	VirtualKey::VK_NONE,	
+/*	0x1f	*/	VirtualKey::VK_NONE,	
+/*	0x20	*/	VirtualKey::VK_SPACE,	
+/*	0x21	*/	VirtualKey::VK_EXCLAIM,	
+/*	0x22	*/	VirtualKey::VK_QUOTEDBL,	
+/*	0x23	*/	VirtualKey::VK_HASH,	
+/*	0x24	*/	VirtualKey::VK_DOLLAR,
+/*	0x25	*/	VirtualKey::VK_PERCENT,	
+/*	0x26	*/	VirtualKey::VK_AMPERSAND,	
+/*	0x27	*/	VirtualKey::VK_ACUTEACCENT,	
+/*	0x28	*/	VirtualKey::VK_LEFTPAREN,	
+/*	0x29	*/	VirtualKey::VK_RIGHTPAREN,	
+/*	0x2a	*/	VirtualKey::VK_ASTERISK,	
+/*	0x2b	*/	VirtualKey::VK_PLUS,	
+/*	0x2c	*/	VirtualKey::VK_COMMA,	
+/*	0x2d	*/	VirtualKey::VK_MINUS,	
+/*	0x2e	*/	VirtualKey::VK_PERIOD,	
+/*	0x2f	*/	VirtualKey::VK_SLASH,	
+/*	0x30	*/	VirtualKey::VK_0,	
+/*	0x31	*/	VirtualKey::VK_1,	
+/*	0x32	*/	VirtualKey::VK_2,	
+/*	0x33	*/	VirtualKey::VK_3,	
+/*	0x34	*/	VirtualKey::VK_4,	
+/*	0x35	*/	VirtualKey::VK_5,	
+/*	0x36	*/	VirtualKey::VK_6,	
+/*	0x37	*/	VirtualKey::VK_7,	
+/*	0x38	*/	VirtualKey::VK_8,	
+/*	0x39	*/	VirtualKey::VK_9,	
+/*	0x3a	*/	VirtualKey::VK_COLON,	
+/*	0x3b	*/	VirtualKey::VK_SEMICOLON,	
+/*	0x3c	*/	VirtualKey::VK_LESS,	
+/*	0x3d	*/	VirtualKey::VK_EQUALS,	
+/*	0x3e	*/	VirtualKey::VK_GREATER,	
+/*	0x3f	*/	VirtualKey::VK_QUESTION,	
+/*	0x40	*/	VirtualKey::VK_AT,	
+/*	0x41	*/	VirtualKey::VK_A,	
+/*	0x42	*/	VirtualKey::VK_B,	
+/*	0x43	*/	VirtualKey::VK_C,
+/*	0x44	*/	VirtualKey::VK_D,	
+/*	0x45	*/	VirtualKey::VK_E,	
+/*	0x46	*/	VirtualKey::VK_F,	
+/*	0x47	*/	VirtualKey::VK_G,	
+/*	0x48	*/	VirtualKey::VK_H,	
+/*	0x49	*/	VirtualKey::VK_I,	
+/*	0x4a	*/	VirtualKey::VK_J,	
+/*	0x4b	*/	VirtualKey::VK_K,	
+/*	0x4c	*/	VirtualKey::VK_L,	
+/*	0x4d	*/	VirtualKey::VK_M,	
+/*	0x4e	*/	VirtualKey::VK_N,	
+/*	0x4f	*/	VirtualKey::VK_O,	
+/*	0x50	*/	VirtualKey::VK_P,	
+/*	0x51	*/	VirtualKey::VK_Q,	
+/*	0x52	*/	VirtualKey::VK_R,	
+/*	0x53	*/	VirtualKey::VK_S,	
+/*	0x54	*/	VirtualKey::VK_T,	
+/*	0x55	*/	VirtualKey::VK_U,	
+/*	0x56	*/	VirtualKey::VK_V,	
+/*	0x57	*/	VirtualKey::VK_W,	
+/*	0x58	*/	VirtualKey::VK_X,	
+/*	0x59	*/	VirtualKey::VK_Y,	
+/*	0x5a	*/	VirtualKey::VK_Z,	
+/*	0x5b	*/	VirtualKey::VK_LEFTBRACKET,	
+/*	0x5c	*/	VirtualKey::VK_BACKSLASH,	
+/*	0x5d	*/	VirtualKey::VK_RIGHTBRACKET,	
+/*	0x5e	*/	VirtualKey::VK_CARET,	
+/*	0x5f	*/	VirtualKey::VK_UNDERSCORE,	
+/*	0x60	*/	VirtualKey::VK_GRAVEACCENT,	
+/*	0x61	*/	VirtualKey::VK_a,	
+/*	0x62	*/	VirtualKey::VK_b,	
+/*	0x63	*/	VirtualKey::VK_c,	
+/*	0x64	*/	VirtualKey::VK_d,	
+/*	0x65	*/	VirtualKey::VK_e,	
+/*	0x66	*/	VirtualKey::VK_f,	
+/*	0x67	*/	VirtualKey::VK_g,	
+/*	0x68	*/	VirtualKey::VK_h,	
+/*	0x69	*/	VirtualKey::VK_i,	
+/*	0x6a	*/	VirtualKey::VK_j,	
+/*	0x6b	*/	VirtualKey::VK_k,	
+/*	0x6c	*/	VirtualKey::VK_l,	
+/*	0x6d	*/	VirtualKey::VK_m,	
+/*	0x6e	*/	VirtualKey::VK_n,	
+/*	0x6f	*/	VirtualKey::VK_o,	
+/*	0x70	*/	VirtualKey::VK_p,	
+/*	0x71	*/	VirtualKey::VK_q,	
+/*	0x72	*/	VirtualKey::VK_r,	
+/*	0x73	*/	VirtualKey::VK_s,	
+/*	0x74	*/	VirtualKey::VK_t,	
+/*	0x75	*/	VirtualKey::VK_u,	
+/*	0x76	*/	VirtualKey::VK_v,	
+/*	0x77	*/	VirtualKey::VK_w,	
+/*	0x78	*/	VirtualKey::VK_x,	
+/*	0x79	*/	VirtualKey::VK_y,	
+/*	0x7a	*/	VirtualKey::VK_z,	
+/*	0x7b	*/	VirtualKey::VK_LEFTBRACE,	
+/*	0x7c	*/	VirtualKey::VK_VERTICALBAR,	
+/*	0x7d	*/	VirtualKey::VK_RIGHTBRACE,	
+/*	0x7e	*/	VirtualKey::VK_TILDE,	
+/*	0x7f	*/	VirtualKey::VK_NONE,	
+};
+
+
+VirtualKey FmrbTerminalInput::read_vkey()
+{
+  int escape = 0;
+  char escape_c[4] = {0};
+  while(true)
+  {
+    if (m_terminal->available())
+    {
+      char c = m_terminal->read();
+      printf("> %02x\n",c);
+
+      if(!escape)
+      {
+        if(c>=0x20 && c<=0x7E){
+          //Visible character
+          return _ascii_to_vkey_map[(int)c];
+        }else{
+          switch(c){
+            case 0x7F: // BS
+              return VirtualKey::VK_BACKSPACE;
+              break;
+            case 0x0D: // CR
+              return VirtualKey::VK_RETURN;
+              break;
+            case 0x1A: // Ctrl-z
+              break;
+            case 0x18: // Ctrl-x
+              break;
+            case 0x16: // Ctrl-v
+              break;
+            case 0x03: // Ctrl-c
+              break;
+            case 0x04: // Ctrl-d
+              break;
+            case 0x1B: // ESC
+              escape = 1;
+              break;
+          }
+        }
+
+      }else{ // Escape
+
+        if(escape==1){
+          switch(c){
+            case 0x5B: // '[' : Cursor/ 
+            case 0x4F: // 'O' : Function key
+              escape_c[0] = c;
+              escape=2;
+              break;
+            default:
+              escape=0;
+              break;
+          }
+        }else if(escape==2){
+          if(escape_c[0]==0x5B){
+            switch(c){
+              case 0x41:  // ESC[A : UP
+              return VirtualKey::VK_UP;
+              case 0x42:  // ESC[B : DOWN
+              return VirtualKey::VK_DOWN;
+              case 0x43:  // ESC[C : RIGHT
+              return VirtualKey::VK_RIGHT;
+              case 0x44:  // ESC[D : LEFT
+              return VirtualKey::VK_LEFT;
+                escape = 0;
+                break;
+              case 0x31:  // ESC[1 : ...
+              case 0x32:  // ESC[2 : ...
+              case 0x33:  // ESC[3 : ...
+              case 0x35:  // ESC[5 : ...
+              case 0x36:  // ESC[6 : ...
+                escape_c[1] = c;
+                escape = 3;
+                break;
+              default:
+                escape = 0;
+              break;
+            }
+          }else if(escape_c[0]==0x4F){
+            switch(c){
+              case 0x50: // ESC OP : F1
+                return VirtualKey::VK_F1;
+              case 0x51: // ESC OP : F2
+                return VirtualKey::VK_F2;
+              case 0x52: // ESC OP : F3
+                return VirtualKey::VK_F3;
+              case 0x53: // ESC OP : F4
+                return VirtualKey::VK_F4;
+            }
+            escape = 0;
+          }else{
+            escape = 0;
+          }
+        }else if(escape==3){
+          if(escape_c[1]==0x31){
+            switch(c){
+              case 0x35: // ESC[15 : ..  F5
+                return VirtualKey::VK_F5;
+              case 0x37: // ESC[17 : ..  F6
+                return VirtualKey::VK_F6;
+              case 0x38: // ESC[18 : ..  F7
+                return VirtualKey::VK_F7;
+              case 0x39: // ESC[19 : ..  F8
+                return VirtualKey::VK_F8;
+                escape_c[2] = c;
+                escape = 4;
+                break;
+              default:
+                escape = 0;
+                break;
+            }
+          }else if(escape_c[1]==0x32){
+            switch(c){
+              case 0x30: // ESC[20 : ..  F9
+                return VirtualKey::VK_F9;
+              case 0x31: // ESC[21 : ..  F10
+                return VirtualKey::VK_F10;
+              case 0x33: // ESC[23 : ..  F11
+                return VirtualKey::VK_F11;
+              case 0x34: // ESC[24 : ..  F12
+                return VirtualKey::VK_F12;
+                escape_c[2] = c;
+                escape = 4;
+                break;
+              default:
+                escape = 0;
+                break;
+            }
+          }else if(escape_c[1]==0x33){
+            if(c==0x7E){ // ESC[3~ : DEL
+              return VirtualKey::VK_DELETE;
+            }
+            escape=0;
+          }else if(escape_c[1]==0x35){
+            if(c==0x7E){ // ESC[5~ : PageUp
+              return VirtualKey::VK_PAGEUP;
+            }
+            escape=0;
+          }else if(escape_c[1]==0x36){
+            if(c==0x7E){ // ESC[6~ : PageUp
+              return VirtualKey::VK_PAGEDOWN;
+            }
+            escape=0;
+          }else{
+            escape=0;
+          }
+        }else if(escape==4){
+          switch(c){
+            case 0x7E: //  ESC[1*~ : FN
+              break;
+            default:
+              break;
+          }
+          escape=0;
+        }else{ //escape > 4
+          escape=0;
+        }
+
+        if(escape==0){
+          escape_c[0] = 0;
+          escape_c[1] = 0;
+          escape_c[2] = 0;
+          escape_c[3] = 0;
+        }
+      }
+    }
+  }
+}
+

@@ -50,7 +50,7 @@ private:
 /**
  * Dialog 
  **/
-class FmrbDialog{
+class FmrbDialog : public FmrbTerminalInput{
 public:
   OVERLOAD_SPI_ALLOCATOR
   FmrbDialog(fabgl::Canvas* canvas,fabgl::Terminal *);

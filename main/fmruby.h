@@ -42,6 +42,17 @@ enum class FMRB_RCODE{
   OK_DONE,
 };
 
+class FmrbTerminalInput{
+public:
+  FmrbTerminalInput(fabgl::Terminal *t);
+  ~FmrbTerminalInput();
+  fabgl::Terminal *m_terminal;
+
+  OVERLOAD_SPI_ALLOCATOR
+  VirtualKey read_vkey();
+  void wait_vkey(VirtualKey k);
+};
+
 void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line,...);
 void fmrb_dump_mem_stat();
 
