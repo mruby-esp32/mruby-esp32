@@ -33,6 +33,8 @@ public:
   int mruby_screen_shift_x;
   int mruby_screen_shift_y;
 
+  //Code Highlight
+
   OVERLOAD_SPI_ALLOCATOR
   FmrbConfig(FmrbFileService* file_service);
   FMRB_RCODE load();
@@ -44,6 +46,32 @@ private:
 private:
 
 };
+
+/**
+ * Dialog 
+ **/
+class FmrbDialog{
+public:
+  OVERLOAD_SPI_ALLOCATOR
+  FmrbDialog(fabgl::Canvas* canvas,fabgl::Terminal *);
+  ~FmrbDialog();
+  void open_message_dialog(const char* message,int timeout_sec);
+  bool open_confirmation_dialog(const char* message);
+  const char* open_text_select_dialog(const char* list[],int list_length);
+  const char* open_file_select_dialog(const char* path);
+
+private:
+  fabgl::Terminal *m_terminal;
+  fabgl::Canvas *m_canvas;
+  uint8_t *m_swap_buff;
+  uint16_t m_screen_width;
+  uint16_t m_screen_height;
+  uint16_t m_dialog_width;
+  uint16_t m_dialog_height;
+  uint16_t m_x;
+  uint16_t m_y;
+};
+
 
 /**
  * Menu 

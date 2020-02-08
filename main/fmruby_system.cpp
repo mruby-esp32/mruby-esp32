@@ -98,6 +98,8 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data,int mode){
   uint16_t width  = (data[header]) + (data[header+1]<<8);
   uint16_t height = (data[header+2]) + (data[header+3]<<8);
   
+  VGAController.processPrimitives();
+
   int dl = 15;
   if(mode==2) dl = 3;
   uint8_t* p = data+header+4;
@@ -118,6 +120,7 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data,int mode){
       p++;
     }
   }
+  vTaskDelay(fabgl::msToTicks(34));
 }
 
 FMRB_RCODE FmrbSystemApp::show_splash(){
@@ -169,7 +172,14 @@ char* alloc_menu_text_mem(const char* input)
   return buff;
 }
 
-
+FMRB_RCODE message_callback(uint32_t fid,FmrbMenuModule* menu)
+{
+  FmrbDialog* dialog = new FmrbDialog(menu->m_canvas,menu->m_terminal);
+  dialog->open_message_dialog("Not supported.",0);
+  vTaskDelay(1000);
+  delete dialog;
+  return FMRB_RCODE::OK;
+}
 
 FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
 {
@@ -194,7 +204,7 @@ FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
   FmrbMenuItem *m1,*m2;
   //Main
        FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Open Editor "),2 ,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Run script  "),4 ,menu_callback,FmrbMenuItemType::UNSELECTABLE);
+       FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Run script  "),4 ,message_callback,FmrbMenuItemType::SELECTABLE);
   m1 = FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Config      "),3 ,menu_callback,FmrbMenuItemType::SELECTABLE);
      //FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem("")           ,5,menu_callback,FmrbMenuItemType::UNSELECTABLE);
   //Sub Config
@@ -458,9 +468,6 @@ static char get_cursor_dir(fabgl::Terminal *term){
 }
 
 void FmrbMenuModule::begin(uint32_t *param){
-  uint32_t fsize=0;
-  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/assets/2bit_logo.img",fsize,false,false);
-  if(img_data) draw_img(400,50,img_data,0);
 
   //m_canvas->selectFont(&fabgl::FONT_8x8);
   m_canvas->selectFont(fabgl::getPresetFixedFont(8,14));
@@ -469,7 +476,9 @@ void FmrbMenuModule::begin(uint32_t *param){
 
   clear_draw_area();
   exec_menu(m_top);
-  clear_draw_area();
+  
+  m_canvas->setBrushColor(Color::Black);
+  m_canvas->clear();
 }
 
 void FmrbMenuModule::set_param(uint32_t param){
@@ -479,7 +488,11 @@ void FmrbMenuModule::set_param(uint32_t param){
 }
 
 void FmrbMenuModule::clear_draw_area(void){
-  m_canvas->fillRectangle(0,0,300,300);
+  m_canvas->setBrushColor(Color::Black);
+  m_canvas->clear();
+  uint32_t fsize=0;
+  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/assets/2bit_logo.img",fsize,false,false);
+  if(img_data) draw_img(400,50,img_data,0);
 }
 
 void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
@@ -508,6 +521,7 @@ void FmrbMenuModule::exec_menu(FmrbMenuItem* head_item)
             if(item->type==FmrbMenuItemType::SELECTABLE){
               if(item->func){
                 FMRB_RCODE ret = item->func(item->fid,this); // callback if set
+                clear_draw_area();
                 draw_menu(head_item);
                 draw_item(head_item,pos,true);
                 if(ret==FMRB_RCODE::OK_DONE){
@@ -616,4 +630,71 @@ int FmrbMenuModule::draw_menu(FmrbMenuItem* head_item){
   }
 
   return line_count;
+}
+
+/**
+ * Dialog 
+ **/
+FmrbDialog::FmrbDialog(fabgl::Canvas* canvas,fabgl::Terminal *t):
+  m_terminal(t),
+  m_canvas(canvas),
+  m_swap_buff(nullptr),
+  m_dialog_width(0),
+  m_dialog_height(0),
+  m_x(0),
+  m_y(0)
+{
+  m_screen_width = VGAController.getScreenWidth();
+  m_screen_height = VGAController.getScreenHeight();
+}
+
+FmrbDialog::~FmrbDialog(){
+  if(m_swap_buff)fmrb_free(m_swap_buff);
+}
+
+void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
+{
+  int len = strlen(message);
+
+  /*
+  const fabgl::FontInfo *info = m_canvas->getFontInfo();
+  uint8_t width_org = info->width;
+  uint8_t height_org = info->height;
+  m_canvas->selectFont(fabgl::getPresetFixedFont(8,14));
+  m_canvas->setGlyphOptions(GlyphOptions().FillBackground(true));
+  */
+  
+  const fabgl::FontInfo *fontinfo = m_canvas->getFontInfo();
+  uint8_t font_width = fontinfo->width;
+  uint8_t font_height = fontinfo->height;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Font[%d,%d]\n",font_width,font_height);
+
+  /*
+   Width : 80% window, 10% margin, 60% text
+   */
+  uint16_t window_width = m_screen_width * 80 / 100;
+  uint16_t window_height = (font_height+2)*3;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Window[%d,%d]\n",window_width,window_height);
+  m_canvas->setBrushColor(RGB888(0,0,1<<6));
+  int s = 6;
+  m_canvas->fillRectangle(
+    s+ m_screen_width*10/100,
+    s+ m_screen_height/2 - window_height/2,
+    s+ m_screen_width*90/100,
+    s+ m_screen_height/2 + window_height/2
+  );
+  m_canvas->setBrushColor(Color::Blue);
+  m_canvas->fillRectangle(
+    m_screen_width*10/100,
+    m_screen_height/2 - window_height/2,
+    m_screen_width*90/100,
+    m_screen_height/2 + window_height/2
+  );
+  m_canvas->setPenColor(Color::White);
+  m_canvas->drawText(
+    m_screen_width*20/100,
+    m_screen_height/2 - window_height/2 + (font_height+2),
+    message);
+
+  //wait_key;
 }
