@@ -114,5 +114,7 @@ private:
   void delete_line();
 
   void print_csr_info(void);
+
+  void clear_screen(void);
 };
 

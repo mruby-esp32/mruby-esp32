@@ -215,6 +215,12 @@ FMRB_RCODE FmrbEditor::release()
   return FMRB_RCODE::OK;
 }
 
+void FmrbEditor::clear_screen(void)
+{
+  m_canvas->setPenColor(Color::White);
+  m_canvas->setBrushColor(Color::Black);
+  m_canvas->clear();
+}
 
 FMRB_RCODE FmrbEditor::run(char* input_script){
   if(!m_term) return FMRB_RCODE::ERROR;
@@ -233,9 +239,11 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
   const FMRB_RCODE last_result = m_mruby_engine->get_result();
   const char *err_msg = m_mruby_engine->get_error_msg();
   if(last_result != FMRB_RCODE::OK){
+    FMRB_DEBUG(FMRB_LOG::MSG,">%s\n",err_msg);
     FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term);
     dialog->open_message_dialog(err_msg,0);
     delete dialog;
+    clear_screen();
   }
 
   if(input_script)
@@ -246,6 +254,8 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
     load(null_script);
     //load_demo_file();
   }
+  
+  m_term->enableCursor(true);
 
   update();
 
@@ -283,10 +293,10 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
           move_edit_cursor(0x44);
         break;
 
-        case FmrbVkey::VK_KP_PAGEUP:
+        case FmrbVkey::VK_PAGEUP:
           page_up();
         break;
-        case FmrbVkey::VK_KP_PAGEDOWN:
+        case FmrbVkey::VK_PAGEDOWN:
           page_down();
         break;
 

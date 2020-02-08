@@ -74,29 +74,31 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
       FMRB_DEBUG(FMRB_LOG::ERR,"  [%d] %.*s\n",
                 i, (int)RSTRING_LEN(*loc), RSTRING_PTR(*loc));
       if(FMRB_DBG_MSG_MAX_LEN - csr >1){
-        snprintf(m_error_msg+csr+1,FMRB_DBG_MSG_MAX_LEN-csr-1,"  [%d] %.*s\n",
+        snprintf(m_error_msg+csr,FMRB_DBG_MSG_MAX_LEN-csr-1," [%d] %.*s\n",
                 i, (int)RSTRING_LEN(*loc), RSTRING_PTR(*loc));
         csr = strlen(m_error_msg);
       }
     }
   }
+  //printf("cst:%d:[%s]\n",csr,m_error_msg);
   if (mrb_string_p(*loc)) {
     log_len = (int)RSTRING_LEN(*loc);
-    FMRB_DEBUG(FMRB_LOG::ERR,"%.*s: ", log_len, RSTRING_PTR(*loc));
+    FMRB_DEBUG(FMRB_LOG::ERR,"%.*s> ", log_len, RSTRING_PTR(*loc));
     if(FMRB_DBG_MSG_MAX_LEN - csr >1){
-      snprintf(m_error_msg+csr+1,FMRB_DBG_MSG_MAX_LEN-csr-1,"%.*s: ",
+      snprintf(m_error_msg+csr,FMRB_DBG_MSG_MAX_LEN-csr-1,"%.*s: ",
                 log_len, RSTRING_PTR(*loc));
       csr = strlen(m_error_msg);
     }
+  //printf("cst:%d:%s\n",csr,m_error_msg);
   }
 
   //log_len += (int)RSTRING_LEN(s);
   FMRB_DEBUG(FMRB_LOG::RAW,"%s\n", RSTRING_PTR(s));
   if(FMRB_DBG_MSG_MAX_LEN - csr >1){
     log_len = (int)RSTRING_LEN(s);
-    snprintf(m_error_msg+csr+1,FMRB_DBG_MSG_MAX_LEN-csr-1,"%.*s: ",
-                log_len, RSTRING_PTR(*loc));
+    snprintf(m_error_msg+csr,FMRB_DBG_MSG_MAX_LEN-csr-1,"%s",RSTRING_PTR(s));
     csr = strlen(m_error_msg);
+    printf("cst:%d:%s\n",csr,m_error_msg);
   }
 
 }

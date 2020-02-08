@@ -209,7 +209,6 @@ FMRB_RCODE FmrbSystemApp::run_main_menu(){
 }
 
 FMRB_RCODE FmrbSystemApp::run_editor(){
-    m_terminal.enableCursor(true);
 
     m_editor->begin(&m_mruby_engine);
     fmrb_dump_mem_stat();
@@ -603,39 +602,68 @@ FmrbDialog::~FmrbDialog(){
 
 void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
 {
-  int len = strlen(message);
-  
   const fabgl::FontInfo *fontinfo = m_canvas->getFontInfo();
   uint8_t font_width = fontinfo->width;
   uint8_t font_height = fontinfo->height;
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"Font[%d,%d]\n",font_width,font_height);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"Font[%d,%d]\n",font_width,font_height);
 
-  /*
-   Width : 80% window, 10% margin, 60% text
-   */
-  uint16_t window_width = m_screen_width * 80 / 100;
-  uint16_t window_height = (font_height+2)*3;
+  int msg_len = strlen(message);
+  int line_cnt = 0;
+  int max_line_chars = m_screen_width/font_width - 5;
+  //count lines
+  for(int lcnt=0,c=0;c<=msg_len;c++){
+    if('\n' == message[c] || 0 == message[c] || lcnt>=max_line_chars){
+      lcnt=0;
+      line_cnt++;
+    }
+    lcnt++;
+  }
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"line_cnt[%d] max=%d\n",line_cnt,max_line_chars);
+  
+  uint8_t line_height = font_height+2;
+  uint16_t window_width = m_screen_width * 95 / 100;
+  uint16_t window_height = line_height*(2+line_cnt);
   FMRB_DEBUG(FMRB_LOG::DEBUG,"Window[%d,%d]\n",window_width,window_height);
   m_canvas->setBrushColor(RGB888(0,0,1<<6));
   int s = 6;
   m_canvas->fillRectangle(
-    s+ m_screen_width*10/100,
+    s+ m_screen_width*5/100,
     s+ m_screen_height/2 - window_height/2,
-    s+ m_screen_width*90/100,
+    s+ m_screen_width*95/100,
     s+ m_screen_height/2 + window_height/2
   );
   m_canvas->setBrushColor(Color::Blue);
   m_canvas->fillRectangle(
-    m_screen_width*10/100,
+    m_screen_width*5/100,
     m_screen_height/2 - window_height/2,
-    m_screen_width*90/100,
+    m_screen_width*95/100,
     m_screen_height/2 + window_height/2
   );
   m_canvas->setPenColor(Color::White);
-  m_canvas->drawText(
-    m_screen_width*20/100,
-    m_screen_height/2 - window_height/2 + (font_height+2),
-    message);
+  const char* prev_p = message;
+  char* buff = (char*)fmrb_spi_malloc(max_line_chars+2);
+  for(int lcnt=0,line=0,c=0;c<=msg_len;c++){
+    //FMRB_DEBUG(FMRB_LOG::DEBUG,"[%c] c:%d lcnt:%d line:%d\n",message[c],c,lcnt,line);
+    if('\n' == message[c] || 0 == message[c] || lcnt>=max_line_chars){
+      memset(buff,0,max_line_chars+2);
+      memcpy(buff,prev_p,&message[c]-prev_p);
+      if(lcnt>=max_line_chars){
+        prev_p = &message[c];
+      }else{
+        prev_p = &message[c]+1;
+      }
+      lcnt=0;
+      FMRB_DEBUG(FMRB_LOG::DEBUG,">%s\n",buff);
+      m_canvas->drawText(
+        m_screen_width*7/100,
+        line*line_height + m_screen_height/2 - window_height/2 + line_height,
+        buff,true);
+      line++;
+    }
+    lcnt++;
+  }
+  fmrb_free(buff);
+
 
   //wait_key;
   wait_vkey(FmrbVkey::VK_RETURN);
