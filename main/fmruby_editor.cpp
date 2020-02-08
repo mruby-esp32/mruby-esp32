@@ -67,6 +67,11 @@ int EditLine::insert(uint16_t pos,char c)
 {
   if(text==NULL) return -1;
 
+  if(pos>length){
+    FMRB_DEBUG(FMRB_LOG::ERR,"Bad position (%d>%d)\n",pos,length);
+    return -1;
+  }
+
   EDT_DEBUG("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
   if( length+1+1 > buff_size) // Text lenght + null char + new char >= cuurent buff size
   {
@@ -232,13 +237,11 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
 
   while(true){
     FmrbVkey vkey = read_vkey();
+    //printf("V> %d\n",(int)vkey);
     if(FmrbTerminalInput::is_visible(vkey)){
       int akey = FmrbTerminalInput::to_ascii(vkey);
-      printf("V> %d\n",(int)vkey);
-      printf("A> 0x%02x\n",(int)akey);
       insert_ch(akey);
     }else{
-      printf("V> %d\n",(int)vkey);
       switch(vkey){
         case FmrbVkey::VK_RETURN:
         case FmrbVkey::VK_KP_ENTER:
@@ -281,6 +284,7 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
           load_file();
         break;
         case FmrbVkey::VK_F4:
+          FMRB_DEBUG(FMRB_LOG::INFO,"Editor Run Script\n");
           return FMRB_RCODE::OK;
         break;
         case FmrbVkey::VK_F5:
@@ -645,6 +649,13 @@ void FmrbEditor::delete_line()
     m_x = m_lineno_shift;
     move_cursor(m_x, m_y);
   }
+  //check_position
+  EditLine* cline = seek_line(m_disp_head_line+m_y-1);
+  if( (m_x - m_lineno_shift-1) > cline->length ){
+    m_x = m_lineno_shift+1 + cline->length;
+    move_cursor(m_x, m_y);
+  }
+
   update();
 }
 
