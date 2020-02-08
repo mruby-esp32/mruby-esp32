@@ -18,6 +18,9 @@
 #include "fmruby_fabgl.h"
 #include "fmruby_app.h"
 
+extern fabgl::VGAController VGAController;
+extern fabgl::PS2Controller PS2Controller;
+extern fabgl::Canvas        FMRB_canvas;
 
 void* fmrb_spi_malloc(size_t size)
 {
@@ -272,7 +275,7 @@ static void show_fatal_error(const char* msg,const char* detail){
 }
 
 TaskHandle_t mainTaskHandle = NULL;
-FmrbSystemApp SystemApp;
+FmrbSystemApp SystemApp(&VGAController,&PS2Controller,&FMRB_canvas);
 
 void mainTask(void *pvParameters)
 {

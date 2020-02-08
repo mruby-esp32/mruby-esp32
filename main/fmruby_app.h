@@ -24,10 +24,11 @@ private:
 /**
  * Config
  **/
+#define FMRB_MODE_LINE_MAX (256)
 class FmrbConfig  {
 public:
-  char main_mode_line[256];
-  char mruby_mode_line[256];
+  char main_mode_line[FMRB_MODE_LINE_MAX];
+  char mruby_mode_line[FMRB_MODE_LINE_MAX];
   int main_screen_shift_x;
   int main_screen_shift_y;
   int mruby_screen_shift_x;
@@ -53,7 +54,7 @@ private:
 class FmrbDialog : public FmrbTerminalInput{
 public:
   OVERLOAD_SPI_ALLOCATOR
-  FmrbDialog(fabgl::Canvas* canvas,fabgl::Terminal *);
+  FmrbDialog(fabgl::VGAController *v,fabgl::Canvas* canvas,fabgl::Terminal *);
   ~FmrbDialog();
   void open_message_dialog(const char* message,int timeout_sec);
   bool open_confirmation_dialog(const char* message);
@@ -61,8 +62,9 @@ public:
   const char* open_file_select_dialog(const char* path);
 
 private:
-  fabgl::Terminal *m_terminal;
+  fabgl::VGAController* m_vga;
   fabgl::Canvas *m_canvas;
+  fabgl::Terminal *m_terminal;
   uint8_t *m_swap_buff;
   uint16_t m_screen_width;
   uint16_t m_screen_height;
@@ -86,6 +88,7 @@ enum class FmrbMenuItemType{
   SELECTABLE,
   UNSELECTABLE,
 };
+
 class FmrbMenuItem{
 public:
   char* description;
@@ -111,11 +114,12 @@ public:
 
 class FmrbMenuModule : public FmrbTerminalInput {
 public:
-  fabgl::Canvas* m_canvas;
+  fabgl::VGAController *m_vga;
+  fabgl::Canvas *m_canvas;
   fabgl::Terminal* m_terminal;
 
   OVERLOAD_SPI_ALLOCATOR
-  FmrbMenuModule(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem *item);
+  FmrbMenuModule(fabgl::VGAController*, fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem *item);
   ~FmrbMenuModule();
   void begin(uint32_t *param);
   void set_param(uint32_t param);
@@ -142,16 +146,19 @@ enum class FMRB_JPAD_KEY{
   UP,DOWN,LEFT,RIGHT,
 };
 
+#define FMRB_DBG_MSG_MAX_LEN (1024)
 class FmrbMrubyEngine {
 public:
   FmrbMrubyEngine();
   ~FmrbMrubyEngine();
   void run(char* code_string);
   uint8_t *get_joypad_map();
+  const char *get_error_msg();
+  int get_error_line();
+  FMRB_RCODE get_result();
 
 private:
-  static constexpr int DBG_MSG_MAX_LEN = 128;
-  int m_exec_result;
+  FMRB_RCODE m_exec_result;
   char* m_error_msg;
   int m_error_line;
   uint8_t *m_joypad_map;
@@ -176,10 +183,16 @@ enum class FMRB_SYS_STATE{
 
 class FmrbSystemApp {
 public:
-  FmrbSystemApp();
+  fabgl::VGAController *m_vga;
+  fabgl::PS2Controller *m_ps2;
+  fabgl::Canvas *m_canvas;
+
+  FmrbSystemApp(fabgl::VGAController*,fabgl::PS2Controller*,fabgl::Canvas*);
   void init();
   FMRB_RCODE run();
   FmrbMrubyEngine *mruby_engign();
+
+  static void draw_img(fabgl::VGAController *vga,uint16_t x0,uint16_t y0,uint8_t* data,int mode);
 
 private:
   FmrbConfig *m_config;
@@ -191,7 +204,6 @@ private:
   FmrbMenuModule *m_main_menu;
   FmrbMrubyEngine m_mruby_engine;
 
-  void wait_key(char target,int timeout);
   FMRB_RCODE init_terminal();
   FMRB_RCODE close_terminal();
   FMRB_RCODE print_system_info();

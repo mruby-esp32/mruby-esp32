@@ -4,14 +4,14 @@
 
 
 FmrbConfig::FmrbConfig(FmrbFileService *file_service):
-main_mode_line({0}),
-mruby_mode_line({0}),
 main_screen_shift_x(0),
 main_screen_shift_y(0),
 mruby_screen_shift_x(0),
 mruby_screen_shift_y(0),
 m_fservice(file_service)
 {
+  memset(main_mode_line,0,FMRB_MODE_LINE_MAX);
+  memset(mruby_mode_line,0,FMRB_MODE_LINE_MAX);
 }
 
 FMRB_RCODE FmrbConfig::load()

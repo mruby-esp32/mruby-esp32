@@ -5,7 +5,10 @@
 /**
  * FmrbSystemApp
  **/
-FmrbSystemApp::FmrbSystemApp()
+FmrbSystemApp::FmrbSystemApp(fabgl::VGAController *v,fabgl::PS2Controller *ps2,fabgl::Canvas *c):
+m_vga(v),
+m_ps2(ps2),
+m_canvas(c)
 {
   m_state = FMRB_SYS_STATE::INIT;
   m_terminal_available = false;
@@ -28,7 +31,7 @@ FMRB_RCODE FmrbSystemApp::init_terminal(void)
   if(!m_terminal_available){
     fabgl_terminal_mode_init(m_config);
 
-    m_terminal.begin(&VGAController);
+    m_terminal.begin(m_vga);
     m_terminal.connectLocally();
 
     m_terminal.setBackgroundColor(Color::Black);
@@ -63,9 +66,9 @@ FMRB_RCODE FmrbSystemApp::print_system_info()
 
   m_terminal.printf("\e[37m* Family mruby *   Ver. %s (%s)\r\n",FMRB_VERSION,FMRB_RELEASE);
   m_terminal.write ("\e[34m   Powereded by FabGL\e[32m\r\n\n");
-  m_terminal.printf("\e[32mScreen Size        :\e[33m %d x %d\r\n", VGAController.getScreenWidth(), VGAController.getScreenHeight());
+  m_terminal.printf("\e[32mScreen Size        :\e[33m %d x %d\r\n", m_vga->getScreenWidth(), m_vga->getScreenHeight());
   m_terminal.printf("\e[32mTerminal Size      :\e[33m %d x %d\r\n", m_terminal.getColumns(), m_terminal.getRows());
-  m_terminal.printf("\e[32mKeyboard           :\e[33m %s\r\n", PS2Controller.keyboard()->isKeyboardAvailable() ? "OK" : "Error");
+  m_terminal.printf("\e[32mKeyboard           :\e[33m %s\r\n", m_ps2->keyboard()->isKeyboardAvailable() ? "OK" : "Error");
   m_terminal.printf("\e[32mFree DMA Memory    :\e[33m %d\r\n", heap_caps_get_free_size(MALLOC_CAP_DMA));
   m_terminal.printf("\e[32mFree 32 bit Memory :\e[33m %d\r\n\n", heap_caps_get_free_size(MALLOC_CAP_32BIT));
   m_terminal.write("\e[32m >> Press Enter\r\n\n");
@@ -73,12 +76,12 @@ FMRB_RCODE FmrbSystemApp::print_system_info()
   return FMRB_RCODE::OK;
 }
 
-static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data,int mode){
+void FmrbSystemApp::draw_img(fabgl::VGAController *vga,uint16_t x0,uint16_t y0,uint8_t* data,int mode){
   const int header = 4;
   uint16_t width  = (data[header]) + (data[header+1]<<8);
   uint16_t height = (data[header+2]) + (data[header+3]<<8);
   
-  VGAController.processPrimitives();
+  vga->processPrimitives();
 
   int dl = 15;
   if(mode==2) dl = 3;
@@ -93,8 +96,8 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data,int mode){
     for(uint16_t x=0;x<width;x++){
       if(!skip){
         if(((*p)&0xC0) == 0 ){ //check alpha
-          VGAController.setRawPixel(x0+x,y0+y,
-            VGAController.createRawPixel(RGB222((*p)&0x03, ((*p)&0x0C) >> 2, ((*p)&0x30) >> 4)));
+          vga->setRawPixel(x0+x,y0+y,
+            vga->createRawPixel(RGB222((*p)&0x03, ((*p)&0x0C) >> 2, ((*p)&0x30) >> 4)));
         }
       }
       p++;
@@ -104,8 +107,8 @@ static void draw_img(uint16_t x0,uint16_t y0,uint8_t* data,int mode){
 }
 
 FMRB_RCODE FmrbSystemApp::show_splash(){
-  FMRB_canvas.setBrushColor(Color::Black);
-  FMRB_canvas.clear();
+  m_canvas->setBrushColor(Color::Black);
+  m_canvas->clear();
   vTaskDelay(500);
 
   uint32_t fsize;
@@ -117,13 +120,13 @@ FMRB_RCODE FmrbSystemApp::show_splash(){
   if(img_data){
     for(int i=0;i<15;i++){
       if(i<10){
-        draw_img(0,0,img_data,1);
+        draw_img(m_vga,0,0,img_data,1);
       }else{
-        draw_img(0,0,img_data,2);
+        draw_img(m_vga,0,0,img_data,2);
       }
       vTaskDelay(30);
     }
-    draw_img(0,0,img_data,0);
+    draw_img(m_vga,0,0,img_data,0);
 
     fmrb_free(img_data);
   }
@@ -132,11 +135,11 @@ FMRB_RCODE FmrbSystemApp::show_splash(){
 }
 
 FMRB_RCODE FmrbSystemApp::clear_splash(){
-  int w = VGAController.getScreenWidth();
-  int h = VGAController.getScreenHeight();
-  FMRB_canvas.setBrushColor(Color::Black);
+  int w = m_vga->getScreenWidth();
+  int h = m_vga->getScreenHeight();
+  m_canvas->setBrushColor(Color::Black);
   for(int i=0;i<h;i++){
-    FMRB_canvas.fillRectangle(0,i,w-1,i);
+    m_canvas->fillRectangle(0,i,w-1,i);
     //vTaskDelay(1);
   }
   return FMRB_RCODE::OK;
@@ -154,7 +157,7 @@ char* alloc_menu_text_mem(const char* input)
 
 FMRB_RCODE message_callback(uint32_t fid,FmrbMenuModule* menu)
 {
-  FmrbDialog* dialog = new FmrbDialog(menu->m_canvas,menu->m_terminal);
+  FmrbDialog* dialog = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal);
   dialog->open_message_dialog("Not supported.",0);
   delete dialog;
   return FMRB_RCODE::OK;
@@ -208,7 +211,7 @@ FMRB_RCODE FmrbSystemApp::run_main_menu(){
 FMRB_RCODE FmrbSystemApp::run_editor(){
     m_terminal.enableCursor(true);
 
-    m_editor->begin();
+    m_editor->begin(&m_mruby_engine);
     fmrb_dump_mem_stat();
     FMRB_RCODE err = m_editor->run(m_script);
 
@@ -262,8 +265,8 @@ FMRB_RCODE FmrbSystemApp::run()
       {
         init_terminal();
         m_script = NULL;
-        if(!m_editor) m_editor = new FmrbEditor(&m_terminal);
-        if(!m_main_menu) m_main_menu = new FmrbMenuModule(&FMRB_canvas,&m_terminal,prepare_top_menu());
+        if(!m_editor) m_editor = new FmrbEditor(m_vga,m_canvas,&m_terminal);
+        if(!m_main_menu) m_main_menu = new FmrbMenuModule(m_vga, m_canvas,&m_terminal,prepare_top_menu());
 
         if(!skip_splash){
           show_splash();
@@ -393,8 +396,9 @@ FmrbMenuItem* FmrbMenuItem::retrieve_item(FmrbMenuItem* head_item,int line){
  *  FmrbMenuModule
  *****/
 
-FmrbMenuModule::FmrbMenuModule(fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem* item):
+FmrbMenuModule::FmrbMenuModule(fabgl::VGAController* vga,fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem* item):
 FmrbTerminalInput(terminal),
+m_vga(vga),
 m_canvas(canvas),
 m_terminal(terminal),
 m_top(item),
@@ -435,7 +439,7 @@ void FmrbMenuModule::clear_draw_area(void){
   uint32_t fsize=0;
   uint8_t* img_data = (uint8_t*)FMRB_storage.load("/assets/2bit_logo.img",fsize,false,false);
   if(img_data){
-    draw_img(400,50,img_data,0);
+    FmrbSystemApp::draw_img(m_vga,400,50,img_data,0);
     fmrb_free(img_data);
   }
 }
@@ -578,18 +582,19 @@ int FmrbMenuModule::draw_menu(FmrbMenuItem* head_item){
 /**
  * Dialog 
  **/
-FmrbDialog::FmrbDialog(fabgl::Canvas* canvas,fabgl::Terminal *t):
+FmrbDialog::FmrbDialog(fabgl::VGAController* vga,fabgl::Canvas* canvas,fabgl::Terminal *t):
   FmrbTerminalInput(t),
-  m_terminal(t),
+  m_vga(vga),
   m_canvas(canvas),
+  m_terminal(t),
   m_swap_buff(nullptr),
   m_dialog_width(0),
   m_dialog_height(0),
   m_x(0),
   m_y(0)
 {
-  m_screen_width = VGAController.getScreenWidth();
-  m_screen_height = VGAController.getScreenHeight();
+  m_screen_width = m_vga->getScreenWidth();
+  m_screen_height = m_vga->getScreenHeight();
 }
 
 FmrbDialog::~FmrbDialog(){
@@ -599,14 +604,6 @@ FmrbDialog::~FmrbDialog(){
 void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
 {
   int len = strlen(message);
-
-  /*
-  const fabgl::FontInfo *info = m_canvas->getFontInfo();
-  uint8_t width_org = info->width;
-  uint8_t height_org = info->height;
-  m_canvas->selectFont(fabgl::getPresetFixedFont(8,14));
-  m_canvas->setGlyphOptions(GlyphOptions().FillBackground(true));
-  */
   
   const fabgl::FontInfo *fontinfo = m_canvas->getFontInfo();
   uint8_t font_width = fontinfo->width;

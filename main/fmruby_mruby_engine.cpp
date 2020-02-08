@@ -12,15 +12,33 @@
 #include "fmruby_app.h"
 
 
-FmrbMrubyEngine::FmrbMrubyEngine()
+FmrbMrubyEngine::FmrbMrubyEngine():
+m_exec_result(FMRB_RCODE::OK),
+m_error_line(0)
 {
   m_joypad_map = (uint8_t*)fmrb_spi_malloc(FMRB_JOYPAD_MAP_LENGTH);
   memset(m_joypad_map,0,FMRB_JOYPAD_MAP_LENGTH);
+  m_error_msg = (char*)fmrb_spi_malloc(FMRB_DBG_MSG_MAX_LEN);
 }
 FmrbMrubyEngine::~FmrbMrubyEngine()
 {
-  fmrb_free( m_joypad_map );
+  if(m_joypad_map) fmrb_free( m_joypad_map );
+  if(m_error_msg) fmrb_free( m_error_msg );
 }
+
+const char *FmrbMrubyEngine::get_error_msg()
+{
+  return m_error_msg;
+}
+int FmrbMrubyEngine::get_error_line()
+{
+  return m_error_line;
+}
+FMRB_RCODE FmrbMrubyEngine::get_result()
+{
+  return m_exec_result;
+}
+
 
 void* FmrbMrubyEngine::mrb_esp32_psram_allocf(mrb_state *mrb, void *p, size_t size, void *ud)
 {
@@ -49,22 +67,36 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb) {
   int i;
   mrb_value *loc;
   int log_len = 0;
+  int csr = 0;
 
   for (i=depth-1,loc=&RARRAY_PTR(backtrace)[i]; i>0; i--,loc--) {
     if (mrb_string_p(*loc)) {
-      FMRB_DEBUG(FMRB_LOG::ERR,"\t[%d] %.*s\n",
+      FMRB_DEBUG(FMRB_LOG::ERR,"  [%d] %.*s\n",
                 i, (int)RSTRING_LEN(*loc), RSTRING_PTR(*loc));
+      if(FMRB_DBG_MSG_MAX_LEN - csr >1){
+        snprintf(m_error_msg+csr+1,FMRB_DBG_MSG_MAX_LEN-csr-1,"  [%d] %.*s\n",
+                i, (int)RSTRING_LEN(*loc), RSTRING_PTR(*loc));
+        csr = strlen(m_error_msg);
+      }
     }
   }
   if (mrb_string_p(*loc)) {
     log_len = (int)RSTRING_LEN(*loc);
     FMRB_DEBUG(FMRB_LOG::ERR,"%.*s: ", log_len, RSTRING_PTR(*loc));
+    if(FMRB_DBG_MSG_MAX_LEN - csr >1){
+      snprintf(m_error_msg+csr+1,FMRB_DBG_MSG_MAX_LEN-csr-1,"%.*s: ",
+                log_len, RSTRING_PTR(*loc));
+      csr = strlen(m_error_msg);
+    }
   }
-  log_len += (int)RSTRING_LEN(s);
-  FMRB_DEBUG(FMRB_LOG::RAW,"%s\n", RSTRING_PTR(s));
 
-  if(log_len > DBG_MSG_MAX_LEN){
-    log_len = DBG_MSG_MAX_LEN;
+  //log_len += (int)RSTRING_LEN(s);
+  FMRB_DEBUG(FMRB_LOG::RAW,"%s\n", RSTRING_PTR(s));
+  if(FMRB_DBG_MSG_MAX_LEN - csr >1){
+    log_len = (int)RSTRING_LEN(s);
+    snprintf(m_error_msg+csr+1,FMRB_DBG_MSG_MAX_LEN-csr-1,"%.*s: ",
+                log_len, RSTRING_PTR(*loc));
+    csr = strlen(m_error_msg);
   }
 
 }
@@ -114,6 +146,11 @@ void FmrbMrubyEngine::prepare_env()
   //create a task for UART input
   xTaskCreateUniversal(uartTask, "uartTask", FMRB_UART_TASK_STACK_SIZE, m_joypad_map, FMRB_UART_TASK_PRIORITY, &uartTaskHandle, CONFIG_ARDUINO_RUNNING_CORE);
   //create sound module
+
+  m_exec_result = FMRB_RCODE::OK;
+  m_error_msg[0] = '\0';
+  m_error_line = -1;
+
 }
 void FmrbMrubyEngine::cleanup_env()
 {
@@ -129,11 +166,6 @@ void FmrbMrubyEngine::run(char* code_string)
 {
   FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby script>\n\n");
   prepare_env();
-
-  m_exec_result = 0;
-  if(m_error_msg) fmrb_free(m_error_msg);
-  m_error_msg = NULL;
-  m_error_line = -1;
 
   mrb_state *mrb = mrb_open_allocf(mrb_esp32_psram_allocf,NULL);
 
@@ -151,7 +183,7 @@ void FmrbMrubyEngine::run(char* code_string)
       check_backtrace(mrb);
     }
     mrb->exc = 0;
-    m_exec_result = -1;
+    m_exec_result = FMRB_RCODE::ERROR;
   } else {
     FMRB_DEBUG(FMRB_LOG::INFO,"<Execute mruby completed successfully>\n");
   }

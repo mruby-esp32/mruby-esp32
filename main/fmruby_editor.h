@@ -57,17 +57,22 @@ enum EDIT_STATUS{
   EDIT_MEM_ERROR
 };
 
+class FmrbMrubyEngine;
+
 class FmrbEditor : public FmrbTerminalInput {
 public:
   OVERLOAD_SPI_ALLOCATOR
-  FmrbEditor(fabgl::Terminal* terminal);
+  FmrbEditor(fabgl::VGAController* vga,fabgl::Canvas* canvas,fabgl::Terminal* terminal);
   ~FmrbEditor();
-  FMRB_RCODE begin();
+  FMRB_RCODE begin(FmrbMrubyEngine*);
   FMRB_RCODE run(char* input_script);
   FMRB_RCODE release(void);
   char* dump_script(void);
 
 private:
+  fabgl::VGAController *m_vga;
+  fabgl::Canvas* m_canvas;
+  fabgl::Terminal* m_term;
   EditLine* m_buff_head;
   int m_height;
   int m_disp_height;
@@ -79,8 +84,9 @@ private:
   int m_disp_head_line;
   int m_total_line;
   FmrbSimpleLineLexer* m_line_lexer_p;
-  fabgl::Terminal* m_term;
   enum EDIT_STATUS m_error;
+  FmrbMrubyEngine* m_mruby_engine;
+
   
   void wait_key(char);
   void load_file();

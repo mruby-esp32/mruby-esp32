@@ -171,8 +171,11 @@ void EditLine::clear(void)
  * FmrbEditor
  *   An editor for mruby code
  ***********************************/
-FmrbEditor::FmrbEditor(fabgl::Terminal* terminal):
+FmrbEditor::FmrbEditor(fabgl::VGAController *vga,fabgl::Canvas* canvas,fabgl::Terminal* terminal):
   FmrbTerminalInput(terminal),
+  m_vga(vga),
+  m_canvas(canvas),
+  m_term(terminal),
   m_buff_head(nullptr),
   m_height(0),
   m_disp_height(0),
@@ -184,7 +187,6 @@ FmrbEditor::FmrbEditor(fabgl::Terminal* terminal):
   m_disp_head_line(1),
   m_total_line(0),
   m_line_lexer_p(nullptr),
-  m_term(terminal),
   m_error(EDIT_STATUS::EDIT_NO_ERROR)
 {
 
@@ -193,9 +195,11 @@ FmrbEditor::~FmrbEditor(){
 
 }
 
-FMRB_RCODE FmrbEditor::begin()
+FMRB_RCODE FmrbEditor::begin(FmrbMrubyEngine* mruby_engine)
 {
   m_line_lexer_p = nullptr;
+  m_mruby_engine = mruby_engine;
+
 #if 0
   m_line_lexer_p = (FmrbSimpleLineLexer*)fmrb_spi_malloc(sizeof(FmrbSimpleLineLexer));
   if(m_line_lexer_p) m_line_lexer_p->init();
@@ -214,6 +218,8 @@ FMRB_RCODE FmrbEditor::release()
 
 FMRB_RCODE FmrbEditor::run(char* input_script){
   if(!m_term) return FMRB_RCODE::ERROR;
+  if(!m_mruby_engine) return FMRB_RCODE::ERROR;
+
   m_height = m_term->getRows();
   m_width  = m_term->getColumns();
   m_disp_height = m_height - 1;
@@ -223,6 +229,14 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
 
   m_term->clear();
   move_cursor(m_lineno_shift+1,1);
+
+  const FMRB_RCODE last_result = m_mruby_engine->get_result();
+  const char *err_msg = m_mruby_engine->get_error_msg();
+  if(last_result != FMRB_RCODE::OK){
+    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term);
+    dialog->open_message_dialog(err_msg,0);
+    delete dialog;
+  }
 
   if(input_script)
   {
@@ -235,6 +249,7 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
 
   update();
 
+  //main editor input handling loop
   while(true){
     FmrbVkey vkey = read_vkey();
     //printf("V> %d\n",(int)vkey);
@@ -626,7 +641,6 @@ void FmrbEditor::delete_line()
 {
   EditLine* line = seek_line(m_disp_head_line+m_y-1);
   print_csr_info();
-  printf("line:%p\n",line);
 
   if(NULL==line)return;
   if(m_total_line>1){
