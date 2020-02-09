@@ -145,12 +145,12 @@ public:
   fabgl::Canvas *m_canvas;
   fabgl::Terminal* m_terminal;
   FmrbCanvasConfig *m_canvas_config;
+  void *m_param;
 
   OVERLOAD_SPI_ALLOCATOR
   FmrbMenuModule(fabgl::VGAController*, fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem *item);
   ~FmrbMenuModule();
-  void begin(uint32_t *param);
-  void set_param(uint32_t param);
+  void begin(void *param_p);
   void set_storage(FmrbFileService *storage);
 
 private:
@@ -158,7 +158,6 @@ private:
   int m_offset_x;
   int m_offset_y;
   int m_mergin;
-  uint32_t *m_param;
   FmrbFileService *m_storage;
 
   void draw_item(FmrbMenuItem* head_item,int line,bool invert);
@@ -216,6 +215,7 @@ public:
   fabgl::VGAController *m_vga;
   fabgl::PS2Controller *m_ps2;
   fabgl::Canvas *m_canvas;
+  FmrbConfig *m_config;
 
   FmrbSystemApp(fabgl::VGAController*,fabgl::PS2Controller*,fabgl::Canvas*);
   void init(FmrbFileService* st);
@@ -225,7 +225,6 @@ public:
   static void draw_img(fabgl::VGAController *vga,uint16_t x0,uint16_t y0,uint8_t* data,int mode);
 
 private:
-  FmrbConfig *m_config;
   char* m_script;
   FMRB_SYS_STATE m_state;
   FmrbEditor *m_editor;
@@ -248,5 +247,9 @@ private:
 };
 
 char* alloc_menu_text_mem(const char* input);
+FmrbConfig* get_system_config(void);
+
 FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu);
+FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu);
+FMRB_RCODE fmrb_subapp_select_mruby_resolution(FmrbMenuModule* menu);
 

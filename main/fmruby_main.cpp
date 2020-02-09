@@ -39,11 +39,21 @@
 #include "fmruby_fabgl.h"
 #include "fmruby_app.h"
 
-//shared with mrbgem
+//Shared with mrbgem
 extern fabgl::VGAController VGAController;
 extern fabgl::PS2Controller PS2Controller;
 extern fabgl::Canvas        FMRB_canvas;
-FmrbFileService FMRB_storage;
+FmrbFileService             FMRB_storage;
+
+//Local data
+
+TaskHandle_t mainTaskHandle = NULL;
+FmrbSystemApp SystemApp(&VGAController,&PS2Controller,&FMRB_canvas);
+
+FmrbConfig* get_system_config(void)
+{
+  return SystemApp.m_config;
+}
 
 void* fmrb_spi_malloc(size_t size)
 {
@@ -58,6 +68,9 @@ void* fmrb_spi_realloc(void* ptr, size_t size)
 void fmrb_free(void* ptr){
   free(ptr);
 }
+
+FmrbConfig* get_system_config(void);
+
 
 void fmrb_dump_mem_stat(){
 
@@ -297,9 +310,9 @@ static void show_fatal_error(const char* msg,const char* detail){
   }
 }
 
-TaskHandle_t mainTaskHandle = NULL;
-FmrbSystemApp SystemApp(&VGAController,&PS2Controller,&FMRB_canvas);
-
+/**
+ *  Main Task
+ **/
 void mainTask(void *pvParameters)
 {
   FMRB_DEBUG(FMRB_LOG::INFO,"=======================================\n");

@@ -112,6 +112,9 @@ void FmrbMrubyEngine::check_backtrace(mrb_state *mrb,mrb_value result_val) {
   int log_len = 0;
   int csr = 0;
 
+  snprintf(m_error_msg,FMRB_DBG_MSG_MAX_LEN-csr-1,"  <Exception occurred>");
+  csr = strlen(m_error_msg);
+
   for (i=depth-1,loc=&RARRAY_PTR(backtrace)[i]; i>0; i--,loc--) {
     if (mrb_string_p(*loc)) {
       FMRB_DEBUG(FMRB_LOG::ERR,"  [%d] %.*s\n",

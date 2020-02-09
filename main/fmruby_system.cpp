@@ -100,6 +100,8 @@ FMRB_RCODE FmrbSystemApp::print_system_info()
 }
 
 void FmrbSystemApp::draw_img(fabgl::VGAController *vga,uint16_t x0,uint16_t y0,uint8_t* data,int mode){
+  uint16_t maxx = vga->getScreenWidth();
+  uint16_t maxy = vga->getScreenHeight();
   const int header = 4;
   uint16_t width  = (data[header]) + (data[header+1]<<8);
   uint16_t height = (data[header+2]) + (data[header+3]<<8);
@@ -110,6 +112,7 @@ void FmrbSystemApp::draw_img(fabgl::VGAController *vga,uint16_t x0,uint16_t y0,u
   if(mode==2) dl = 3;
   uint8_t* p = data+header+4;
   for(uint16_t y=0;y<height;y++){
+    if(maxy>=y0+y) break;
     bool skip=false;
     if(mode>0){
       if(rand()%dl != 0){
@@ -117,6 +120,7 @@ void FmrbSystemApp::draw_img(fabgl::VGAController *vga,uint16_t x0,uint16_t y0,u
       }
     }
     for(uint16_t x=0;x<width;x++){
+      if(maxx>=x0+x) break;
       if(!skip){
         if(((*p)&0xC0) == 0 ){ //check alpha
           vga->setRawPixel(x0+x,y0+y,
@@ -190,15 +194,23 @@ FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
   FMRB_RCODE ret = FMRB_RCODE::OK;
   FMRB_DEBUG(FMRB_LOG::DEBUG,">menu callback fid:%d\n",fid);
 
-
-  if(fid==2){//begin editor
-    menu->set_param(1);
-    ret = FMRB_RCODE::OK_DONE;
+  switch(fid){
+    case 2:
+      ret = FMRB_RCODE::OK_DONE;
+      *((uint32_t*)menu->m_param)=1;
+      break;
+    case 11:
+      fmrb_subapp_select_main_resolution(menu);
+      break;
+    case 12:
+      fmrb_subapp_select_mruby_resolution(menu);
+      break;
+    case 13:
+      ret = fmrb_subapp_resolution_test(menu);
+      break;
+    default:
+    break;
   }
-  if(fid==13){//resolution test
-    ret = fmrb_subapp_resolution_test(menu);
-  }
-
   return ret;
 }
 

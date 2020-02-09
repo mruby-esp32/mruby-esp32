@@ -123,11 +123,7 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
     //load_demo_file();
   }
 
-    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
-    dialog->open_confirmation_dialog("Please select");
-    delete dialog;
-
-
+  //Check last execution status
   const FMRB_RCODE last_result = m_mruby_engine->get_result();
   const char *err_msg = m_mruby_engine->get_error_msg();
   const int error_line = m_mruby_engine->get_error_line();

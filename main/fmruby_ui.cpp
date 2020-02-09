@@ -104,11 +104,11 @@ FmrbTerminalInput(terminal),
 m_vga(vga),
 m_canvas(canvas),
 m_terminal(terminal),
+m_param(nullptr),
 m_top(item),
 m_offset_x(30),
 m_offset_y(10),
 m_mergin(3),
-m_param(nullptr),
 m_storage(nullptr)
 {
   m_canvas_config = new FmrbCanvasConfig(RGB888(255,255,255),RGB888(0,0,0),true,8,14);
@@ -119,7 +119,7 @@ FmrbMenuModule::~FmrbMenuModule(){
   if(m_canvas_config) delete m_canvas_config;
 }
 
-void FmrbMenuModule::begin(uint32_t *param){
+void FmrbMenuModule::begin(void *param){
   m_canvas_config->set(m_canvas);
   m_param = param;
 
@@ -128,12 +128,6 @@ void FmrbMenuModule::begin(uint32_t *param){
   
   m_canvas_config->set(m_canvas);
   m_canvas->clear();
-}
-
-void FmrbMenuModule::set_param(uint32_t param){
-  if(m_param){
-    *m_param = param;
-  }
 }
 
 void FmrbMenuModule::set_storage(FmrbFileService *storage){

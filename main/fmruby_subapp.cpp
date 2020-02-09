@@ -91,9 +91,9 @@ static FMRB_RCODE finish_submenu(uint32_t fid,FmrbMenuModule* menu)
 
 FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu)
 {
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"esolution test\n");
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Resolution test\n");
 
-  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select resolution>"),0,select_resolution,FmrbMenuItemType::TITLE);
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select resolution>"),0,nullptr,FmrbMenuItemType::TITLE);
   //Main
   FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Quit                  "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
 
@@ -116,8 +116,6 @@ FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu)
   menu->m_canvas->clear();
   FmrbMenuModule *localMenu = new FmrbMenuModule(menu->m_vga,menu->m_canvas,menu->m_terminal,top);
 
-  //Message and wait
-
   localMenu->begin(nullptr);
 
   //end of sub app
@@ -126,3 +124,109 @@ FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu)
   return FMRB_RCODE::OK;
 }
 
+
+
+/**
+ * Select Resolution
+ **/
+static void do_set_resolution(int type,FmrbMenuModule* menu,const char* mode)
+{
+  FMRB_DEBUG(FMRB_LOG::INFO,"Change resolution [%d]:%s\n",type,mode);
+
+  FmrbDialog* dialog = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+  bool do_change = false;
+  if(type==1){
+    do_change = dialog->open_confirmation_dialog("Are you sure to change the main display mode?");
+  }else if(type==2){
+    do_change = dialog->open_confirmation_dialog("Are you sure to change the mruby display mode?");
+  }
+  delete dialog;
+
+  if(!do_change) return;
+
+  auto config = get_system_config();
+  if(type==1){ //main
+    strcpy(config->main_mode_line,mode);
+    menu->m_vga->setResolution(mode);
+  }else if(type==2){
+    strcpy(config->mruby_mode_line,mode);
+    menu->m_vga->setResolution(mode);
+  }
+  vTaskDelay(fabgl::msToTicks(1000));
+}
+
+static FMRB_RCODE set_resolution(uint32_t fid,FmrbMenuModule* menu)
+{
+  uint8_t *type = (uint8_t*)menu->m_param;
+
+  FMRB_RCODE ret = FMRB_RCODE::OK;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,">menu select_resolution fid:%d\n",fid);
+
+  switch(fid){
+    case 2: do_set_resolution(*type,menu,VGA_320x200_75Hz); break;
+    case 3: do_set_resolution(*type,menu,VGA_320x200_75HzRetro); break;
+    case 4: do_set_resolution(*type,menu,QVGA_320x240_60Hz); break;
+
+    case 5: do_set_resolution(*type,menu,VGA_640x200_70Hz); break;
+    case 6: do_set_resolution(*type,menu,VGA_640x200_70HzRetro); break;
+    case 7: do_set_resolution(*type,menu,VGA_640x240_60Hz); break;
+    case 8: do_set_resolution(*type,menu,VGA_640x350_70Hz); break;
+    case 9: do_set_resolution(*type,menu,VGA_640x350_70HzAlt1); break;
+
+    case 10: do_set_resolution(*type,menu,VGA_640x480_60Hz); break;
+    case 11: do_set_resolution(*type,menu,VGA_640x480_60HzAlt1); break;
+    case 12: do_set_resolution(*type,menu,VGA_640x480_60HzD); break;
+    case 13: do_set_resolution(*type,menu,VGA_640x480_73Hz); break;
+    case 14: do_set_resolution(*type,menu,VESA_640x480_75Hz); break;
+
+    default:
+    break;
+  }
+
+  menu->m_canvas_config->set(menu->m_canvas);
+  return ret;
+}
+
+FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu)
+{
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"select_main_resolution\n");
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select resolution>"),0,nullptr,FmrbMenuItemType::TITLE);
+
+  //Main
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Cancel                "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
+
+  //FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_320x200_75Hz      "),2 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  //FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_320x200_75HzRetro "),3 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  //FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" QVGA_320x240_60Hz     "),4 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x200_70Hz      "),5 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x200_70HzRetro "),6 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x240_60Hz      "),7 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x350_70Hz      "),8 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x350_70HzAlt1  "),9,set_resolution,FmrbMenuItemType::SELECTABLE);
+
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60Hz      "),10,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60HzAlt1  "),11,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60HzD     "),12,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_73Hz      "),13,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VESA_640x480_75Hz     "),14,set_resolution,FmrbMenuItemType::SELECTABLE);
+
+  menu->m_canvas->clear();
+  FmrbMenuModule *localMenu = new FmrbMenuModule(menu->m_vga,menu->m_canvas,menu->m_terminal,top);
+
+  //Message and wait
+  uint8_t type = 1;
+  localMenu->begin(&type);
+
+  //end of sub app
+  delete localMenu;
+
+  return FMRB_RCODE::OK;
+
+}
+
+FMRB_RCODE fmrb_subapp_select_mruby_resolution(FmrbMenuModule* menu)
+{
+  return FMRB_RCODE::OK;
+
+}
