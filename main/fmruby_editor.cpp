@@ -48,11 +48,12 @@ const char* sample_script2 =
  * FmrbEditor
  *   An editor for mruby code
  ***********************************/
-FmrbEditor::FmrbEditor(fabgl::VGAController *vga,fabgl::Canvas* canvas,fabgl::Terminal* terminal):
+FmrbEditor::FmrbEditor(fabgl::VGAController *vga,fabgl::Canvas* canvas,fabgl::Terminal* terminal,  FmrbFileService *storage):
   FmrbTerminalInput(terminal),
   m_vga(vga),
   m_canvas(canvas),
   m_term(terminal),
+  m_storage(storage),
   m_buff_head(nullptr),
   m_height(0),
   m_disp_height(0),
@@ -634,7 +635,7 @@ void FmrbEditor::load_file(){
   //clear current buffer
   clear_buffer();
   uint32_t fsize;
-  char* buff = FMRB_storage.load("/default.rb",fsize,true,false);
+  char* buff = m_storage->load("/default.rb",fsize,true,false);
   move_cursor(m_lineno_shift+1,1);
   if(buff){
     load(buff);
@@ -662,7 +663,7 @@ void FmrbEditor::save_file(){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file\n");
   char* buff = dump_script();
   if(buff){
-    FMRB_storage.save(buff,"/default.rb");
+    m_storage->save(buff,"/default.rb");
     fmrb_free(buff);
   }else{
     FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");

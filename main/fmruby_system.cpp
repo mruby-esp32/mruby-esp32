@@ -35,11 +35,13 @@ m_canvas(c)
   m_terminal_available = false;
   m_editor = nullptr;
   m_main_menu = nullptr;
+  m_storage = nullptr;
 }
 
-void FmrbSystemApp::init(){
-  FMRB_storage.init();
-  m_config = new FmrbConfig(&FMRB_storage);
+void FmrbSystemApp::init(FmrbFileService* st){
+  m_storage = st;
+  m_storage->init();
+  m_config = new FmrbConfig();
   //load config
   strncpy(m_config->main_mode_line,VGA_640x350_70HzAlt1,256);
   strncpy(m_config->mruby_mode_line,VGA_320x200_75Hz,256);
@@ -133,9 +135,8 @@ FMRB_RCODE FmrbSystemApp::show_splash(){
   vTaskDelay(500);
 
   uint32_t fsize;
-  //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bktest.img",fsize,false,false);
-  //uint8_t* img_data = (uint8_t*)FMRB_storage.load("/bk_small.img",fsize,false,false);
-  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/assets/topimage.img",fsize,false,false);
+  uint8_t* img_data = (uint8_t*)m_storage->load("/assets/topimage.img",fsize,false,false);
+
   //FMRB_DEBUG(FMRB_LOG::DEBUG,"img:%d,%d\n",width,height);
   
   if(img_data){
@@ -285,8 +286,11 @@ FMRB_RCODE FmrbSystemApp::run()
       {
         init_terminal();
         m_script = NULL;
-        if(!m_editor) m_editor = new FmrbEditor(m_vga,m_canvas,&m_terminal);
-        if(!m_main_menu) m_main_menu = new FmrbMenuModule(m_vga, m_canvas,&m_terminal,prepare_top_menu());
+        if(!m_editor) m_editor = new FmrbEditor(m_vga,m_canvas,&m_terminal,m_storage);
+        if(!m_main_menu){
+          m_main_menu = new FmrbMenuModule(m_vga, m_canvas,&m_terminal,prepare_top_menu());
+          m_main_menu->set_storage(m_storage);
+        }
 
         if(!skip_splash){
           show_splash();

@@ -58,12 +58,11 @@ public:
   //Code Highlight
 
   OVERLOAD_SPI_ALLOCATOR
-  FmrbConfig(FmrbFileService* file_service);
-  FMRB_RCODE load();
-  FMRB_RCODE save();
+  FmrbConfig();
+  FMRB_RCODE load(FmrbFileService *fs);
+  FMRB_RCODE save(FmrbFileService *fs);
 
 private:
-  FmrbFileService *m_fservice;
 };
 
 /**
@@ -152,6 +151,7 @@ public:
   ~FmrbMenuModule();
   void begin(uint32_t *param);
   void set_param(uint32_t param);
+  void set_storage(FmrbFileService *storage);
 
 private:
   FmrbMenuItem* m_top;
@@ -159,6 +159,7 @@ private:
   int m_offset_y;
   int m_mergin;
   uint32_t *m_param;
+  FmrbFileService *m_storage;
 
   void draw_item(FmrbMenuItem* head_item,int line,bool invert);
   int draw_menu(FmrbMenuItem* head_item);
@@ -217,7 +218,7 @@ public:
   fabgl::Canvas *m_canvas;
 
   FmrbSystemApp(fabgl::VGAController*,fabgl::PS2Controller*,fabgl::Canvas*);
-  void init();
+  void init(FmrbFileService* st);
   FMRB_RCODE run();
   FmrbMrubyEngine *mruby_engign();
 
@@ -232,6 +233,7 @@ private:
   fabgl::Terminal m_terminal;
   FmrbMenuModule *m_main_menu;
   FmrbMrubyEngine m_mruby_engine;
+  FmrbFileService *m_storage;
 
   FMRB_RCODE init_terminal();
   FMRB_RCODE close_terminal();
@@ -244,8 +246,6 @@ private:
   FMRB_RCODE run_mruby();
 
 };
-
-extern FmrbFileService FMRB_storage;
 
 char* alloc_menu_text_mem(const char* input);
 FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu);

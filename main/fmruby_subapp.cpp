@@ -80,9 +80,7 @@ static FMRB_RCODE select_resolution(uint32_t fid,FmrbMenuModule* menu)
     break;
   }
 
-  menu->m_canvas->setPenColor(Color::White);
-  menu->m_canvas->setBrushColor(Color::Black);
-  menu->m_canvas->setGlyphOptions(GlyphOptions().FillBackground(true));
+  menu->m_canvas_config->set(menu->m_canvas);
   return ret;
 }
 

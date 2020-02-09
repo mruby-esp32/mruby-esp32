@@ -39,9 +39,11 @@
 #include "fmruby_fabgl.h"
 #include "fmruby_app.h"
 
+//shared with mrbgem
 extern fabgl::VGAController VGAController;
 extern fabgl::PS2Controller PS2Controller;
 extern fabgl::Canvas        FMRB_canvas;
+FmrbFileService FMRB_storage;
 
 void* fmrb_spi_malloc(size_t size)
 {
@@ -327,7 +329,7 @@ void mainTask(void *pvParameters)
 #endif
 
   try{
-    SystemApp.init();
+    SystemApp.init(&FMRB_storage);
     SystemApp.run();
   }catch(std::bad_alloc& e) {
     show_fatal_error("bad_alloc exception!",e.what());

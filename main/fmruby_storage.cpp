@@ -34,8 +34,6 @@
 #include "SPI.h"
 SPIClass hspi(HSPI);
 
-FmrbFileService FMRB_storage;
-
 //#define DEFAULT_TEST_PATH "/test.rb"
 FmrbFileService::FmrbFileService(){
   m_spiffs_opened=false;

@@ -24,23 +24,22 @@
 #include "fmruby_fabgl.h"
 
 
-FmrbConfig::FmrbConfig(FmrbFileService *file_service):
+FmrbConfig::FmrbConfig():
 main_screen_shift_x(0),
 main_screen_shift_y(0),
 mruby_screen_shift_x(0),
-mruby_screen_shift_y(0),
-m_fservice(file_service)
+mruby_screen_shift_y(0)
 {
   memset(main_mode_line,0,FMRB_MODE_LINE_MAX);
   memset(mruby_mode_line,0,FMRB_MODE_LINE_MAX);
 }
 
-FMRB_RCODE FmrbConfig::load()
+FMRB_RCODE FmrbConfig::load(FmrbFileService *fs)
 {
   return FMRB_RCODE::OK;
 }
 
-FMRB_RCODE FmrbConfig::save()
+FMRB_RCODE FmrbConfig::save(FmrbFileService *fs)
 {
   return FMRB_RCODE::OK;
   

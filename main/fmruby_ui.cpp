@@ -108,7 +108,8 @@ m_top(item),
 m_offset_x(30),
 m_offset_y(10),
 m_mergin(3),
-m_param(nullptr)
+m_param(nullptr),
+m_storage(nullptr)
 {
   m_canvas_config = new FmrbCanvasConfig(RGB888(255,255,255),RGB888(0,0,0),true,8,14);
 }
@@ -119,16 +120,13 @@ FmrbMenuModule::~FmrbMenuModule(){
 }
 
 void FmrbMenuModule::begin(uint32_t *param){
-
-  //m_canvas->selectFont(&fabgl::FONT_8x8);
-  m_canvas->selectFont(fabgl::getPresetFixedFont(8,14));
-  m_canvas->setGlyphOptions(GlyphOptions().FillBackground(true));
+  m_canvas_config->set(m_canvas);
   m_param = param;
 
   clear_draw_area();
   exec_menu(m_top);
   
-  m_canvas->setBrushColor(Color::Black);
+  m_canvas_config->set(m_canvas);
   m_canvas->clear();
 }
 
@@ -138,14 +136,20 @@ void FmrbMenuModule::set_param(uint32_t param){
   }
 }
 
+void FmrbMenuModule::set_storage(FmrbFileService *storage){
+  m_storage = storage;
+}
+
 void FmrbMenuModule::clear_draw_area(void){
   m_canvas->setBrushColor(Color::Black);
   m_canvas->clear();
-  uint32_t fsize=0;
-  uint8_t* img_data = (uint8_t*)FMRB_storage.load("/assets/2bit_logo.img",fsize,false,false);
-  if(img_data){
-    FmrbSystemApp::draw_img(m_vga,400,50,img_data,0);
-    fmrb_free(img_data);
+  if(m_storage){
+    uint32_t fsize=0;
+    uint8_t* img_data = (uint8_t*)m_storage->load("/assets/2bit_logo.img",fsize,false,false);
+    if(img_data){
+      FmrbSystemApp::draw_img(m_vga,400,50,img_data,0);
+      fmrb_free(img_data);
+    }
   }
 }
 
