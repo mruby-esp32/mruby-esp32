@@ -32,8 +32,8 @@ const char* null_script = "\n";
 
 const char* sample_script = 
 //#include "./mrb/entry_mrb.rb"
-#include "./mrb/tetris.rb"
-//#include "./mrb/bitmap_test.rb"
+//#include "./mrb/tetris.rb"
+#include "./mrb/bitmap_test.rb"
 ;
 
 const char* sample_script2 = 
@@ -631,7 +631,7 @@ void FmrbEditor::load_file(){
   //clear current buffer
   clear_buffer();
   uint32_t fsize;
-  char* buff = m_storage->load("/default.rb",fsize,true,false);
+  char* buff = m_storage->load("/spiffs/scripts/default.rb",fsize,true,false);
   move_cursor(m_lineno_shift+1,1);
   if(buff){
     load(buff);
@@ -659,7 +659,7 @@ void FmrbEditor::save_file(){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file\n");
   char* buff = dump_script();
   if(buff){
-    m_storage->save(buff,"/default.rb");
+    m_storage->save(buff,"/spiffs/scripts/default.rb");
     fmrb_free(buff);
   }else{
     FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");

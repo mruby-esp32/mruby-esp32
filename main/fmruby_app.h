@@ -29,17 +29,35 @@
 /**
  * File service
  **/
+enum class FmrbStorageType{
+  NONE,
+  SPIFFS,
+  SD,
+};
 
+#define FMRB_MAX_PATH_LEN (256)
 class FmrbFileService {
 public:
   FmrbFileService();
   FMRB_RCODE init();
+  FMRB_RCODE mount_sd();
+  void umount_sd();
+
   char* load(const char* path,uint32_t &fsize,bool is_text=false,bool localmem=true);
   char* load_bitmap(const char* path,uint16_t &width,uint16_t &height,uint32_t &type);
   FMRB_RCODE save(char* buff,const char* path);
+
 private:
   bool m_spiffs_opened;
   bool m_sd_opened;
+
+  uint64_t m_sd_size; 
+
+  void init_sd_spi();
+  FMRB_RCODE mount_spiffs();
+  FmrbStorageType check_stype_path(const char*);
+  const char* to_data_path(const char* path);
+
 };
 
 /**

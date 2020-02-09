@@ -32,102 +32,183 @@
 
 #include "SD.h"
 #include "SPI.h"
+
 SPIClass hspi(HSPI);
 
-//#define DEFAULT_TEST_PATH "/test.rb"
-FmrbFileService::FmrbFileService(){
-  m_spiffs_opened=false;
-  m_sd_opened=false;
-}
-
-#define FORMAT_SPIFFS_IF_FAILED false
-
-static int init_sd()
+FmrbFileService::FmrbFileService():
+m_spiffs_opened(false),
+m_sd_opened(false),
+m_sd_size(0)
 {
-  //gpio_pullup_en(GPIO_NUM_12);
-  hspi.begin(14,12,13,15); 
-  //pinMode(15, OUTPUT); //HSPI SS
-  vTaskDelay(500);
-
- if(!SD.begin(15,hspi,4000000,"/sd",1)){
-      FMRB_DEBUG(FMRB_LOG::ERR,"Card Mount Failed\n");
-      return -1;
-  }
-  uint8_t cardType = SD.cardType();
-
-  if(cardType == CARD_NONE){
-      FMRB_DEBUG(FMRB_LOG::ERR,"No SD card attached\n");
-      return -1;
-  }
-
-#if 0
-  printf("SD Card Type: ");
-  if(cardType == CARD_MMC){
-      printf("MMC\n");
-  } else if(cardType == CARD_SD){
-      printf("SDSC\n");
-  } else if(cardType == CARD_SDHC){
-      printf("SDHC\n");
-  } else {
-      printf("UNKNOWN\n");
-  }
-#endif
-
-  uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-  FMRB_DEBUG(FMRB_LOG::INFO,"SD Card Size: %lluMB\n", cardSize);
-  return 0;
 }
 
-FMRB_RCODE FmrbFileService::init(){
-  AutoSuspendInterrupts autoSuspendInt;
-  
-  /*
+FMRB_RCODE FmrbFileService::init(){  
+#if 0 //debug
   const esp_partition_t* partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
                                       ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
   if(partition){
     FMRB_DEBUG(FMRB_LOG::DEBUG,"label:%s\n",partition->label);
     FMRB_DEBUG(FMRB_LOG::DEBUG,"addr:%X\n",partition->address);
-    pFMRB_DEBUG(FMRB_LOG::DEBUG,size:%d\n",partition->size);
+    pFMRB_DEBUG(FMRB_LOG::DEBUG,"size:%d\n",partition->size);
   }else{
     FMRB_DEBUG(FMRB_LOG::DEBUG,"spiffs partition not found\n");
   }
-  */
+#endif
 
-  bool ret = SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED,"/spiffs",1);
-  if(!ret){
-    FMRB_DEBUG(FMRB_LOG::ERR,"SPIFFS Mount Failed\n");
-    return FMRB_RCODE::DEVICE_ERROR;
-  }
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"SPIFFS Mount OK\n");
-  m_spiffs_opened=true;
+  mount_spiffs();
 
-  int sd_stat = init_sd();
-  if(sd_stat>=0){
-    m_sd_opened = true;
-  }else{
-    m_sd_opened = false;
-  }
+  init_sd_spi();
+
+  mount_sd();
 
   return FMRB_RCODE::OK;
 }
 
-char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool localmem){
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"Reading file: %s\r\n", path);
-  if(!m_spiffs_opened) return NULL;
+
+void FmrbFileService::init_sd_spi(void)
+{
+  AutoSuspendInterrupts autoSuspendInt;
+  //gpio_pullup_en(GPIO_NUM_12);
+  //pinMode(15, OUTPUT); //HSPI SS < Low Active
+  hspi.begin(14,12,13,15); 
+  vTaskDelay(100);
+}
+
+FMRB_RCODE FmrbFileService::mount_spiffs(void)
+{
+  if(m_spiffs_opened)return FMRB_RCODE::OK;
 
   AutoSuspendInterrupts autoSuspendInt;
-  File file = SPIFFS.open(path);
-  //File file = SD.open("/default.rb");
+  bool ret = SPIFFS.begin(false,"/spiffs",1);
+  if(!ret){
+    FMRB_DEBUG(FMRB_LOG::ERR,"SPIFFS Mount Failed\n");
+    return FMRB_RCODE::DEVICE_ERROR;
+  }
+  FMRB_DEBUG(FMRB_LOG::INFO,"SPIFFS Mount OK\n");
+  m_spiffs_opened = true;
+  return FMRB_RCODE::OK;
+}
+
+FMRB_RCODE FmrbFileService::mount_sd(void)
+{
+  AutoSuspendInterrupts autoSuspendInt;
+  if(!SD.begin(15,hspi,4000000,"/sd",1)){
+      FMRB_DEBUG(FMRB_LOG::ERR,"Card Mount Failed\n");
+      return FMRB_RCODE::DEVICE_ERROR;
+  }
+  uint8_t cardType = SD.cardType();
+
+  if(cardType == CARD_NONE){
+      FMRB_DEBUG(FMRB_LOG::ERR,"No SD card attached\n");
+      SD.end();
+      return FMRB_RCODE::NOTREADY_ERROR;
+  }
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"mount SD OK\n");
+
+#if 0
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"SD Card Type: ");
+  if(cardType == CARD_MMC){
+      FMRB_DEBUG(FMRB_LOG::RAW,"MMC\n");
+  } else if(cardType == CARD_SD){
+      FMRB_DEBUG(FMRB_LOG::RAW,"SDSC\n");
+  } else if(cardType == CARD_SDHC){
+      FMRB_DEBUG(FMRB_LOG::RAW,"SDHC\n");
+  } else {
+      FMRB_DEBUG(FMRB_LOG::RAW,"UNKNOWN\n");
+  }
+#endif
+
+  uint64_t cardSize = SD.cardSize();
+  FMRB_DEBUG(FMRB_LOG::INFO,"SD Card Size: %lluMB\n", cardSize / (1024 * 1024));
+  m_sd_opened = true;
+  return FMRB_RCODE::OK;
+}
+
+void FmrbFileService::umount_sd(void)
+{
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"umount SD\n");
+  AutoSuspendInterrupts autoSuspendInt;
+  SD.end();
+}
+
+FmrbStorageType FmrbFileService::check_stype_path(const char* path)
+{
+  int len = strnlen(path,FMRB_MAX_PATH_LEN);
+  if(len==FMRB_MAX_PATH_LEN) return FmrbStorageType::NONE; // too long or broken
+  if(len<5) return FmrbStorageType::NONE; // /sd/X
+  const char* cmp = strstr(path,"/sd/");
+  if(cmp == path){
+    return FmrbStorageType::SD;
+  }
+  if(len<9) return FmrbStorageType::NONE; // /spiffs/X
+  cmp = strstr(path,"/spiffs/");
+  if(cmp == path){
+    return FmrbStorageType::SPIFFS;
+  }
+  return FmrbStorageType::NONE;
+}
+
+const char* FmrbFileService::to_data_path(const char* path)
+{
+  // "/sd/data.dat" >> "/data.dat"
+  FmrbStorageType stype = check_stype_path(path);
+  if(stype==FmrbStorageType::NONE) return nullptr;
+  if(stype==FmrbStorageType::SD){
+    return path+3;
+  }
+ return path+7;
+}
+
+
+char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool localmem){
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Reading file: %s\n", path);
+  FmrbStorageType stype = check_stype_path(path);
+  if(stype==FmrbStorageType::NONE){
+    FMRB_DEBUG(FMRB_LOG::ERR,"Bad path: %s\n", path);
+    return nullptr;
+  }
+  if(stype==FmrbStorageType::SPIFFS){
+    if(!m_spiffs_opened){
+      FMRB_DEBUG(FMRB_LOG::ERR,"SPIFFS not mounted: %s\n", path);
+      return NULL;
+    } 
+  }
+
+  if(stype==FmrbStorageType::SD){
+    if(!m_sd_opened){
+      FMRB_RCODE ret = mount_sd();
+      if(ret!=FMRB_RCODE::OK){
+        FMRB_DEBUG(FMRB_LOG::ERR,"Cannot mound SD: %s\n", path); 
+        return NULL;
+      }
+    } 
+  }
+
+  //---Suspend Interrupt---
+  //AutoSuspendInterrupts autoSuspendInt;
+  fabgl::suspendInterrupts();
+  char* buff = NULL;
+  File file;
+  size_t rsize = 0;
+  int term = 0;
+  int size = 0;
+
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"- open file: %s\n",to_data_path(path));
+  if(stype==FmrbStorageType::SPIFFS){
+    file = SPIFFS.open(to_data_path(path));
+  }else{
+    file = SD.open(to_data_path(path));
+  }
+  
   if(!file || file.isDirectory()){
     FMRB_DEBUG(FMRB_LOG::ERR,"- failed to open file for reading\n");
-    return NULL;
+    buff = nullptr;
+    goto file_access_end;
   }
-  int term = 0;
   if(is_text) term = 1;
-  int size = (int)file.size();
+  size = (int)file.size();
   FMRB_DEBUG(FMRB_LOG::DEBUG,"- read from file: size=%d\n",size);
 
-  char* buff = NULL;
   if(localmem){
     buff = (char*)heap_caps_malloc(size+term,MALLOC_CAP_DMA);
   }else{
@@ -136,20 +217,29 @@ char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool l
   if(!buff){
     FMRB_DEBUG(FMRB_LOG::ERR,"malloc error\n");
     file.close();
-    return NULL;
+    buff = nullptr;
+    goto file_access_end;
   }
-  size_t rsize = file.read((uint8_t*)buff,(size_t)size);
+  rsize = file.read((uint8_t*)buff,(size_t)size);
   FMRB_DEBUG(FMRB_LOG::DEBUG,"- read done:%d\n",(int)rsize);
   file.close();
   if(rsize==0){
     fmrb_free(buff);
-    return NULL;
+    buff = nullptr;
+    goto file_access_end;
   }
   if(is_text){
     fsize = (uint32_t)rsize+term;
     buff[size]=(uint8_t)'\0';
   }else{
     fsize = (uint32_t)rsize;
+  }
+
+file_access_end:
+  fabgl::resumeInterrupts();
+
+  if(stype==FmrbStorageType::SD){
+    umount_sd();
   }
   return buff;
 }

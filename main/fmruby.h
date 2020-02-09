@@ -57,6 +57,7 @@ enum class FMRB_LOG{
 
 enum class FMRB_RCODE{
   DEVICE_ERROR=-100,
+  NOTREADY_ERROR,
   MEMALLOC_ERROR,
   ERROR=-1,
   OK=0,

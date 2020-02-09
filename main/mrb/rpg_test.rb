@@ -30,12 +30,12 @@ class WalkMap
      @max_y = @map.size
      puts "max>#{@max_x},#{@max_y}"
      @bitmap_list = []
-     @bitmap_list << Bitmap.new.load("/sample/grass.img")  # 0
-     @bitmap_list << Bitmap.new.load("/sample/road.img")   # 1
-     @bitmap_list << Bitmap.new.load("/sample/water.img")  # 2
-     @bitmap_list << Bitmap.new.load("/sample/castle.img") # 3
+     @bitmap_list << Bitmap.new.load("/spiffs/sample/grass.img")  # 0
+     @bitmap_list << Bitmap.new.load("/spiffs/sample/road.img")   # 1
+     @bitmap_list << Bitmap.new.load("/spiffs/sample/water.img")  # 2
+     @bitmap_list << Bitmap.new.load("/spiffs/sample/castle.img") # 3
      @character_list = []
-     @character_list << Bitmap.new.load("/sample/man.img")
+     @character_list << Bitmap.new.load("/spiffs/sample/man.img")
 
      @offset_x = 40
      @offset_y = 20

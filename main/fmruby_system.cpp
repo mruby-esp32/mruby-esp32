@@ -59,6 +59,7 @@ FMRB_RCODE FmrbSystemApp::init_terminal(void)
 
     m_terminal.setBackgroundColor(Color::Black);
     m_terminal.setForegroundColor(Color::White);
+    m_terminal.loadFont(fabgl::getPresetFixedFont(8,14));
     m_terminal.clear();
     //FMRB_DEBUG(FMRB_LOG::DEBUG,"terminal_init() done\n");
     m_terminal_available = true;
@@ -112,7 +113,7 @@ void FmrbSystemApp::draw_img(fabgl::VGAController *vga,uint16_t x0,uint16_t y0,u
   if(mode==2) dl = 3;
   uint8_t* p = data+header+4;
   for(uint16_t y=0;y<height;y++){
-    if(maxy>=y0+y) break;
+    if(maxy<=y0+y) break;
     bool skip=false;
     if(mode>0){
       if(rand()%dl != 0){
@@ -120,7 +121,7 @@ void FmrbSystemApp::draw_img(fabgl::VGAController *vga,uint16_t x0,uint16_t y0,u
       }
     }
     for(uint16_t x=0;x<width;x++){
-      if(maxx>=x0+x) break;
+      if(maxx<=x0+x) break;
       if(!skip){
         if(((*p)&0xC0) == 0 ){ //check alpha
           vga->setRawPixel(x0+x,y0+y,
@@ -139,7 +140,7 @@ FMRB_RCODE FmrbSystemApp::show_splash(){
   vTaskDelay(500);
 
   uint32_t fsize;
-  uint8_t* img_data = (uint8_t*)m_storage->load("/assets/topimage.img",fsize,false,false);
+  uint8_t* img_data = (uint8_t*)m_storage->load("/spiffs/assets/topimage.img",fsize,false,false);
 
   //FMRB_DEBUG(FMRB_LOG::DEBUG,"img:%d,%d\n",width,height);
   
@@ -286,7 +287,7 @@ FMRB_RCODE FmrbSystemApp::run()
   FMRB_DEBUG(FMRB_LOG::DEBUG,"m_mruby_engine END\n");
   #endif
 
-  bool skip_splash = true;
+  bool skip_splash = false;
   bool skip_menu = false;
   
   while(true){
@@ -598,7 +599,7 @@ FmrbVkey FmrbTerminalInput::read_vkey()
     if (m_terminal->available())
     {
       char c = m_terminal->read();
-      FMRB_DEBUG(FMRB_LOG::DEBUG,"> %02x\n",c);
+      //FMRB_DEBUG(FMRB_LOG::DEBUG,"> %02x\n",c);
 
       if(!escape)
       {

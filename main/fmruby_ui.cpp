@@ -139,7 +139,7 @@ void FmrbMenuModule::clear_draw_area(void){
   m_canvas->clear();
   if(m_storage){
     uint32_t fsize=0;
-    uint8_t* img_data = (uint8_t*)m_storage->load("/assets/2bit_logo.img",fsize,false,false);
+    uint8_t* img_data = (uint8_t*)m_storage->load("/spiffs/assets/2bit_logo.img",fsize,false,false);
     if(img_data){
       FmrbSystemApp::draw_img(m_vga,400,50,img_data,0);
       fmrb_free(img_data);
@@ -296,8 +296,8 @@ FmrbDialog::FmrbDialog(fabgl::VGAController* vga,fabgl::Canvas* canvas,fabgl::Te
   m_x(0),
   m_y(0),
   m_fg_color (RGB888(255,255,255)),
-  m_bg_color1(RGB888(  0,  0,1<<6)),
-  m_bg_color2(RGB888(  0,  0,3<<6)),
+  m_bg_color1(RGB888(  0,  0,3<<6)),
+  m_bg_color2(RGB888(  0,  0,1<<6)),
   m_canva_config_origin(cconfig)
 {
   m_screen_width = m_vga->getScreenWidth();
