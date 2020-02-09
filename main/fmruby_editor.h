@@ -71,8 +71,8 @@ public:
 
 private:
   fabgl::VGAController *m_vga;
-  fabgl::Canvas* m_canvas;
-  fabgl::Terminal* m_term;
+  fabgl::Canvas *m_canvas;
+  fabgl::Terminal *m_term;
   EditLine* m_buff_head;
   int m_height;
   int m_disp_height;
@@ -85,7 +85,8 @@ private:
   int m_total_line;
   FmrbSimpleLineLexer* m_line_lexer_p;
   enum EDIT_STATUS m_error;
-  FmrbMrubyEngine* m_mruby_engine;
+  FmrbMrubyEngine *m_mruby_engine;
+  FmrbCanvasConfig *m_canvas_config;
 
   
   void wait_key(char);

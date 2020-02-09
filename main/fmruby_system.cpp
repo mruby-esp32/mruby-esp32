@@ -157,7 +157,7 @@ char* alloc_menu_text_mem(const char* input)
 
 FMRB_RCODE message_callback(uint32_t fid,FmrbMenuModule* menu)
 {
-  FmrbDialog* dialog = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal);
+  FmrbDialog* dialog = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
   dialog->open_message_dialog("Not supported.",0);
   delete dialog;
   return FMRB_RCODE::OK;
@@ -406,10 +406,12 @@ m_offset_y(10),
 m_mergin(3),
 m_param(nullptr)
 {
+  m_canvas_config = new FmrbCanvasConfig(RGB888(255,255,255),RGB888(0,0,0),true,8,14);
 }
 
 FmrbMenuModule::~FmrbMenuModule(){
   delete (m_top);
+  if(m_canvas_config) delete m_canvas_config;
 }
 
 void FmrbMenuModule::begin(uint32_t *param){
@@ -581,7 +583,7 @@ int FmrbMenuModule::draw_menu(FmrbMenuItem* head_item){
 /**
  * Dialog 
  **/
-FmrbDialog::FmrbDialog(fabgl::VGAController* vga,fabgl::Canvas* canvas,fabgl::Terminal *t):
+FmrbDialog::FmrbDialog(fabgl::VGAController* vga,fabgl::Canvas* canvas,fabgl::Terminal *t,FmrbCanvasConfig* cconfig):
   FmrbTerminalInput(t),
   m_vga(vga),
   m_canvas(canvas),
@@ -590,26 +592,34 @@ FmrbDialog::FmrbDialog(fabgl::VGAController* vga,fabgl::Canvas* canvas,fabgl::Te
   m_dialog_width(0),
   m_dialog_height(0),
   m_x(0),
-  m_y(0)
+  m_y(0),
+  m_fg_color (RGB888(255,255,255)),
+  m_bg_color1(RGB888(  0,  0,1<<6)),
+  m_bg_color2(RGB888(  0,  0,3<<6)),
+  m_canva_config_origin(cconfig)
 {
   m_screen_width = m_vga->getScreenWidth();
   m_screen_height = m_vga->getScreenHeight();
+
+  m_canvas->setGlyphOptions(GlyphOptions().FillBackground(true));
+
+  const fabgl::FontInfo *fontinfo = m_canvas->getFontInfo();
+  m_font_width = fontinfo->width;
+  m_font_height = fontinfo->height;
+  m_line_height = m_font_height+2;
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"Font[%d,%d]\n",font_width,font_height);
 }
 
 FmrbDialog::~FmrbDialog(){
+  m_canva_config_origin->set(m_canvas);
   if(m_swap_buff)fmrb_free(m_swap_buff);
 }
-
+  
 void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
 {
-  const fabgl::FontInfo *fontinfo = m_canvas->getFontInfo();
-  uint8_t font_width = fontinfo->width;
-  uint8_t font_height = fontinfo->height;
-  //FMRB_DEBUG(FMRB_LOG::DEBUG,"Font[%d,%d]\n",font_width,font_height);
-
   int msg_len = strlen(message);
   int line_cnt = 0;
-  int max_line_chars = m_screen_width/font_width - 5;
+  int max_line_chars = m_screen_width/m_font_width - 5;
   //count lines
   for(int lcnt=0,c=0;c<=msg_len;c++){
     if('\n' == message[c] || 0 == message[c] || lcnt>=max_line_chars){
@@ -619,27 +629,12 @@ void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
     lcnt++;
   }
   //FMRB_DEBUG(FMRB_LOG::DEBUG,"line_cnt[%d] max=%d\n",line_cnt,max_line_chars);
-  
-  uint8_t line_height = font_height+2;
   uint16_t window_width = m_screen_width * 95 / 100;
-  uint16_t window_height = line_height*(2+line_cnt);
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"Window[%d,%d]\n",window_width,window_height);
-  m_canvas->setBrushColor(RGB888(0,0,1<<6));
-  int s = 6;
-  m_canvas->fillRectangle(
-    s+ m_screen_width*5/100,
-    s+ m_screen_height/2 - window_height/2,
-    s+ m_screen_width*95/100,
-    s+ m_screen_height/2 + window_height/2
-  );
-  m_canvas->setBrushColor(Color::Blue);
-  m_canvas->fillRectangle(
-    m_screen_width*5/100,
-    m_screen_height/2 - window_height/2,
-    m_screen_width*95/100,
-    m_screen_height/2 + window_height/2
-  );
-  m_canvas->setPenColor(Color::White);
+  uint16_t window_height = m_line_height*(2+line_cnt);
+
+  int text_top_height = draw_window(line_cnt);
+
+  m_canvas->setPenColor(m_fg_color);
   const char* prev_p = message;
   char* buff = (char*)fmrb_spi_malloc(max_line_chars+2);
   for(int lcnt=0,line=0,c=0;c<=msg_len;c++){
@@ -656,7 +651,7 @@ void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
       FMRB_DEBUG(FMRB_LOG::DEBUG,">%s\n",buff);
       m_canvas->drawText(
         m_screen_width*7/100,
-        line*line_height + m_screen_height/2 - window_height/2 + line_height,
+        text_top_height + line*m_line_height,
         buff,true);
       line++;
     }
@@ -664,12 +659,70 @@ void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
   }
   fmrb_free(buff);
 
-
   //wait_key;
   wait_vkey(FmrbVkey::VK_RETURN);
 }
 
 
+bool FmrbDialog::open_confirmation_dialog(const char* message)
+{
+  bool select = true;
+  const char* _yes = "     <Yes>         No ";
+  const char* _no  = "      Yes         <No>";
+  int text_top_height = draw_window(3);
+  m_canvas->setPenColor(m_fg_color);
+  m_canvas->setBrushColor(m_bg_color1);
+  m_canvas->drawText( m_screen_width*7/100, text_top_height,message,true);
+
+  while(true){
+    if(select){
+      m_canvas->drawText(m_screen_width*7/100, text_top_height+m_line_height*2,_yes,true);
+    }else{
+      m_canvas->drawText(m_screen_width*7/100, text_top_height+m_line_height*2,_no ,true);
+    }
+    FmrbVkey key = read_vkey();
+    if(key==FmrbVkey::VK_LEFT){
+      select=true;
+    }else if(key==FmrbVkey::VK_RIGHT){
+      select=false;
+    }else if(key==FmrbVkey::VK_RETURN){
+      break;
+    }
+  }
+
+  return select;
+}
+
+int FmrbDialog::draw_window(int line)
+{
+  const fabgl::FontInfo *fontinfo = m_canvas->getFontInfo();
+  uint8_t font_height = fontinfo->height;
+  uint8_t line_height = font_height+2;
+  uint16_t window_width = m_screen_width * 95 / 100;
+  uint16_t window_height = line_height*(2+line);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Window[%d,%d]\n",window_width,window_height);
+  m_canvas->setBrushColor(m_bg_color2);
+  int s = 6;
+  m_canvas->fillRectangle(
+    s+ m_screen_width*5/100,
+    s+ m_screen_height/2 - window_height/2,
+    s+ m_screen_width*95/100,
+    s+ m_screen_height/2 + window_height/2
+  );
+  m_canvas->setBrushColor(m_bg_color1);
+  m_canvas->fillRectangle(
+    m_screen_width*5/100,
+    m_screen_height/2 - window_height/2,
+    m_screen_width*95/100,
+    m_screen_height/2 + window_height/2
+  );
+  return m_screen_height/2 - window_height/2 + line_height;
+}
+
+
+/**
+ * FmrbTerminalInput Class
+ **/
 FmrbTerminalInput::FmrbTerminalInput(fabgl::Terminal *t):
 m_terminal(t)
 {
@@ -1075,3 +1128,25 @@ FmrbVkey FmrbTerminalInput::read_vkey()
   }
 }
 
+
+/**
+ * FmrbCanvasConfig
+ **/
+FmrbCanvasConfig::FmrbCanvasConfig(RGB888 fg,RGB888 bg,bool fillbg, int font_width,int font_height):
+  fg(fg),
+  bg(bg),
+  fill_bg(fillbg),
+  font_width(font_width),
+  font_height(font_height)
+{
+}
+
+FmrbCanvasConfig::~FmrbCanvasConfig(){}
+
+void FmrbCanvasConfig::set(fabgl::Canvas* canvas)
+{
+  canvas->setPenColor(fg);
+  canvas->setBrushColor(bg);
+  canvas->selectFont(fabgl::getPresetFixedFont(font_width,font_height));
+  canvas->setGlyphOptions(GlyphOptions().FillBackground(fill_bg));
+}

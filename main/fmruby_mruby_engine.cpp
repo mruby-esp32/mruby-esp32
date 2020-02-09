@@ -206,7 +206,6 @@ void FmrbMrubyEngine::run(char* code_string)
   mrbc_filename(mrb, cxt, "fmrb");
 
   mrb_parser_state* parser = mrb_parse_nstring(mrb, code_string, strlen(code_string), cxt);
-  //FMRB_DEBUG(FMRB_LOG::DEBUG,"capture_errors:%d\n",parser->capture_errors);
   mrb_value result_val = mrb_load_exec(mrb, parser, cxt);
   //mrb_value val = mrb_load_string(mrb,code_string);
   if (mrb->exc) {

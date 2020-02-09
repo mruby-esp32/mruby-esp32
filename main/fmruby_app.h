@@ -43,9 +43,6 @@ public:
 
 private:
   FmrbFileService *m_fservice;
-
-private:
-
 };
 
 /**
@@ -54,12 +51,13 @@ private:
 class FmrbDialog : public FmrbTerminalInput{
 public:
   OVERLOAD_SPI_ALLOCATOR
-  FmrbDialog(fabgl::VGAController *v,fabgl::Canvas* canvas,fabgl::Terminal *);
+  FmrbDialog(fabgl::VGAController *v,fabgl::Canvas* canvas,fabgl::Terminal*,FmrbCanvasConfig*);
   ~FmrbDialog();
   void open_message_dialog(const char* message,int timeout_sec);
   bool open_confirmation_dialog(const char* message);
   const char* open_text_select_dialog(const char* list[],int list_length);
   const char* open_file_select_dialog(const char* path);
+  const char* open_text_input_dialog(const char* list[],int list_length);
 
 private:
   fabgl::VGAController* m_vga;
@@ -72,6 +70,15 @@ private:
   uint16_t m_dialog_height;
   uint16_t m_x;
   uint16_t m_y;
+  uint8_t m_line_height;
+  uint8_t m_font_width;
+  uint8_t m_font_height;
+  RGB888 m_fg_color;
+  RGB888 m_bg_color1;
+  RGB888 m_bg_color2;
+  FmrbCanvasConfig *m_canva_config_origin;
+
+  int draw_window(int line);
 };
 
 
@@ -117,6 +124,7 @@ public:
   fabgl::VGAController *m_vga;
   fabgl::Canvas *m_canvas;
   fabgl::Terminal* m_terminal;
+  FmrbCanvasConfig *m_canvas_config;
 
   OVERLOAD_SPI_ALLOCATOR
   FmrbMenuModule(fabgl::VGAController*, fabgl::Canvas* canvas,fabgl::Terminal* terminal,FmrbMenuItem *item);

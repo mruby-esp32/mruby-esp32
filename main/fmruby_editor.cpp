@@ -23,150 +23,6 @@ const char* sample_script2 =
 #define EDT_DEBUG(...)  printf(__VA_ARGS__)
 //#define EDT_DEBUG(...)
 
-EditLine::EditLine()
-{
-  text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
-  if(text == nullptr) throw std::bad_alloc();;
-  memset(text,0,EDITLINE_BLOCK_SIZE);
-  text[0] = '\0';
-  length = 0;
-  buff_size = EDITLINE_BLOCK_SIZE;
-
-  flag = 0;
-  lineno = 0;
-  prev = nullptr;
-  next = nullptr;
-
-}
-EditLine::EditLine(char* input){
-  int input_len = strlen(input);
-  int block_size = (input_len+1)/EDITLINE_BLOCK_SIZE + 1;
-  buff_size = EDITLINE_BLOCK_SIZE * block_size;
-  text = (char*)fmrb_spi_malloc(buff_size);
-  if(text == nullptr) throw std::bad_alloc();;
-  memset(text,0,buff_size);
-  strcpy(text,input);
-  length = input_len;
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"input_len:%d, buff_size:%d\n",input_len,buff_size);
-
-  flag = 0;
-  lineno = 0;
-  prev = nullptr;
-  next = nullptr;
-}
-
-EditLine::~EditLine(){
-  this->next = nullptr;
-  this->prev = nullptr;
-  if(this->text){
-    fmrb_free(this->text);
-  }
-}
-
-int EditLine::insert(uint16_t pos,char c)
-{
-  if(text==NULL) return -1;
-
-  if(pos>length){
-    FMRB_DEBUG(FMRB_LOG::ERR,"Bad position (%d>%d)\n",pos,length);
-    return -1;
-  }
-
-  EDT_DEBUG("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
-  if( length+1+1 > buff_size) // Text lenght + null char + new char >= cuurent buff size
-  {
-    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size+EDITLINE_BLOCK_SIZE);
-    text = (char*)fmrb_spi_realloc(text,buff_size+EDITLINE_BLOCK_SIZE);
-    if (NULL==text)
-    {
-      return -1;
-    }
-    memset(text+buff_size,0,EDITLINE_BLOCK_SIZE);
-    buff_size += EDITLINE_BLOCK_SIZE;
-  }
-  // 012345
-  // ABC@      pos=2, length=3, buffsize=6
-  // ABXC@            length=4, buffsize=6
-
-  EDT_DEBUG("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
-  memmove(text+pos+1,text+pos,length-pos+1);
-  text[pos]=c;
-  length+=1;
-  return 0;
-}
-
-int EditLine::backdelete(uint16_t pos)
-{
-  if(text==NULL) return -1;
-  if(pos==0) return -1;
-  // 012345
-  // ABC@      pos=1, length=3, buffsize=6
-  // BC@              length=2, buffsize=6
-
-  EDT_DEBUG("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
-  memmove(text+pos-1,text+pos,length-pos+1);
-  length-=1;
-
-  EDT_DEBUG("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
-  if( length+1 <= buff_size - EDITLINE_BLOCK_SIZE) // Text lenght + null char < cuurent buff size - BLOCK
-  {
-    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
-    text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
-    if (NULL==text)
-    {
-      return -1;
-    }
-    buff_size -= EDITLINE_BLOCK_SIZE;
-  }
-
-  return 0;
-}
-
-
-int EditLine::insert(char c)
-{
-  return 1;
-}
-
-char* EditLine::cut(uint16_t start_pos, uint16_t end_pos)
-{
-  // 0123456789
-  // abcde@     // start:2 end:5
-  // cde@       // buff
-  // ab@        // text
-
-  if(NULL==text)return NULL;
-  if(end_pos < start_pos)return NULL;
-  int copy_size = end_pos - start_pos + 1;
-  char* buff = (char*)fmrb_spi_malloc(copy_size);
-  memcpy(buff,&text[start_pos],copy_size);
-  memmove(&text[start_pos],&text[end_pos],length-end_pos+1);
-  length -= copy_size-1;
-  
-  EDT_DEBUG("start:%d end:%d length=%d buffsize=%d\n",start_pos,end_pos,length,buff_size);
-  if( length+1 <= buff_size - EDITLINE_BLOCK_SIZE) // Text lenght + null char < cuurent buff size - BLOCK
-  {
-    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
-    text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
-    if (NULL==text)
-    {
-      fmrb_free(buff);
-      return NULL;
-    }
-    buff_size -= EDITLINE_BLOCK_SIZE;
-  }
-  return buff;
-}
-
-void EditLine::clear(void)
-{
-  text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
-  memset(text,0,EDITLINE_BLOCK_SIZE);
-  strcpy(text,"\n");
-  length = strlen(text);
-  buff_size = EDITLINE_BLOCK_SIZE;
-}
-
 /***********************************
  * FmrbEditor
  *   An editor for mruby code
@@ -189,7 +45,7 @@ FmrbEditor::FmrbEditor(fabgl::VGAController *vga,fabgl::Canvas* canvas,fabgl::Te
   m_line_lexer_p(nullptr),
   m_error(EDIT_STATUS::EDIT_NO_ERROR)
 {
-
+  m_canvas_config = new FmrbCanvasConfig(RGB888(255,255,255),RGB888(0,0,0),true,8,14);
 }
 FmrbEditor::~FmrbEditor(){
 
@@ -199,11 +55,12 @@ FMRB_RCODE FmrbEditor::begin(FmrbMrubyEngine* mruby_engine)
 {
   m_line_lexer_p = nullptr;
   m_mruby_engine = mruby_engine;
-
+  m_canvas_config->set(m_canvas);
 #if 0
   m_line_lexer_p = (FmrbSimpleLineLexer*)fmrb_spi_malloc(sizeof(FmrbSimpleLineLexer));
   if(m_line_lexer_p) m_line_lexer_p->init();
 #endif
+
   return FMRB_RCODE::OK;
 }
 
@@ -217,8 +74,7 @@ FMRB_RCODE FmrbEditor::release()
 
 void FmrbEditor::clear_screen(void)
 {
-  m_canvas->setPenColor(Color::White);
-  m_canvas->setBrushColor(Color::Black);
+  m_canvas_config->set(m_canvas);
   m_canvas->clear();
 }
 
@@ -245,12 +101,17 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
     //load_demo_file();
   }
 
+    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+    dialog->open_confirmation_dialog("Please select");
+    delete dialog;
+
+
   const FMRB_RCODE last_result = m_mruby_engine->get_result();
   const char *err_msg = m_mruby_engine->get_error_msg();
   const int error_line = m_mruby_engine->get_error_line();
   if(last_result != FMRB_RCODE::OK){
     FMRB_DEBUG(FMRB_LOG::MSG,"[%d]>%s\n",error_line,err_msg);
-    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term);
+    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
     dialog->open_message_dialog(err_msg,0);
     delete dialog;
     clear_screen();
@@ -787,6 +648,157 @@ void FmrbEditor::save_file(){
   }
   FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file done\n");
 }
+
+/**
+ *  EditLine Class
+ **/
+EditLine::EditLine()
+{
+  text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
+  if(text == nullptr) throw std::bad_alloc();;
+  memset(text,0,EDITLINE_BLOCK_SIZE);
+  text[0] = '\0';
+  length = 0;
+  buff_size = EDITLINE_BLOCK_SIZE;
+
+  flag = 0;
+  lineno = 0;
+  prev = nullptr;
+  next = nullptr;
+
+}
+EditLine::EditLine(char* input){
+  int input_len = strlen(input);
+  int block_size = (input_len+1)/EDITLINE_BLOCK_SIZE + 1;
+  buff_size = EDITLINE_BLOCK_SIZE * block_size;
+  text = (char*)fmrb_spi_malloc(buff_size);
+  if(text == nullptr) throw std::bad_alloc();;
+  memset(text,0,buff_size);
+  strcpy(text,input);
+  length = input_len;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"input_len:%d, buff_size:%d\n",input_len,buff_size);
+
+  flag = 0;
+  lineno = 0;
+  prev = nullptr;
+  next = nullptr;
+}
+
+EditLine::~EditLine(){
+  this->next = nullptr;
+  this->prev = nullptr;
+  if(this->text){
+    fmrb_free(this->text);
+  }
+}
+
+int EditLine::insert(uint16_t pos,char c)
+{
+  if(text==NULL) return -1;
+
+  if(pos>length){
+    FMRB_DEBUG(FMRB_LOG::ERR,"Bad position (%d>%d)\n",pos,length);
+    return -1;
+  }
+
+  EDT_DEBUG("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
+  if( length+1+1 > buff_size) // Text lenght + null char + new char >= cuurent buff size
+  {
+    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size+EDITLINE_BLOCK_SIZE);
+    text = (char*)fmrb_spi_realloc(text,buff_size+EDITLINE_BLOCK_SIZE);
+    if (NULL==text)
+    {
+      return -1;
+    }
+    memset(text+buff_size,0,EDITLINE_BLOCK_SIZE);
+    buff_size += EDITLINE_BLOCK_SIZE;
+  }
+  // 012345
+  // ABC@      pos=2, length=3, buffsize=6
+  // ABXC@            length=4, buffsize=6
+
+  EDT_DEBUG("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
+  memmove(text+pos+1,text+pos,length-pos+1);
+  text[pos]=c;
+  length+=1;
+  return 0;
+}
+
+int EditLine::backdelete(uint16_t pos)
+{
+  if(text==NULL) return -1;
+  if(pos==0) return -1;
+  // 012345
+  // ABC@      pos=1, length=3, buffsize=6
+  // BC@              length=2, buffsize=6
+
+  EDT_DEBUG("%p, %p, %d\n",text+pos+1,text+pos,length-pos+1);
+  memmove(text+pos-1,text+pos,length-pos+1);
+  length-=1;
+
+  EDT_DEBUG("p:%d length=%d buffsize=%d\n",pos,length,buff_size);
+  if( length+1 <= buff_size - EDITLINE_BLOCK_SIZE) // Text lenght + null char < cuurent buff size - BLOCK
+  {
+    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
+    text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
+    if (NULL==text)
+    {
+      return -1;
+    }
+    buff_size -= EDITLINE_BLOCK_SIZE;
+  }
+
+  return 0;
+}
+
+
+int EditLine::insert(char c)
+{
+  return 1;
+}
+
+char* EditLine::cut(uint16_t start_pos, uint16_t end_pos)
+{
+  // 0123456789
+  // abcde@     // start:2 end:5
+  // cde@       // buff
+  // ab@        // text
+
+  if(NULL==text)return NULL;
+  if(end_pos < start_pos)return NULL;
+  int copy_size = end_pos - start_pos + 1;
+  char* buff = (char*)fmrb_spi_malloc(copy_size);
+  memcpy(buff,&text[start_pos],copy_size);
+  memmove(&text[start_pos],&text[end_pos],length-end_pos+1);
+  length -= copy_size-1;
+  
+  EDT_DEBUG("start:%d end:%d length=%d buffsize=%d\n",start_pos,end_pos,length,buff_size);
+  if( length+1 <= buff_size - EDITLINE_BLOCK_SIZE) // Text lenght + null char < cuurent buff size - BLOCK
+  {
+    EDT_DEBUG("realloc block(text_p:%p new buff size:%d)\n",text,buff_size-EDITLINE_BLOCK_SIZE);
+    text = (char*)fmrb_spi_realloc(text,buff_size-EDITLINE_BLOCK_SIZE);
+    if (NULL==text)
+    {
+      fmrb_free(buff);
+      return NULL;
+    }
+    buff_size -= EDITLINE_BLOCK_SIZE;
+  }
+  return buff;
+}
+
+void EditLine::clear(void)
+{
+  text = (char*)fmrb_spi_malloc(EDITLINE_BLOCK_SIZE);
+  memset(text,0,EDITLINE_BLOCK_SIZE);
+  strcpy(text,"\n");
+  length = strlen(text);
+  buff_size = EDITLINE_BLOCK_SIZE;
+}
+
+/**
+ *  Code Highlight
+ **/
 
 const char* highlight_words[] = 
 {"BEGIN","class","ensure","nil","self","when",

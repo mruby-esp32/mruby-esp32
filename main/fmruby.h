@@ -60,6 +60,21 @@ public:
 
 };
 
+struct FmrbCanvasConfig {
+  RGB888 fg; //pen color
+  RGB888 bg; //brush color
+  bool fill_bg;
+  int font_width;
+  int font_height;
+
+  OVERLOAD_SPI_ALLOCATOR
+  FmrbCanvasConfig(RGB888 fg,RGB888 bg,bool fillbg, int widht,int height);
+  ~FmrbCanvasConfig();
+  void set(fabgl::Canvas*);
+};
+
+
+
 void fmrb_debug_print(FMRB_LOG lv,const char *fmt,const char* func,int line,...);
 void fmrb_dump_mem_stat();
 
