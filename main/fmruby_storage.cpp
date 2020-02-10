@@ -27,14 +27,111 @@
 
 #include "esp_partition.h"
 
-#include "FS.h"
 #include "SPIFFS.h"
-
 #include "SD.h"
 #include "SPI.h"
 
 SPIClass hspi(HSPI);
 
+FmrbDir::FmrbDir(FmrbStorageType t):
+type(t),
+length(0),
+dir_path(nullptr)
+{
+  memset(path_list,0,sizeof(char*)*FMRB_MAX_DIRLIST_LEN);
+}
+
+FmrbDir::~FmrbDir()
+{
+  for(int i=0;i<FMRB_MAX_DIRLIST_LEN;i++){
+    if(path_list[i]){
+      fmrb_free(path_list[i]);
+    }
+  }
+  if(dir_path)fmrb_free(dir_path);
+}
+
+void FmrbDir::set(File *dir,const char* dir_name)
+{
+  if(dir_path){
+    FMRB_DEBUG(FMRB_LOG::ERR,"Already set\n");
+    return;
+  }
+  if(!dir_name) return;
+
+  int index = 0;
+  dir_path = (char*)fmrb_spi_malloc(1+strnlen(dir_name,FMRB_MAX_PATH_LEN)); 
+  strcpy(dir_path,dir_name);
+
+  while (true) {
+    File entry = dir->openNextFile();
+    if (!entry) {
+      break;
+    }
+    const char* epath = entry.name();
+    if(!epath)continue;
+    const char* removed_path = remove_base_dir(epath,dir_name);
+    if(removed_path && is_file(removed_path)){
+      fmrb_dump_mem_stat();
+      path_list[index] = (char*)fmrb_spi_malloc(1+strnlen(removed_path,FMRB_MAX_PATH_LEN)); 
+      strcpy(path_list[index],removed_path);
+      //FMRB_DEBUG(FMRB_LOG::DEBUG,"File(%s) > %s\n",dir_path,path_list[index]);
+      index++;
+      if(index>=FMRB_MAX_DIRLIST_LEN){
+        FMRB_DEBUG(FMRB_LOG::ERR,"Too many files\n");
+        break;
+      }
+    }
+  }
+  length = index;
+}
+
+const char* FmrbDir::fetch_path(int n)
+{
+  if(n>=length){
+    FMRB_DEBUG(FMRB_LOG::ERR,"bad index(%d)\n",n);
+    return nullptr;
+  }
+  return path_list[n];
+}
+
+bool FmrbDir::is_file(const char* path)
+{
+  if(!path)return false;
+  const char* cmp = strstr(path,"/");
+  if(cmp==NULL) return true;
+  return false;
+}
+
+bool FmrbDir::is_dir(const char* path)
+{
+  // /sd/aaa/ > true,  /sd/aaa > false
+  if(!path)return false;
+  int len = strnlen(path,FMRB_MAX_PATH_LEN);
+  if(len<=0) return false;
+  if( *(path+len-1) == '/' ){
+    return true;
+  }
+  return false;
+}
+
+
+const char* FmrbDir::remove_base_dir(const char* in,const char* base)
+{
+  // "/sd/aaa/bbb/ccc.dat", "/sd/aaa/" > "bbb/ccc.dat"
+  const char* cmp = strstr(in,base);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"%s(%s)\n",in,base);
+  if(cmp != in){
+    return nullptr;
+  }
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,">>(%s)\n",in + strnlen(base,FMRB_MAX_PATH_LEN)-1);
+  return in + strnlen(base,FMRB_MAX_PATH_LEN);
+}
+
+
+/**
+ * FmrbFileService
+ **/
 FmrbFileService::FmrbFileService():
 m_spiffs_opened(false),
 m_sd_opened(false),
@@ -70,8 +167,10 @@ void FmrbFileService::init_sd_spi(void)
   AutoSuspendInterrupts autoSuspendInt;
   //gpio_pullup_en(GPIO_NUM_12);
   //pinMode(15, OUTPUT); //HSPI SS < Low Active
+  /*
   hspi.begin(14,12,13,15); 
   vTaskDelay(100);
+  */
 }
 
 FMRB_RCODE FmrbFileService::mount_spiffs(void)
@@ -89,9 +188,16 @@ FMRB_RCODE FmrbFileService::mount_spiffs(void)
   return FMRB_RCODE::OK;
 }
 
+extern fabgl::VGAController VGAController;
+
 FMRB_RCODE FmrbFileService::mount_sd(void)
 {
+  //VGAController.setResolution();
   AutoSuspendInterrupts autoSuspendInt;
+  
+  hspi.begin(14,12,13,15); 
+  vTaskDelay(100);
+
   if(!SD.begin(15,hspi,4000000,"/sd",1)){
       FMRB_DEBUG(FMRB_LOG::ERR,"Card Mount Failed\n");
       return FMRB_RCODE::DEVICE_ERROR;
@@ -135,12 +241,12 @@ FmrbStorageType FmrbFileService::check_stype_path(const char* path)
 {
   int len = strnlen(path,FMRB_MAX_PATH_LEN);
   if(len==FMRB_MAX_PATH_LEN) return FmrbStorageType::NONE; // too long or broken
-  if(len<5) return FmrbStorageType::NONE; // /sd/X
+  if(len<4) return FmrbStorageType::NONE; // /sd/
   const char* cmp = strstr(path,"/sd/");
   if(cmp == path){
     return FmrbStorageType::SD;
   }
-  if(len<9) return FmrbStorageType::NONE; // /spiffs/X
+  if(len<8) return FmrbStorageType::NONE; // /spiffs/
   cmp = strstr(path,"/spiffs/");
   if(cmp == path){
     return FmrbStorageType::SPIFFS;
@@ -159,18 +265,17 @@ const char* FmrbFileService::to_data_path(const char* path)
  return path+7;
 }
 
-
-char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool localmem){
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"Reading file: %s\n", path);
+FMRB_RCODE FmrbFileService::precheck_path(const char* path)
+{
   FmrbStorageType stype = check_stype_path(path);
   if(stype==FmrbStorageType::NONE){
     FMRB_DEBUG(FMRB_LOG::ERR,"Bad path: %s\n", path);
-    return nullptr;
+    return FMRB_RCODE::ERROR;
   }
   if(stype==FmrbStorageType::SPIFFS){
     if(!m_spiffs_opened){
       FMRB_DEBUG(FMRB_LOG::ERR,"SPIFFS not mounted: %s\n", path);
-      return NULL;
+      return FMRB_RCODE::ERROR;
     } 
   }
 
@@ -179,15 +284,24 @@ char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool l
       FMRB_RCODE ret = mount_sd();
       if(ret!=FMRB_RCODE::OK){
         FMRB_DEBUG(FMRB_LOG::ERR,"Cannot mound SD: %s\n", path); 
-        return NULL;
+        return FMRB_RCODE::ERROR;
       }
     } 
   }
+  return FMRB_RCODE::OK;
+}
+
+char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool localmem){
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Reading file: %s\n", path);
+  if(precheck_path(path)!=FMRB_RCODE::OK){
+    return nullptr;
+  }
+  FmrbStorageType stype = check_stype_path(path);
 
   //---Suspend Interrupt---
   //AutoSuspendInterrupts autoSuspendInt;
   fabgl::suspendInterrupts();
-  char* buff = NULL;
+  char* buff = nullptr;
   File file;
   size_t rsize = 0;
   int term = 0;
@@ -200,9 +314,15 @@ char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool l
     file = SD.open(to_data_path(path));
   }
   
-  if(!file || file.isDirectory()){
+  if(!file){
     FMRB_DEBUG(FMRB_LOG::ERR,"- failed to open file for reading\n");
     buff = nullptr;
+    goto file_access_end;
+  }
+  if(file.isDirectory()){
+    FMRB_DEBUG(FMRB_LOG::ERR,"- file is directory\n");
+    buff = nullptr;
+    file.close();
     goto file_access_end;
   }
   if(is_text) term = 1;
@@ -210,6 +330,7 @@ char* FmrbFileService::load(const char* path,uint32_t &fsize,bool is_text,bool l
   FMRB_DEBUG(FMRB_LOG::DEBUG,"- read from file: size=%d\n",size);
 
   if(localmem){
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"- malloc local\n");
     buff = (char*)heap_caps_malloc(size+term,MALLOC_CAP_DMA);
   }else{
     buff = (char*)fmrb_spi_malloc(size+term);
@@ -247,7 +368,7 @@ file_access_end:
 char* FmrbFileService::load_bitmap(const char* path,uint16_t &width,uint16_t &height,uint32_t &type){
   uint32_t fsize;
   char* data = load(path,fsize,false,true);
-  if(!data) return NULL;
+  if(!data) return nullptr;
   type = *((uint32_t*)data) ;
   width  = (data[FMRB_BITMAP_HEADER_SIZE])   + (data[FMRB_BITMAP_HEADER_SIZE+1]<<8);
   height = (data[FMRB_BITMAP_HEADER_SIZE+2]) + (data[FMRB_BITMAP_HEADER_SIZE+3]<<8);
@@ -255,9 +376,47 @@ char* FmrbFileService::load_bitmap(const char* path,uint16_t &width,uint16_t &he
   return data;
 }
 
+
+FmrbDir* FmrbFileService::get_dir_obj(const char* dir_path){
+  FmrbDir* dir_obj = nullptr;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"get_list: %s\n", dir_path);
+  if(precheck_path(dir_path)!=FMRB_RCODE::OK){
+    return;// FMRB_RCODE::ERROR;
+  }
+  FmrbStorageType stype = check_stype_path(dir_path);
+
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"- open dir: %s (%d)\n",dir_path,FmrbDir::is_dir(dir_path));
+  //---Suspend Interrupt---
+  AutoSuspendInterrupts autoSuspendInt;
+  File base_dir;
+  if(stype==FmrbStorageType::SPIFFS){
+    base_dir = SPIFFS.open("/");
+    dir_obj = new FmrbDir(FmrbStorageType::SPIFFS);
+  }else{
+    base_dir = SD.open(to_data_path(dir_path));
+    dir_obj = new FmrbDir(FmrbStorageType::SD);
+  }
+  
+  if(!base_dir || !base_dir.isDirectory()){
+    FMRB_DEBUG(FMRB_LOG::ERR,"- failed to open dir for reading\n");
+    return dir_obj;
+  }
+  
+  dir_obj->set(&base_dir,to_data_path(dir_path));
+
+  base_dir.close();
+  if(stype==FmrbStorageType::SD){
+    umount_sd();
+  }
+  return dir_obj;
+}
+
+
 FMRB_RCODE FmrbFileService::save(char* buff,const char* path){
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"Writing file: %s\r\n", path);
-  if(!m_spiffs_opened) return FMRB_RCODE::ERROR;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Writing file: %s\n", path);
+  if(precheck_path(path)!=FMRB_RCODE::OK){
+    return FMRB_RCODE::ERROR;
+  }
 
   AutoSuspendInterrupts autoSuspendInt;
   File file = SPIFFS.open(path, FILE_WRITE);

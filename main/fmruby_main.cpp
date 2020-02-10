@@ -57,12 +57,16 @@ FmrbConfig* get_system_config(void)
 
 void* fmrb_spi_malloc(size_t size)
 {
-  return heap_caps_malloc(size,MALLOC_CAP_SPIRAM);
+  void *p = heap_caps_malloc(size,MALLOC_CAP_SPIRAM);
+  if(!p) throw "fmrb_spi_malloc error!";
+  return p;
 }
 
 void* fmrb_spi_realloc(void* ptr, size_t size)
 {
-  return heap_caps_realloc(ptr,size,MALLOC_CAP_SPIRAM);
+  void *p = heap_caps_realloc(ptr,size,MALLOC_CAP_SPIRAM);
+  if(!p) throw "fmrb_spi_realloc error!";
+  return p;
 }
 
 void fmrb_free(void* ptr){

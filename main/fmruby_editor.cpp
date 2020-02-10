@@ -628,10 +628,24 @@ void FmrbEditor::clear_buffer(){
 
 void FmrbEditor::load_file(){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file\n");
+
+  FmrbDir *data_dir = m_storage->get_dir_obj("/spiffs/sample/");
+  if(data_dir){
+    for(int i=0;i<data_dir->length;i++){
+      auto path = data_dir->fetch_path(i);
+      FMRB_DEBUG(FMRB_LOG::DEBUG,"Load Dir File:%s\n",path);
+    }
+    
+    delete data_dir;
+  }
+
+
   //clear current buffer
   clear_buffer();
   uint32_t fsize;
   char* buff = m_storage->load("/spiffs/scripts/default.rb",fsize,true,false);
+
+
   move_cursor(m_lineno_shift+1,1);
   if(buff){
     load(buff);

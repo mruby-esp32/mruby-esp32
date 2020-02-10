@@ -43,8 +43,8 @@ void FmrbSystemApp::init(FmrbFileService* st){
   m_storage->init();
   m_config = new FmrbConfig();
   //load config
-  strncpy(m_config->main_mode_line,VGA_640x350_70HzAlt1,256);
-  strncpy(m_config->mruby_mode_line,VGA_320x200_75Hz,256);
+  strncpy(m_config->main_mode_line,VGA_640x350_70HzAlt1,FMRB_MODE_LINE_MAX);
+  strncpy(m_config->mruby_mode_line,VGA_320x200_75Hz,FMRB_MODE_LINE_MAX);
 
 }
 
@@ -165,9 +165,9 @@ FMRB_RCODE FmrbSystemApp::clear_splash(){
   int w = m_vga->getScreenWidth();
   int h = m_vga->getScreenHeight();
   m_canvas->setBrushColor(Color::Black);
-  for(int i=0;i<h;i++){
-    m_canvas->fillRectangle(0,i,w-1,i);
-    //vTaskDelay(1);
+  for(int i=0;i<h;i+=4){
+    m_canvas->fillRectangle(0,i,w-1,i+3);
+    vTaskDelay(1);
   }
   return FMRB_RCODE::OK;
 }

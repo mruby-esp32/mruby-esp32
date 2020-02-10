@@ -26,6 +26,8 @@
 #include "mruby.h"
 #include <cstdlib>
 
+#include "FS.h"
+
 /**
  * File service
  **/
@@ -36,6 +38,27 @@ enum class FmrbStorageType{
 };
 
 #define FMRB_MAX_PATH_LEN (256)
+#define FMRB_MAX_DIRLIST_LEN (256)
+class FmrbDir{
+public:
+  FmrbStorageType type;
+  int length;
+  char* dir_path;
+
+  OVERLOAD_SPI_ALLOCATOR
+  FmrbDir(FmrbStorageType);
+  ~FmrbDir();
+  void set(File *file,const char* dir_name);
+  const char* fetch_path(int n);
+
+  static bool is_file(const char* path);
+  static bool is_dir(const char* path);
+  static const char* remove_base_dir(const char* in,const char* base);
+
+private:
+  char* path_list[FMRB_MAX_DIRLIST_LEN];
+};
+
 class FmrbFileService {
 public:
   FmrbFileService();
@@ -45,7 +68,12 @@ public:
 
   char* load(const char* path,uint32_t &fsize,bool is_text=false,bool localmem=true);
   char* load_bitmap(const char* path,uint16_t &width,uint16_t &height,uint32_t &type);
+  FmrbDir* get_dir_obj(const char* dir_path);
+
   FMRB_RCODE save(char* buff,const char* path);
+
+  static FmrbStorageType check_stype_path(const char*);
+  static const char* to_data_path(const char* path);
 
 private:
   bool m_spiffs_opened;
@@ -55,9 +83,9 @@ private:
 
   void init_sd_spi();
   FMRB_RCODE mount_spiffs();
-  FmrbStorageType check_stype_path(const char*);
-  const char* to_data_path(const char* path);
+  FMRB_RCODE precheck_path(const char* path);
 
+  
 };
 
 /**
