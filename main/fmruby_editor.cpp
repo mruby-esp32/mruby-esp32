@@ -41,8 +41,8 @@ const char* sample_script2 =
 ;
 
 
-#define EDT_DEBUG(...)  printf(__VA_ARGS__)
-//#define EDT_DEBUG(...)
+//#define EDT_DEBUG(...)  printf(__VA_ARGS__)
+#define EDT_DEBUG(...)
 
 /***********************************
  * FmrbEditor
@@ -830,7 +830,7 @@ EditLine::EditLine(char* input){
   memset(text,0,buff_size);
   strcpy(text,input);
   length = input_len;
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"input_len:%d, buff_size:%d\n",input_len,buff_size);
+  //FMRB_DEBUG(FMRB_LOG::DEBUG,"input_len:%d, buff_size:%d\n",input_len,buff_size);
 
   flag = 0;
   lineno = 0;

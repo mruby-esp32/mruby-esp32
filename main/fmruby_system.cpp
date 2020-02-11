@@ -29,7 +29,8 @@
 FmrbSystemApp::FmrbSystemApp(fabgl::VGAController *v,fabgl::PS2Controller *ps2,fabgl::Canvas *c):
 m_vga(v),
 m_ps2(ps2),
-m_canvas(c)
+m_canvas(c),
+m_resolution_updated(false)
 {
   m_state = FMRB_SYS_STATE::INIT;
   m_terminal_available = false;
@@ -197,10 +198,11 @@ FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
   switch(fid){
     case 2:
       ret = FMRB_RCODE::OK_DONE;
-      *((uint32_t*)menu->m_param)=1;
+      *((uint32_t*)menu->m_param) |= 0x00000001;
       break;
     case 11:
       fmrb_subapp_select_main_resolution(menu);
+      *((uint32_t*)menu->m_param) |= 0x00000002;
       break;
     case 12:
       fmrb_subapp_select_mruby_resolution(menu);
@@ -228,7 +230,7 @@ FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
      //FmrbMenuItem::add_item_tail(top,alloc_text_mem("")           ,5,menu_callback,FmrbMenuItemType::UNSELECTABLE);
   //Sub Config
   m2 = FmrbMenuItem::add_child_item(m1,alloc_text_mem("<Configuration>"),10,menu_callback,FmrbMenuItemType::TITLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Editor Resolution "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Main Resolution "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
        FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" mruby Resolution  "),12,menu_callback,FmrbMenuItemType::SELECTABLE);
        FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Resolution Test   "),13,menu_callback,FmrbMenuItemType::SELECTABLE);
        FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Save Config       "),14,menu_callback,FmrbMenuItemType::SELECTABLE);
@@ -240,14 +242,24 @@ FMRB_RCODE FmrbSystemApp::run_main_menu(){
   uint32_t return_info=0;
   m_main_menu->begin(&return_info);
   //m_main_menu.clear();
-  if(return_info==1){
+  if(return_info & 0x00000001){
     m_state = FMRB_SYS_STATE::DO_EDIT;
+  }
+  if(return_info & 0x00000002){
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Main Resolution Updated\n");
+    m_resolution_updated = true;
   }
   return FMRB_RCODE::OK;
 }
 
 FMRB_RCODE FmrbSystemApp::run_editor(){
 
+    if(m_resolution_updated){
+      FMRB_DEBUG(FMRB_LOG::DEBUG,"Reset terminal\n");
+      close_terminal();
+      init_terminal();
+      m_resolution_updated = false;
+    }
     m_editor->begin(&m_mruby_engine);
     fmrb_dump_mem_stat();
     FMRB_RCODE result = m_editor->run(m_script);

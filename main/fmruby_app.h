@@ -276,6 +276,7 @@ public:
   fabgl::PS2Controller *m_ps2;
   fabgl::Canvas *m_canvas;
   FmrbConfig *m_config;
+  bool m_resolution_updated;
 
   FmrbSystemApp(fabgl::VGAController*,fabgl::PS2Controller*,fabgl::Canvas*);
   void init(FmrbFileService* st);
