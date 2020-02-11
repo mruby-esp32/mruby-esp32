@@ -41,9 +41,10 @@ m_canvas(c)
 void FmrbSystemApp::init(FmrbFileService* fs){
   m_storage = fs;
   m_storage->init();
+
   m_config = new FmrbConfig();
-  //load config
-  m_config->load(fs);
+  m_config->init(fs);
+  m_config->load();
 }
 
 FMRB_RCODE FmrbSystemApp::init_terminal(void)
@@ -207,6 +208,9 @@ FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
     case 13:
       ret = fmrb_subapp_resolution_test(menu);
       break;
+    case 14:
+      fmrb_subapp_save_config(menu);
+      break;
     default:
     break;
   }
@@ -227,6 +231,7 @@ FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
        FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Editor Resolution "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
        FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" mruby Resolution  "),12,menu_callback,FmrbMenuItemType::SELECTABLE);
        FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Resolution Test   "),13,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Save Config       "),14,menu_callback,FmrbMenuItemType::SELECTABLE);
 
   return top;
 }

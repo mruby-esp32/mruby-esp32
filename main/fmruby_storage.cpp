@@ -439,6 +439,7 @@ FMRB_RCODE FmrbFileService::save(const uint8_t *buff,const char* path,size_t dat
   }
   FmrbStorageType stype = check_stype_path(path);
 
+  //---Suspend Interrupt---
   AutoSuspendInterrupts autoSuspendInt;
 
   FMRB_DEBUG(FMRB_LOG::DEBUG,"- open file: %s\n",to_data_path(path));
@@ -455,7 +456,7 @@ FMRB_RCODE FmrbFileService::save(const uint8_t *buff,const char* path,size_t dat
   }
   for(int i=0;i<data_size;i++){
     if(file.write(buff[i])){
-      FMRB_DEBUG(FMRB_LOG::DEBUG,"- file written\n");
+      //FMRB_DEBUG(FMRB_LOG::DEBUG,"- file written\n");
     } else {
       FMRB_DEBUG(FMRB_LOG::ERR,"- write failed\n");
       file.close();

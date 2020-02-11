@@ -145,13 +145,38 @@ static void do_set_resolution(int type,FmrbMenuModule* menu,const char* mode)
   if(!do_change) return;
 
   auto config = get_system_config();
+  FMRB_RCODE rcode;
   if(type==1){ //main
     strcpy(config->main_mode_line,mode);
-    menu->m_vga->setResolution(mode);
+
+    FmrbDialog* dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+    std::string val;
+    rcode = dialog1->open_text_input_dialog("Input Main screen x-offset",&val);
+    config->main_screen_shift_x = atoi(val.c_str());
+    delete dialog1;
+
+    dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+    val = "";
+    rcode = dialog1->open_text_input_dialog("Input Main screen y-offset",&val);
+    config->main_screen_shift_y = atoi(val.c_str());
+    delete dialog1;
+
   }else if(type==2){
     strcpy(config->mruby_mode_line,mode);
-    menu->m_vga->setResolution(mode);
+
+    FmrbDialog* dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+    std::string val;
+    rcode = dialog1->open_text_input_dialog("Input mruby screen x-offset",&val);
+    config->mruby_screen_shift_x = atoi(val.c_str());
+    delete dialog1;
+
+    dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+    val = "";
+    rcode = dialog1->open_text_input_dialog("Input mruby screen y-offset",&val);
+    config->mruby_screen_shift_y = atoi(val.c_str());
+    delete dialog1;
   }
+  fabgl_terminal_mode_init(config);
   vTaskDelay(fabgl::msToTicks(1000));
 }
 
@@ -266,4 +291,28 @@ int16_t fmrb_subapp_select_file(FmrbDir* dir_obj,FmrbDialog *dialog)
 
   return selected_index;
 
+}
+
+
+
+FMRB_RCODE fmrb_subapp_save_config(FmrbMenuModule* menu)
+{
+  FmrbDialog* confirm_dialog = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+  bool save_check = confirm_dialog->open_confirmation_dialog("Do you save current configuration to SPIFFS?");
+  delete confirm_dialog;
+  
+  menu->m_canvas->clear();
+  FMRB_RCODE rcode = FMRB_RCODE::ERROR;
+  if(save_check){
+    auto config = get_system_config();
+    rcode = config->save();
+    FmrbDialog* msg_dialog = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+    if(rcode==FMRB_RCODE::OK){
+      msg_dialog->open_message_dialog("Configuration was saved successfully");
+    }else{
+      msg_dialog->open_message_dialog("Failed to save configuration");
+    }
+    delete confirm_dialog;
+  }
+  return rcode;
 }

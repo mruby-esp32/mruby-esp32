@@ -96,21 +96,25 @@ private:
  **/
 #define FMRB_CONFIG_KEY_MAX (64)
 #define FMRB_MODE_LINE_MAX (256)
+#define FMRB_CONFIG_FILE_PATH "/spiffs/config/config.txt"
 class FmrbConfig  {
 public:
   char main_mode_line[FMRB_MODE_LINE_MAX];
   char mruby_mode_line[FMRB_MODE_LINE_MAX];
-  int main_screen_shift_x;
-  int main_screen_shift_y;
-  int mruby_screen_shift_x;
-  int mruby_screen_shift_y;
+  int32_t main_screen_shift_x;
+  int32_t main_screen_shift_y;
+  int32_t mruby_screen_shift_x;
+  int32_t mruby_screen_shift_y;
+
+  FmrbFileService* m_storage;
 
   //Code Highlight
 
   OVERLOAD_SPI_ALLOCATOR
   FmrbConfig();
-  FMRB_RCODE load(FmrbFileService *fs);
-  FMRB_RCODE save(FmrbFileService *fs);
+  void init(FmrbFileService* fs);
+  FMRB_RCODE load(void);
+  FMRB_RCODE save(void);
 
 private:
   FMRB_RCODE read_value_str(const char* txt,const char* key,char* out);
@@ -309,3 +313,4 @@ FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu);
 FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu);
 FMRB_RCODE fmrb_subapp_select_mruby_resolution(FmrbMenuModule* menu);
 int16_t fmrb_subapp_select_file(FmrbDir* dir_obj,FmrbDialog *dialog);
+FMRB_RCODE fmrb_subapp_save_config(FmrbMenuModule* menu);

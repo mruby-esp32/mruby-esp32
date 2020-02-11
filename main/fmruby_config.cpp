@@ -28,18 +28,23 @@ FmrbConfig::FmrbConfig():
 main_screen_shift_x(0),
 main_screen_shift_y(0),
 mruby_screen_shift_x(0),
-mruby_screen_shift_y(0)
+mruby_screen_shift_y(0),
+m_storage(nullptr)
 {
   memset(main_mode_line,0,FMRB_MODE_LINE_MAX);
   memset(mruby_mode_line,0,FMRB_MODE_LINE_MAX);
 }
 
-
-
-FMRB_RCODE FmrbConfig::load(FmrbFileService *fs)
+void FmrbConfig::init(FmrbFileService *fs)
 {
+  m_storage = fs;
+}
+
+FMRB_RCODE FmrbConfig::load()
+{
+  if(!m_storage) return FMRB_RCODE::ERROR;
   uint32_t size;
-  const char* config_txt = fs->load("/spiffs/config/config.txt",size,true,false);
+  const char* config_txt = m_storage->load(FMRB_CONFIG_FILE_PATH,size,true,false);
   if(config_txt){
     FMRB_RCODE rcode = read_value_str(config_txt,"main_mode_line",main_mode_line);
     if(rcode!=FMRB_RCODE::OK){ set_default_value();return FMRB_RCODE::OK; }
@@ -66,10 +71,43 @@ FMRB_RCODE FmrbConfig::load(FmrbFileService *fs)
   return FMRB_RCODE::OK;
 }
 
-FMRB_RCODE FmrbConfig::save(FmrbFileService *fs)
+static void check_buffsize(char **out_buff,int *buff_size,int *pos)
 {
-  return FMRB_RCODE::OK;
-  
+  int size = strlen(*out_buff);
+  *pos = size;
+  if(size > *buff_size-FMRB_MODE_LINE_MAX){
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"check_buffsize realloc(%d)\n",*buff_size);
+    *out_buff = (char*)fmrb_spi_realloc(*out_buff,*buff_size+1024);
+    *buff_size = *buff_size + 1024;
+  }
+}
+
+FMRB_RCODE FmrbConfig::save()
+{
+  if(!m_storage) return FMRB_RCODE::ERROR;
+  int buff_size = 1024;
+  char* out_buff = (char*)fmrb_spi_malloc(buff_size);
+  int pos = 0;
+
+  sprintf(out_buff+pos,"%s:%s\n","main_mode_line",main_mode_line);
+  check_buffsize(&out_buff,&buff_size,&pos);
+  sprintf(out_buff+pos,"%s:%d\n","main_screen_shift_x",main_screen_shift_x);
+  check_buffsize(&out_buff,&buff_size,&pos);
+  sprintf(out_buff+pos,"%s:%d\n","main_screen_shift_y",main_screen_shift_y);
+  check_buffsize(&out_buff,&buff_size,&pos);
+
+  sprintf(out_buff+pos,"%s:%s\n","mruby_mode_line",mruby_mode_line);
+  check_buffsize(&out_buff,&buff_size,&pos);
+  sprintf(out_buff+pos,"%s:%d\n","mruby_screen_shift_x",mruby_screen_shift_x);
+  check_buffsize(&out_buff,&buff_size,&pos);
+  sprintf(out_buff+pos,"%s:%d\n","mruby_screen_shift_y",mruby_screen_shift_y);
+  check_buffsize(&out_buff,&buff_size,&pos);
+
+  FMRB_DEBUG(FMRB_LOG::MSG,"Save Config\n%s\n",out_buff);  
+  FMRB_RCODE rcode = m_storage->save((uint8_t*)out_buff,FMRB_CONFIG_FILE_PATH,strlen(out_buff)+1);
+
+  fmrb_free(out_buff);
+  return rcode;
 }
 
 FMRB_RCODE FmrbConfig::read_value_str(const char* txt,const char* key,char* out)

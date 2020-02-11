@@ -330,8 +330,8 @@ void FmrbDialog::open_message_dialog(const char* message,int timeout_sec)
     lcnt++;
   }
   //FMRB_DEBUG(FMRB_LOG::DEBUG,"line_cnt[%d] max=%d\n",line_cnt,max_line_chars);
-  uint16_t window_width = m_screen_width * 95 / 100;
-  uint16_t window_height = m_line_height*(2+line_cnt);
+  //uint16_t window_width = m_screen_width * 95 / 100;
+  //uint16_t window_height = m_line_height*(2+line_cnt);
 
   int text_top_height = draw_window(line_cnt);
 
