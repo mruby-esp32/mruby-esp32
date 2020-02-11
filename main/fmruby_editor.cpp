@@ -629,32 +629,32 @@ void FmrbEditor::clear_buffer(){
 void FmrbEditor::load_file(){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file\n");
 
-  FmrbDir *data_dir = m_storage->get_dir_obj("/spiffs/sample/");
-  if(data_dir){
-    for(int i=0;i<data_dir->length;i++){
-      auto path = data_dir->fetch_path(i);
-      FMRB_DEBUG(FMRB_LOG::DEBUG,"Load Dir File:%s\n",path);
+  m_terminal->enableCursor(false);
+  std::string load_file_path;
+  //char *load_file_path = (char*)fmrb_spi_malloc(FMRB_MAX_PATH_LEN);
+  //load_file_path[0] = '\0';
+  FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+  FMRB_RCODE ret = dialog->open_file_select_dialog(m_storage,"/spiffs/scripts/",&load_file_path);
+  delete dialog;
+  m_terminal->enableCursor(true);
+  clear_screen();
+
+  if(ret==FMRB_RCODE::OK){
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Load Dir File:%s\n",load_file_path);
+    uint32_t fsize;
+    char* buff = m_storage->load(load_file_path.c_str(),fsize,true,false);
+    if(buff){
+      move_cursor(m_lineno_shift+1,1);
+      //clear current buffer
+      clear_buffer();
+      load(buff);
+      FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file done\n");
+    }else{
+      FMRB_DEBUG(FMRB_LOG::ERR,"failed to load file\n");
     }
-    
-    delete data_dir;
   }
-
-
-  //clear current buffer
-  clear_buffer();
-  uint32_t fsize;
-  char* buff = m_storage->load("/spiffs/scripts/default.rb",fsize,true,false);
-
-
-  move_cursor(m_lineno_shift+1,1);
-  if(buff){
-    load(buff);
-  }else{
-    FMRB_DEBUG(FMRB_LOG::ERR,"failed to load file\n");
-    load(null_script);
-  }
+  //fmrb_free(load_file_path);
   update();
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file done\n");
 }
 
 void FmrbEditor::load_demo_file(int type){

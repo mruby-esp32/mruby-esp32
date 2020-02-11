@@ -51,6 +51,27 @@ FmrbDir::~FmrbDir()
   if(dir_path)fmrb_free(dir_path);
 }
 
+namespace{
+  const char* StorageTypeString[] = {
+    "",
+    "/spiffs",
+    "/sd"
+  };
+}
+
+const char* FmrbDir::type_to_path(FmrbStorageType type)
+{
+  switch(type){
+    case FmrbStorageType::SPIFFS:
+    return StorageTypeString[1];
+    case FmrbStorageType::SD:
+    return StorageTypeString[2];
+    default:
+    break;
+  }
+  return StorageTypeString[0];
+}
+
 void FmrbDir::set(File *dir,const char* dir_name)
 {
   if(dir_path){
@@ -381,7 +402,7 @@ FmrbDir* FmrbFileService::get_dir_obj(const char* dir_path){
   FmrbDir* dir_obj = nullptr;
   FMRB_DEBUG(FMRB_LOG::DEBUG,"get_list: %s\n", dir_path);
   if(precheck_path(dir_path)!=FMRB_RCODE::OK){
-    return;// FMRB_RCODE::ERROR;
+    return dir_obj;
   }
   FmrbStorageType stype = check_stype_path(dir_path);
 

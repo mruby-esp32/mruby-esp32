@@ -21,10 +21,12 @@
 
 #pragma once
 
+#include <cstdlib>
+#include <string>
+
 #include "fmruby.h"
 #include "fmruby_editor.h"
 #include "mruby.h"
-#include <cstdlib>
 
 #include "FS.h"
 
@@ -50,7 +52,8 @@ public:
   ~FmrbDir();
   void set(File *file,const char* dir_name);
   const char* fetch_path(int n);
-
+ 
+  static const char* type_to_path(FmrbStorageType);
   static bool is_file(const char* path);
   static bool is_dir(const char* path);
   static const char* remove_base_dir(const char* in,const char* base);
@@ -116,19 +119,20 @@ private:
  **/
 class FmrbDialog : public FmrbTerminalInput{
 public:
+  fabgl::VGAController *m_vga;
+  fabgl::Canvas *m_canvas;
+  fabgl::Terminal *m_terminal;
+
   OVERLOAD_SPI_ALLOCATOR
   FmrbDialog(fabgl::VGAController *v,fabgl::Canvas* canvas,fabgl::Terminal*,FmrbCanvasConfig*);
   ~FmrbDialog();
   void open_message_dialog(const char* message,int timeout_sec);
   bool open_confirmation_dialog(const char* message);
   const char* open_text_select_dialog(const char* list[],int list_length);
-  const char* open_file_select_dialog(const char* path);
-  const char* open_text_input_dialog(const char* list[],int list_length);
+  FMRB_RCODE open_file_select_dialog(FmrbFileService*,const char* path,std::string* input);
+  FMRB_RCODE open_text_input_dialog(const char* list[],int list_length,std::string* input);
 
 private:
-  fabgl::VGAController* m_vga;
-  fabgl::Canvas *m_canvas;
-  fabgl::Terminal *m_terminal;
   uint8_t *m_swap_buff;
   uint16_t m_screen_width;
   uint16_t m_screen_height;
@@ -298,4 +302,4 @@ FmrbConfig* get_system_config(void);
 FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu);
 FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu);
 FMRB_RCODE fmrb_subapp_select_mruby_resolution(FmrbMenuModule* menu);
-
+int16_t fmrb_subapp_select_file(FmrbDir* dir_obj,FmrbDialog *dialog);

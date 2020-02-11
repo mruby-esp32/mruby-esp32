@@ -395,6 +395,26 @@ bool FmrbDialog::open_confirmation_dialog(const char* message)
   return select;
 }
 
+FMRB_RCODE FmrbDialog::open_file_select_dialog(FmrbFileService* fs,const char* path,std::string* selected_path)
+{
+  if(!path || !fs)return FMRB_RCODE::ERROR;
+
+  m_canvas->clear();
+  FmrbDir *dir_obj = fs->get_dir_obj(path);
+  if(dir_obj){
+    int16_t index = fmrb_subapp_select_file(dir_obj,this);
+    if(index>=0 && index<dir_obj->length){
+      const char* path = dir_obj->fetch_path(index);
+      *selected_path += FmrbDir::type_to_path(dir_obj->type);
+      *selected_path += dir_obj->dir_path;
+      *selected_path += path;
+    }
+    delete dir_obj;
+  }
+  m_canvas->clear();
+  return FMRB_RCODE::OK;
+}
+
 int FmrbDialog::draw_window(int line)
 {
   const fabgl::FontInfo *fontinfo = m_canvas->getFontInfo();

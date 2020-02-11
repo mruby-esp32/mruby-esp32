@@ -228,5 +228,42 @@ FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu)
 FMRB_RCODE fmrb_subapp_select_mruby_resolution(FmrbMenuModule* menu)
 {
   return FMRB_RCODE::OK;
+}
+
+
+static FMRB_RCODE select_file_cb(uint32_t fid,FmrbMenuModule* menu)
+{
+  int16_t *selected_index = (int16_t*)menu->m_param;
+  if(selected_index){
+    *selected_index = fid - 2;
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"selected_index\n",*selected_index);
+  }
+  return FMRB_RCODE::OK_DONE;
+}
+
+
+int16_t fmrb_subapp_select_file(FmrbDir* dir_obj,FmrbDialog *dialog)
+{
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"select_main_resolution\n");
+
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select a file>"),0,nullptr,FmrbMenuItemType::TITLE);
+  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem("[Cancel]"),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
+
+  for(int i=0;i<dir_obj->length;i++){
+    const char* path = dir_obj->fetch_path(i);
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Load Dir File:%s\n",path);
+    FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(path),i+2 ,select_file_cb,FmrbMenuItemType::SELECTABLE);
+  }
+
+  dialog->m_canvas->clear();
+  FmrbMenuModule *localMenu = new FmrbMenuModule(dialog->m_vga,dialog->m_canvas,dialog->m_terminal,top);
+
+  int16_t selected_index = -1;
+  localMenu->begin(&selected_index);
+
+  //end of sub app
+  delete localMenu;
+
+  return selected_index;
 
 }
