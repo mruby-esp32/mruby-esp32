@@ -432,25 +432,35 @@ FmrbDir* FmrbFileService::get_dir_obj(const char* dir_path){
 }
 
 
-FMRB_RCODE FmrbFileService::save(char* buff,const char* path){
+FMRB_RCODE FmrbFileService::save(const uint8_t *buff,const char* path,size_t data_size){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"Writing file: %s\n", path);
   if(precheck_path(path)!=FMRB_RCODE::OK){
     return FMRB_RCODE::ERROR;
   }
+  FmrbStorageType stype = check_stype_path(path);
 
   AutoSuspendInterrupts autoSuspendInt;
-  File file = SPIFFS.open(path, FILE_WRITE);
-  //File file = SD.open("/default.rb", FILE_WRITE);
+
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"- open file: %s\n",to_data_path(path));
+  File file;
+  if(stype==FmrbStorageType::SPIFFS){
+    file = SPIFFS.open(to_data_path(path),FILE_WRITE);
+  }else{
+    file = SD.open(to_data_path(path),FILE_WRITE);
+  }
+
   if(!file){
     FMRB_DEBUG(FMRB_LOG::ERR,"- failed to open file for writing\n");
     return FMRB_RCODE::ERROR;
   }
-  if(file.print(buff)){
-    FMRB_DEBUG(FMRB_LOG::DEBUG,"- file written\n");
-  } else {
-    FMRB_DEBUG(FMRB_LOG::ERR,"- write failed\n");
-    file.close();
-    return FMRB_RCODE::ERROR;
+  for(int i=0;i<data_size;i++){
+    if(file.write(buff[i])){
+      FMRB_DEBUG(FMRB_LOG::DEBUG,"- file written\n");
+    } else {
+      FMRB_DEBUG(FMRB_LOG::ERR,"- write failed\n");
+      file.close();
+      return FMRB_RCODE::ERROR;
+    }
   }
   FMRB_DEBUG(FMRB_LOG::DEBUG,"- save done\n");
   file.close();

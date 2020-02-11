@@ -73,7 +73,7 @@ public:
   char* load_bitmap(const char* path,uint16_t &width,uint16_t &height,uint32_t &type);
   FmrbDir* get_dir_obj(const char* dir_path);
 
-  FMRB_RCODE save(char* buff,const char* path);
+  FMRB_RCODE save(const uint8_t *buff,const char* path,size_t data_size);
 
   static FmrbStorageType check_stype_path(const char*);
   static const char* to_data_path(const char* path);

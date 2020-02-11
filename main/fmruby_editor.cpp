@@ -702,18 +702,25 @@ void FmrbEditor::save_file(){
     if(save_check){
       char* buff = dump_script();
       if(buff){
-        m_storage->save(buff,save_file_path.c_str());
+        FMRB_RCODE ret = m_storage->save((const uint8_t*)buff,save_file_path.c_str(),strlen(buff)+1);
         fmrb_free(buff);
+        if(ret!=FMRB_RCODE::OK){
+          FMRB_DEBUG(FMRB_LOG::ERR,"save file error\n");
+          FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+          dialog->open_message_dialog("Write file Error");
+          delete dialog;
+        }else{
+          FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file done\n");
+          FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+          dialog->open_message_dialog("Write file completed");
+          delete dialog;
+        }
       }else{
         FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");
         FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
-        dialog->open_message_dialog("Write file failed");
+        dialog->open_message_dialog("Dump script Error");
         delete dialog;
       }
-        FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file done\n");
-        FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
-        dialog->open_message_dialog("Write file completed");
-        delete dialog;
     }
   }
   update();
