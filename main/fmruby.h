@@ -62,6 +62,7 @@ enum class FMRB_RCODE{
   ERROR=-1,
   OK=0,
   OK_DONE,
+  OK_EMPTY,
 };
 
 

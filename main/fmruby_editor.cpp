@@ -631,8 +631,6 @@ void FmrbEditor::load_file(){
 
   m_terminal->enableCursor(false);
   std::string load_file_path;
-  //char *load_file_path = (char*)fmrb_spi_malloc(FMRB_MAX_PATH_LEN);
-  //load_file_path[0] = '\0';
   FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
   FMRB_RCODE ret = dialog->open_file_select_dialog(m_storage,"/spiffs/scripts/",&load_file_path);
   delete dialog;
@@ -640,20 +638,30 @@ void FmrbEditor::load_file(){
   clear_screen();
 
   if(ret==FMRB_RCODE::OK){
-    FMRB_DEBUG(FMRB_LOG::DEBUG,"Load Dir File:%s\n",load_file_path);
-    uint32_t fsize;
-    char* buff = m_storage->load(load_file_path.c_str(),fsize,true,false);
-    if(buff){
-      move_cursor(m_lineno_shift+1,1);
-      //clear current buffer
-      clear_buffer();
-      load(buff);
-      FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file done\n");
-    }else{
-      FMRB_DEBUG(FMRB_LOG::ERR,"failed to load file\n");
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Load Dir File:%s\n",load_file_path.c_str());
+
+    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+    char* msg = (char*)fmrb_spi_malloc(load_file_path.length()+100);
+    sprintf(msg,"Do you open %s ?",load_file_path.c_str());
+    bool open_check = dialog->open_confirmation_dialog(msg);
+    delete dialog;
+    fmrb_free(msg);
+    clear_screen();
+
+    if(open_check){
+      uint32_t fsize;
+      char* buff = m_storage->load(load_file_path.c_str(),fsize,true,false);
+      if(buff){
+        move_cursor(m_lineno_shift+1,1);
+        //clear current buffer
+        clear_buffer();
+        load(buff);
+        FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file done\n");
+      }else{
+        FMRB_DEBUG(FMRB_LOG::ERR,"failed to load file\n");
+      }
     }
   }
-  //fmrb_free(load_file_path);
   update();
 }
 
@@ -671,14 +679,44 @@ void FmrbEditor::load_demo_file(int type){
 
 void FmrbEditor::save_file(){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file\n");
-  char* buff = dump_script();
-  if(buff){
-    m_storage->save(buff,"/spiffs/scripts/default.rb");
-    fmrb_free(buff);
-  }else{
-    FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");
+
+  m_terminal->enableCursor(false);
+  std::string save_file_path("/spiffs/scripts/");
+  FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+  FMRB_RCODE ret = dialog->open_text_input_dialog("Write the file name",&save_file_path);
+  delete dialog;
+  m_terminal->enableCursor(true);
+  clear_screen();
+
+  if(ret==FMRB_RCODE::OK){
+    FMRB_DEBUG(FMRB_LOG::DEBUG,"Save File:%s\n",save_file_path.c_str());
+
+    FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+    char* msg = (char*)fmrb_spi_malloc(save_file_path.length()+100);
+    sprintf(msg,"Do you save %s ?",save_file_path.c_str());
+    bool save_check = dialog->open_confirmation_dialog(msg);
+    delete dialog;
+    fmrb_free(msg);
+    clear_screen();
+
+    if(save_check){
+      char* buff = dump_script();
+      if(buff){
+        m_storage->save(buff,save_file_path.c_str());
+        fmrb_free(buff);
+      }else{
+        FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");
+        FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+        dialog->open_message_dialog("Write file failed");
+        delete dialog;
+      }
+        FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file done\n");
+        FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+        dialog->open_message_dialog("Write file completed");
+        delete dialog;
+    }
   }
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file done\n");
+  update();
 }
 
 /**

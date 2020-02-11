@@ -93,25 +93,25 @@ FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"Resolution test\n");
 
-  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select resolution>"),0,nullptr,FmrbMenuItemType::TITLE);
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_text_mem("<Select resolution>"),0,nullptr,FmrbMenuItemType::TITLE);
   //Main
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Quit                  "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Quit                  "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
 
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_320x200_75Hz      "),2 ,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_320x200_75HzRetro "),3 ,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" QVGA_320x240_60Hz     "),4 ,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_320x200_75Hz      "),2 ,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_320x200_75HzRetro "),3 ,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" QVGA_320x240_60Hz     "),4 ,select_resolution,FmrbMenuItemType::SELECTABLE);
 
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x200_70Hz      "),5 ,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x200_70HzRetro "),6 ,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x240_60Hz      "),7 ,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x350_70Hz      "),8 ,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x350_70HzAlt1  "),9,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x200_70Hz      "),5 ,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x200_70HzRetro "),6 ,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x240_60Hz      "),7 ,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x350_70Hz      "),8 ,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x350_70HzAlt1  "),9,select_resolution,FmrbMenuItemType::SELECTABLE);
 
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60Hz      "),10,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60HzAlt1  "),11,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60HzD     "),12,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_73Hz      "),13,select_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VESA_640x480_75Hz     "),14,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60Hz      "),10,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60HzAlt1  "),11,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60HzD     "),12,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_73Hz      "),13,select_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VESA_640x480_75Hz     "),14,select_resolution,FmrbMenuItemType::SELECTABLE);
 
   menu->m_canvas->clear();
   FmrbMenuModule *localMenu = new FmrbMenuModule(menu->m_vga,menu->m_canvas,menu->m_terminal,top);
@@ -190,26 +190,26 @@ static FMRB_RCODE set_resolution(uint32_t fid,FmrbMenuModule* menu)
 FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"select_main_resolution\n");
-  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select resolution>"),0,nullptr,FmrbMenuItemType::TITLE);
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_text_mem("<Select resolution>"),0,nullptr,FmrbMenuItemType::TITLE);
 
   //Main
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Cancel                "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Cancel                "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
 
-  //FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_320x200_75Hz      "),2 ,set_resolution,FmrbMenuItemType::SELECTABLE);
-  //FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_320x200_75HzRetro "),3 ,set_resolution,FmrbMenuItemType::SELECTABLE);
-  //FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" QVGA_320x240_60Hz     "),4 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  //FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_320x200_75Hz      "),2 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  //FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_320x200_75HzRetro "),3 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  //FmrbMenuItem::add_item_tail(top,alloc_text_mem(" QVGA_320x240_60Hz     "),4 ,set_resolution,FmrbMenuItemType::SELECTABLE);
 
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x200_70Hz      "),5 ,set_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x200_70HzRetro "),6 ,set_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x240_60Hz      "),7 ,set_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x350_70Hz      "),8 ,set_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x350_70HzAlt1  "),9,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x200_70Hz      "),5 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x200_70HzRetro "),6 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x240_60Hz      "),7 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x350_70Hz      "),8 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x350_70HzAlt1  "),9,set_resolution,FmrbMenuItemType::SELECTABLE);
 
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60Hz      "),10,set_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60HzAlt1  "),11,set_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_60HzD     "),12,set_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VGA_640x480_73Hz      "),13,set_resolution,FmrbMenuItemType::SELECTABLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" VESA_640x480_75Hz     "),14,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60Hz      "),10,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60HzAlt1  "),11,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60HzD     "),12,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_73Hz      "),13,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VESA_640x480_75Hz     "),14,set_resolution,FmrbMenuItemType::SELECTABLE);
 
   menu->m_canvas->clear();
   FmrbMenuModule *localMenu = new FmrbMenuModule(menu->m_vga,menu->m_canvas,menu->m_terminal,top);
@@ -246,13 +246,13 @@ int16_t fmrb_subapp_select_file(FmrbDir* dir_obj,FmrbDialog *dialog)
 {
   FMRB_DEBUG(FMRB_LOG::DEBUG,"select_main_resolution\n");
 
-  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<Select a file>"),0,nullptr,FmrbMenuItemType::TITLE);
-  FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem("[Cancel]"),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_text_mem("<Select a file>"),0,nullptr,FmrbMenuItemType::TITLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem("[Cancel]"),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
 
   for(int i=0;i<dir_obj->length;i++){
     const char* path = dir_obj->fetch_path(i);
     FMRB_DEBUG(FMRB_LOG::DEBUG,"Load Dir File:%s\n",path);
-    FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(path),i+2 ,select_file_cb,FmrbMenuItemType::SELECTABLE);
+    FmrbMenuItem::add_item_tail(top,alloc_text_mem(path),i+2 ,select_file_cb,FmrbMenuItemType::SELECTABLE);
   }
 
   dialog->m_canvas->clear();

@@ -93,7 +93,6 @@ void FmrbDir::set(File *dir,const char* dir_name)
     if(!epath)continue;
     const char* removed_path = remove_base_dir(epath,dir_name);
     if(removed_path && is_file(removed_path)){
-      fmrb_dump_mem_stat();
       path_list[index] = (char*)fmrb_spi_malloc(1+strnlen(removed_path,FMRB_MAX_PATH_LEN)); 
       strcpy(path_list[index],removed_path);
       //FMRB_DEBUG(FMRB_LOG::DEBUG,"File(%s) > %s\n",dir_path,path_list[index]);

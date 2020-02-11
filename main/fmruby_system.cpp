@@ -173,7 +173,7 @@ FMRB_RCODE FmrbSystemApp::clear_splash(){
 }
 
 
-char* alloc_menu_text_mem(const char* input)
+char* alloc_text_mem(const char* input)
 {
   if(!input) return nullptr;
   if(strlen(input)>100)return nullptr; //Too long
@@ -217,18 +217,18 @@ FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
 
 
 FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
-  FmrbMenuItem *top = new FmrbMenuItem(alloc_menu_text_mem("<System menu>"),1,menu_callback,FmrbMenuItemType::TITLE);
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_text_mem("<System menu>"),1,menu_callback,FmrbMenuItemType::TITLE);
   FmrbMenuItem *m1,*m2;
   //Main
-       FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Open Editor "),2 ,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Run script  "),4 ,message_callback,FmrbMenuItemType::SELECTABLE);
-  m1 = FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem(" Config      "),3 ,menu_callback,FmrbMenuItemType::SELECTABLE);
-     //FmrbMenuItem::add_item_tail(top,alloc_menu_text_mem("")           ,5,menu_callback,FmrbMenuItemType::UNSELECTABLE);
+       FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Open Editor "),2 ,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Run script  "),4 ,message_callback,FmrbMenuItemType::SELECTABLE);
+  m1 = FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Config      "),3 ,menu_callback,FmrbMenuItemType::SELECTABLE);
+     //FmrbMenuItem::add_item_tail(top,alloc_text_mem("")           ,5,menu_callback,FmrbMenuItemType::UNSELECTABLE);
   //Sub Config
-  m2 = FmrbMenuItem::add_child_item(m1,alloc_menu_text_mem("<Configuration>"),10,menu_callback,FmrbMenuItemType::TITLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_menu_text_mem(" Editor Resolution "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_menu_text_mem(" mruby Resolution  "),12,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_menu_text_mem(" Resolution Test   "),13,menu_callback,FmrbMenuItemType::SELECTABLE);
+  m2 = FmrbMenuItem::add_child_item(m1,alloc_text_mem("<Configuration>"),10,menu_callback,FmrbMenuItemType::TITLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Editor Resolution "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" mruby Resolution  "),12,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Resolution Test   "),13,menu_callback,FmrbMenuItemType::SELECTABLE);
 
   return top;
 }

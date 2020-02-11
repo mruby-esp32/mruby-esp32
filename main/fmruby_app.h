@@ -121,16 +121,15 @@ class FmrbDialog : public FmrbTerminalInput{
 public:
   fabgl::VGAController *m_vga;
   fabgl::Canvas *m_canvas;
-  fabgl::Terminal *m_terminal;
 
   OVERLOAD_SPI_ALLOCATOR
   FmrbDialog(fabgl::VGAController *v,fabgl::Canvas* canvas,fabgl::Terminal*,FmrbCanvasConfig*);
   ~FmrbDialog();
-  void open_message_dialog(const char* message,int timeout_sec);
+  void open_message_dialog(const char* message,int timeout_sec=0);
   bool open_confirmation_dialog(const char* message);
   const char* open_text_select_dialog(const char* list[],int list_length);
   FMRB_RCODE open_file_select_dialog(FmrbFileService*,const char* path,std::string* input);
-  FMRB_RCODE open_text_input_dialog(const char* list[],int list_length,std::string* input);
+  FMRB_RCODE open_text_input_dialog(const char* message,std::string* input);
 
 private:
   uint8_t *m_swap_buff;
@@ -149,6 +148,8 @@ private:
   FmrbCanvasConfig *m_canva_config_origin;
 
   int draw_window(int line);
+  void draw_cursor(int pos);
+
 };
 
 
@@ -296,7 +297,7 @@ private:
 
 };
 
-char* alloc_menu_text_mem(const char* input);
+char* alloc_text_mem(const char* input);
 FmrbConfig* get_system_config(void);
 
 FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu);

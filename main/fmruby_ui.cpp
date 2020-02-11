@@ -289,7 +289,6 @@ FmrbDialog::FmrbDialog(fabgl::VGAController* vga,fabgl::Canvas* canvas,fabgl::Te
   FmrbTerminalInput(t),
   m_vga(vga),
   m_canvas(canvas),
-  m_terminal(t),
   m_swap_buff(nullptr),
   m_dialog_width(0),
   m_dialog_height(0),
@@ -401,8 +400,9 @@ FMRB_RCODE FmrbDialog::open_file_select_dialog(FmrbFileService* fs,const char* p
 
   m_canvas->clear();
   FmrbDir *dir_obj = fs->get_dir_obj(path);
+  int16_t index = -1;
   if(dir_obj){
-    int16_t index = fmrb_subapp_select_file(dir_obj,this);
+    index = fmrb_subapp_select_file(dir_obj,this);
     if(index>=0 && index<dir_obj->length){
       const char* path = dir_obj->fetch_path(index);
       *selected_path += FmrbDir::type_to_path(dir_obj->type);
@@ -412,8 +412,77 @@ FMRB_RCODE FmrbDialog::open_file_select_dialog(FmrbFileService* fs,const char* p
     delete dir_obj;
   }
   m_canvas->clear();
+  if(index<0)return FMRB_RCODE::OK_EMPTY;
   return FMRB_RCODE::OK;
 }
+
+FMRB_RCODE FmrbDialog::open_text_input_dialog(const char* message,std::string* input_str)
+{
+  int text_top_height = draw_window(3);
+  m_canvas->setPenColor(m_fg_color);
+  m_canvas->setBrushColor(m_bg_color1);
+  m_canvas->drawText(m_screen_width*7/100, text_top_height,message,true);
+
+  m_canvas->drawText(m_screen_width*7/100, text_top_height+m_line_height*2,input_str->c_str(),false);
+
+  int max_line_chars = m_screen_width/m_font_width - 11;
+  int pos = strlen(input_str->c_str());
+  int min_pos = pos;
+  bool complete = false;
+  while(!complete){
+    //FMRB_DEBUG(FMRB_LOG::DEBUG,"pos:len[%d,%d]\n",pos,strlen(input_str->c_str()));
+    m_canvas->fillRectangle(
+      m_screen_width*7/100,
+      text_top_height+m_line_height*2,
+      m_screen_width*95/100,
+      text_top_height+m_line_height*3+2
+    );
+    m_canvas->drawText(m_screen_width*7/100, text_top_height+m_line_height*2,input_str->c_str(),false);
+    m_canvas->drawLine(
+      m_screen_width*7/100 + pos * m_font_width,
+      text_top_height+m_line_height*3+2,
+      m_screen_width*7/100 + pos * m_font_width+m_font_width,
+      text_top_height+m_line_height*3+2
+    );
+
+    FmrbVkey vkey = read_vkey();
+    int current_len = strlen(input_str->c_str());
+    if(FmrbTerminalInput::is_visible(vkey) && current_len < max_line_chars){
+      int ch = FmrbTerminalInput::to_ascii(vkey);
+      input_str->insert(input_str->begin()+pos, ch);
+      pos++;
+    }else{
+      switch(vkey){
+        case FmrbVkey::VK_RETURN:
+        complete=true;
+        break;
+        case FmrbVkey::VK_DELETE:
+        if((*input_str)[pos] != 0){
+          input_str->erase(input_str->begin()+pos);
+        }
+        break;
+        case FmrbVkey::VK_BACKSPACE:
+        if(pos>min_pos && ((*input_str)[pos-1] != 0) ){
+          input_str->erase(input_str->begin()+pos-1);
+          pos--;
+        }
+        break;
+        case FmrbVkey::VK_RIGHT:
+        pos++;
+        if(pos>current_len)pos--;
+        break;
+        case FmrbVkey::VK_LEFT:
+        pos--;
+        if(pos<min_pos)pos=min_pos;
+        break;
+        default:
+        break;
+      }
+    }
+  }
+
+  return FMRB_RCODE::OK;
+} 
 
 int FmrbDialog::draw_window(int line)
 {
