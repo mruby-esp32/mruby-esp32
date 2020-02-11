@@ -138,8 +138,14 @@ void FmrbMenuModule::clear_draw_area(void){
   m_canvas->setBrushColor(Color::Black);
   m_canvas->clear();
   if(m_storage){
+    int height = m_vga->getScreenHeight();
     uint32_t fsize=0;
-    uint8_t* img_data = (uint8_t*)m_storage->load("/spiffs/assets/2bit_logo_200x200.img",fsize,false,false);
+    uint8_t* img_data;
+    if(height>=350){
+      img_data = (uint8_t*)m_storage->load("/spiffs/assets/2bit_logo_200x200.img",fsize,false,false);
+    }else{
+      img_data = (uint8_t*)m_storage->load("/spiffs/assets/2bit_logo_200x100.img",fsize,false,false);
+    }
     if(img_data){
       FmrbSystemApp::draw_img(m_vga,400,50,img_data,0);
       fmrb_free(img_data);

@@ -230,11 +230,13 @@ FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu)
   FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x350_70Hz      "),8 ,set_resolution,FmrbMenuItemType::SELECTABLE);
   FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x350_70HzAlt1  "),9,set_resolution,FmrbMenuItemType::SELECTABLE);
 
+#if 0
   FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60Hz      "),10,set_resolution,FmrbMenuItemType::SELECTABLE);
   FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60HzAlt1  "),11,set_resolution,FmrbMenuItemType::SELECTABLE);
   FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_60HzD     "),12,set_resolution,FmrbMenuItemType::SELECTABLE);
   FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_640x480_73Hz      "),13,set_resolution,FmrbMenuItemType::SELECTABLE);
   FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VESA_640x480_75Hz     "),14,set_resolution,FmrbMenuItemType::SELECTABLE);
+#endif
 
   menu->m_canvas->clear();
   FmrbMenuModule *localMenu = new FmrbMenuModule(menu->m_vga,menu->m_canvas,menu->m_terminal,top);

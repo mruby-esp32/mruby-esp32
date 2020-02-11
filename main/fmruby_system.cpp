@@ -139,8 +139,15 @@ FMRB_RCODE FmrbSystemApp::show_splash(){
   m_canvas->clear();
   vTaskDelay(500);
 
+  int height = m_vga->getScreenHeight();
+
   uint32_t fsize;
-  uint8_t* img_data = (uint8_t*)m_storage->load("/spiffs/assets/topimage.img",fsize,false,false);
+  uint8_t* img_data;
+  if(height>=350){
+    img_data = (uint8_t*)m_storage->load("/spiffs/assets/topimage_640x350.img",fsize,false,false);
+  }else{
+    img_data = (uint8_t*)m_storage->load("/spiffs/assets/topimage_640x200.img",fsize,false,false);
+  }
 
   //FMRB_DEBUG(FMRB_LOG::DEBUG,"img:%d,%d\n",width,height);
   
@@ -182,6 +189,22 @@ char* alloc_text_mem(const char* input)
   return buff;
 }
 
+void show_system_info(FmrbMenuModule* menu)
+{
+  char* msg = (char*)fmrb_spi_malloc(1000);
+  memset(msg,0,1000);
+  sprintf(msg," ** Family mruby **  version %s (%s)\n",FMRB_VERSION,FMRB_RELEASE);
+  sprintf(msg+strlen(msg),"Free size(INTERNAL)= %d\n",heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  sprintf(msg+strlen(msg),"Free size(SPI)     = %d\n",heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+  sprintf(msg+strlen(msg),"Free size(DMA)     = %d\n",heap_caps_get_free_size(MALLOC_CAP_DMA));
+
+  FmrbDialog* dialog = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+  dialog->open_message_dialog(msg);
+  delete dialog;
+  fmrb_free(msg);
+  menu->m_canvas->clear();
+}
+
 FMRB_RCODE message_callback(uint32_t fid,FmrbMenuModule* menu)
 {
   FmrbDialog* dialog = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
@@ -199,6 +222,9 @@ FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
     case 2:
       ret = FMRB_RCODE::OK_DONE;
       *((uint32_t*)menu->m_param) |= 0x00000001;
+      break;
+    case 5:
+      show_system_info(menu);
       break;
     case 11:
       fmrb_subapp_select_main_resolution(menu);
@@ -227,7 +253,7 @@ FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
        FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Open Editor "),2 ,menu_callback,FmrbMenuItemType::SELECTABLE);
        FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Run script  "),4 ,message_callback,FmrbMenuItemType::SELECTABLE);
   m1 = FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Config      "),3 ,menu_callback,FmrbMenuItemType::SELECTABLE);
-     //FmrbMenuItem::add_item_tail(top,alloc_text_mem("")           ,5,menu_callback,FmrbMenuItemType::UNSELECTABLE);
+       FmrbMenuItem::add_item_tail(top,alloc_text_mem(" About Fmrb  "),5,menu_callback,FmrbMenuItemType::SELECTABLE);
   //Sub Config
   m2 = FmrbMenuItem::add_child_item(m1,alloc_text_mem("<Configuration>"),10,menu_callback,FmrbMenuItemType::TITLE);
        FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Main Resolution "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
