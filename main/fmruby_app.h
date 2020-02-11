@@ -69,7 +69,7 @@ public:
   FMRB_RCODE mount_sd();
   void umount_sd();
 
-  char* load(const char* path,uint32_t &fsize,bool is_text=false,bool localmem=true);
+  char* load(const char* path,uint32_t &fsize,bool is_text=false,bool localmem=false);
   char* load_bitmap(const char* path,uint16_t &width,uint16_t &height,uint32_t &type);
   FmrbDir* get_dir_obj(const char* dir_path);
 
@@ -94,6 +94,7 @@ private:
 /**
  * Config
  **/
+#define FMRB_CONFIG_KEY_MAX (64)
 #define FMRB_MODE_LINE_MAX (256)
 class FmrbConfig  {
 public:
@@ -112,6 +113,10 @@ public:
   FMRB_RCODE save(FmrbFileService *fs);
 
 private:
+  FMRB_RCODE read_value_str(const char* txt,const char* key,char* out);
+  FMRB_RCODE read_value_int(const char* txt,const char* key,int32_t* out);
+  void set_default_value(void);
+
 };
 
 /**

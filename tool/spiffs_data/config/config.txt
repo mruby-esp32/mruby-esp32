@@ -1,0 +1,6 @@
+main_mode_line:"640x350@70Hz" 25.175 640 656 752 800 350 387 389 449 -HSync -VSync
+main_screen_shift_x:20
+main_screen_shift_y:0
+mruby_mode_line:"320x200@75Hz" 12.93 320 352 376 408 200 208 211 229 -HSync -VSync DoubleScan
+mruby_screen_shift_x:20
+mruby_screen_shift_y:0

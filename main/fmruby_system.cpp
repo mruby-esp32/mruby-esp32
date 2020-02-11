@@ -38,14 +38,12 @@ m_canvas(c)
   m_storage = nullptr;
 }
 
-void FmrbSystemApp::init(FmrbFileService* st){
-  m_storage = st;
+void FmrbSystemApp::init(FmrbFileService* fs){
+  m_storage = fs;
   m_storage->init();
   m_config = new FmrbConfig();
   //load config
-  strncpy(m_config->main_mode_line,VGA_640x350_70HzAlt1,FMRB_MODE_LINE_MAX);
-  strncpy(m_config->mruby_mode_line,VGA_320x200_75Hz,FMRB_MODE_LINE_MAX);
-
+  m_config->load(fs);
 }
 
 FMRB_RCODE FmrbSystemApp::init_terminal(void)
