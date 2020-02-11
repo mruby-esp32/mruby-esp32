@@ -31,13 +31,11 @@
 const char* null_script = "\n";
 
 const char* sample_script = 
-//#include "./mrb/entry_mrb.rb"
-//#include "./mrb/tetris.rb"
-#include "./mrb/bitmap_test.rb"
+#include "./mrb/demo.rb"
 ;
 
 const char* sample_script2 = 
-#include "./mrb/rpg_test.rb"
+#include "./mrb/tetris.rb"
 ;
 
 
@@ -50,7 +48,7 @@ const char* sample_script2 =
  ***********************************/
 FmrbEditor::FmrbEditor(fabgl::VGAController *vga,fabgl::Canvas* canvas,fabgl::Terminal* terminal,  FmrbFileService *storage):
   FmrbTerminalInput(terminal),
-  m_code_hightlight(true),
+  m_code_hightlight(false),
   m_vga(vga),
   m_canvas(canvas),
   m_term(terminal),

@@ -32,6 +32,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cc.include_paths << ENV["COMPONENT_INCLUDES"].split(' ')
     cc.include_paths << ENV["COMPONENT_EXTRA_INCLUDES"]&.split(' ')
     cc.flags << '-Wno-maybe-uninitialized'
+    #cc.flags << '-g3 -O0'
     cc.flags.collect! { |x|
       if x.kind_of?(Array) and x.size == 1
         x = x.first
@@ -54,6 +55,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
     cxx.flags.collect! { |x| x.gsub('-MP', '') }
     cxx.flags << '-fpermissive'
+    #cxx.flags << '-g3 -O0'
 
     cxx.defines = conf.cc.defines.dup
   end
@@ -75,5 +77,5 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   #conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
   conf.gem :github => "kishima/mruby-esp32-system"
-  conf.gem :github => "kishima/mruby-esp32-narya", checksum_hash: '3def319760b933201372113ac90283525c4cdebd', branch: 'master'
+  conf.gem :github => "kishima/mruby-esp32-narya", checksum_hash: '35429e178714345abaa16558579e017f8cfc70d4', branch: 'master'
 end

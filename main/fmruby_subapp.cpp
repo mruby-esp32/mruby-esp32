@@ -152,13 +152,13 @@ static void do_set_resolution(int type,FmrbMenuModule* menu,const char* mode)
     FmrbDialog* dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
     std::string val;
     rcode = dialog1->open_text_input_dialog("Input Main screen x-offset",&val);
-    config->main_screen_shift_x = atoi(val.c_str());
+    if(rcode==FMRB_RCODE::OK) config->main_screen_shift_x = atoi(val.c_str());
     delete dialog1;
 
     dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
     val = "";
     rcode = dialog1->open_text_input_dialog("Input Main screen y-offset",&val);
-    config->main_screen_shift_y = atoi(val.c_str());
+    if(rcode==FMRB_RCODE::OK) config->main_screen_shift_y = atoi(val.c_str());
     delete dialog1;
 
   }else if(type==2){
@@ -167,13 +167,13 @@ static void do_set_resolution(int type,FmrbMenuModule* menu,const char* mode)
     FmrbDialog* dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
     std::string val;
     rcode = dialog1->open_text_input_dialog("Input mruby screen x-offset",&val);
-    config->mruby_screen_shift_x = atoi(val.c_str());
+    if(rcode==FMRB_RCODE::OK) config->mruby_screen_shift_x = atoi(val.c_str());
     delete dialog1;
 
     dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
     val = "";
     rcode = dialog1->open_text_input_dialog("Input mruby screen y-offset",&val);
-    config->mruby_screen_shift_y = atoi(val.c_str());
+    if(rcode==FMRB_RCODE::OK) config->mruby_screen_shift_y = atoi(val.c_str());
     delete dialog1;
   }
   fabgl_terminal_mode_init(config);
