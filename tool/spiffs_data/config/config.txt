@@ -4,3 +4,4 @@ main_screen_shift_y:0
 mruby_mode_line:"320x200@75Hz" 12.93 320 352 376 408 200 208 211 229 -HSync -VSync DoubleScan
 mruby_screen_shift_x:20
 mruby_screen_shift_y:0
+mruby_double_buffer:1
