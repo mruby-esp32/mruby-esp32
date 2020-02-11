@@ -105,6 +105,7 @@ public:
   int32_t main_screen_shift_y;
   int32_t mruby_screen_shift_x;
   int32_t mruby_screen_shift_y;
+  int32_t mruby_double_buffer;
 
   FmrbFileService* m_storage;
 
@@ -313,5 +314,6 @@ FmrbConfig* get_system_config(void);
 FMRB_RCODE fmrb_subapp_resolution_test(FmrbMenuModule* menu);
 FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu);
 FMRB_RCODE fmrb_subapp_select_mruby_resolution(FmrbMenuModule* menu);
+FMRB_RCODE fmrb_subapp_set_mruby_buffering(FmrbMenuModule* menu);
 int16_t fmrb_subapp_select_file(FmrbDir* dir_obj,FmrbDialog *dialog);
 FMRB_RCODE fmrb_subapp_save_config(FmrbMenuModule* menu);

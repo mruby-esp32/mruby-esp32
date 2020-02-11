@@ -26,7 +26,7 @@ class Demo
       demo3
     end
     @step+=1
-    if @step > 600
+    if @step > 1800
       puts "type:#{@type}"
       Display::clear
       Display::swap
@@ -38,9 +38,16 @@ class Demo
   end
 
   def demo0
-    Display::clear
-    Display::draw_text(60,@step % 200,"Hello mruby!","WHITE");
-    Display::draw_text(80,@step % 200 + 20,"Ver:#{Config::firmware_ver}","GREEN");
+    if Display::double_buffered?
+      Display::clear
+      Display::draw_text(60,@step % 200,"Hello mruby!","WHITE");
+      Display::draw_text(80,@step % 200 + 20,"Ver:#{Config::firmware_ver}","GREEN");
+    else
+      Display::draw_text(60,@step % 200-1,"Hello mruby!","BLACK");
+      Display::draw_text(80,@step % 200 + 20-1,"Ver:#{Config::firmware_ver}","BLACK");
+      Display::draw_text(60,@step % 200,"Hello mruby!","WHITE");
+      Display::draw_text(80,@step % 200 + 20,"Ver:#{Config::firmware_ver}","GREEN");
+    end
   end
 
   def demo1
@@ -51,12 +58,16 @@ class Demo
     c2 = rcol
     if(rand(2)==1)
       Display::draw_circle(x,y,r,c1,c2)
-      Display::swap
-      Display::draw_circle(x,y,r,c1,c2)
+      if Display::double_buffered?
+        Display::swap
+        Display::draw_circle(x,y,r,c1,c2)
+      end
     else
       Display::draw_circle(x,y,r,c1)
-      Display::swap
-      Display::draw_circle(x,y,r,c1)
+      if Display::double_buffered?
+        Display::swap
+        Display::draw_circle(x,y,r,c1)
+      end
     end
   end
   def demo2

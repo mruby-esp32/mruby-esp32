@@ -33,8 +33,6 @@
 #define VGA_HSYNC  GPIO_NUM_23
 #define VGA_VSYNC  GPIO_NUM_27
 
-#define DOUBLEBUFFERING true
-
 // Shared with mgem
 fabgl::VGAController VGAController;
 fabgl::PS2Controller PS2Controller;
@@ -55,7 +53,9 @@ void fabgl_terminal_mode_init(FmrbConfig* config)
 
 void fabgl_mruby_mode_init(FmrbConfig* config)
 {
-  FMRB_DEBUG(FMRB_LOG::DEBUG,"Mruby screen: %s\n",config->mruby_mode_line);
-  VGAController.setResolution(config->mruby_mode_line, -1, -1, DOUBLEBUFFERING);
+  bool double_buffer = true;
+  if(0 == config->mruby_double_buffer) double_buffer=false;
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Mruby screen: %s [%d]\n",config->mruby_mode_line,double_buffer);
+  VGAController.setResolution(config->mruby_mode_line, -1, -1, double_buffer);
   VGAController.moveScreen(config->mruby_screen_shift_x, config->mruby_screen_shift_y);
 }

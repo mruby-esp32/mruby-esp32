@@ -234,9 +234,12 @@ FMRB_RCODE menu_callback(uint32_t fid,FmrbMenuModule* menu)
       fmrb_subapp_select_mruby_resolution(menu);
       break;
     case 13:
-      ret = fmrb_subapp_resolution_test(menu);
+      fmrb_subapp_set_mruby_buffering(menu);
       break;
     case 14:
+      ret = fmrb_subapp_resolution_test(menu);
+      break;
+    case 15:
       fmrb_subapp_save_config(menu);
       break;
     default:
@@ -256,10 +259,11 @@ FmrbMenuItem* FmrbSystemApp::prepare_top_menu(){
        FmrbMenuItem::add_item_tail(top,alloc_text_mem(" About Fmrb  "),5,menu_callback,FmrbMenuItemType::SELECTABLE);
   //Sub Config
   m2 = FmrbMenuItem::add_child_item(m1,alloc_text_mem("<Configuration>"),10,menu_callback,FmrbMenuItemType::TITLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Main Resolution "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" mruby Resolution  "),12,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Resolution Test   "),13,menu_callback,FmrbMenuItemType::SELECTABLE);
-       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Save Config       "),14,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Main Resolution     "),11,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" mruby Resolution    "),12,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" mruby Double buffer "),13,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Resolution Test     "),14,menu_callback,FmrbMenuItemType::SELECTABLE);
+       FmrbMenuItem::add_item_tail(m2 ,alloc_text_mem(" Save Config         "),15,menu_callback,FmrbMenuItemType::SELECTABLE);
 
   return top;
 }

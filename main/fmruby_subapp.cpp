@@ -161,6 +161,9 @@ static void do_set_resolution(int type,FmrbMenuModule* menu,const char* mode)
     if(rcode==FMRB_RCODE::OK) config->main_screen_shift_y = atoi(val.c_str());
     delete dialog1;
 
+    fabgl_terminal_mode_init(config);
+    vTaskDelay(fabgl::msToTicks(1000));
+
   }else if(type==2){
     strcpy(config->mruby_mode_line,mode);
 
@@ -176,8 +179,6 @@ static void do_set_resolution(int type,FmrbMenuModule* menu,const char* mode)
     if(rcode==FMRB_RCODE::OK) config->mruby_screen_shift_y = atoi(val.c_str());
     delete dialog1;
   }
-  fabgl_terminal_mode_init(config);
-  vTaskDelay(fabgl::msToTicks(1000));
 }
 
 static FMRB_RCODE set_resolution(uint32_t fid,FmrbMenuModule* menu)
@@ -185,7 +186,7 @@ static FMRB_RCODE set_resolution(uint32_t fid,FmrbMenuModule* menu)
   uint8_t *type = (uint8_t*)menu->m_param;
 
   FMRB_RCODE ret = FMRB_RCODE::OK;
-  FMRB_DEBUG(FMRB_LOG::DEBUG,">menu select_resolution fid:%d\n",fid);
+  FMRB_DEBUG(FMRB_LOG::DEBUG,">menu select_resolution fid:%d(%d)\n",fid,*type);
 
   switch(fid){
     case 2: do_set_resolution(*type,menu,VGA_320x200_75Hz); break;
@@ -254,9 +255,40 @@ FMRB_RCODE fmrb_subapp_select_main_resolution(FmrbMenuModule* menu)
 
 FMRB_RCODE fmrb_subapp_select_mruby_resolution(FmrbMenuModule* menu)
 {
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"select_mruby_resolution\n");
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_text_mem("<Select resolution>"),0,nullptr,FmrbMenuItemType::TITLE);
+
+  //Main
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Cancel                "),1 ,finish_submenu,FmrbMenuItemType::SELECTABLE);
+
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_320x200_75Hz      "),2 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" VGA_320x200_75HzRetro "),3 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" QVGA_320x240_60Hz     "),4 ,set_resolution,FmrbMenuItemType::SELECTABLE);
+
+  menu->m_canvas->clear();
+  FmrbMenuModule *localMenu = new FmrbMenuModule(menu->m_vga,menu->m_canvas,menu->m_terminal,top);
+
+  //Message and wait
+  uint8_t type = 2;
+  localMenu->begin(&type);
+
+  //end of sub app
+  delete localMenu;
+
   return FMRB_RCODE::OK;
 }
 
+FMRB_RCODE fmrb_subapp_set_mruby_buffering(FmrbMenuModule* menu)
+{
+  auto config = get_system_config();
+  FmrbDialog* dialog1 = new FmrbDialog(menu->m_vga,menu->m_canvas,menu->m_terminal,menu->m_canvas_config);
+  std::string val;
+  FMRB_RCODE rcode = dialog1->open_text_input_dialog("Input mruby screen buffering 1:Double Buffer 0:None",&val);
+  if(rcode==FMRB_RCODE::OK) config->mruby_double_buffer = atoi(val.c_str());
+  delete dialog1;
+  menu->m_canvas->clear();
+  return FMRB_RCODE::OK_DONE;
+}
 
 static FMRB_RCODE select_file_cb(uint32_t fid,FmrbMenuModule* menu)
 {

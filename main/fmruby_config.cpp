@@ -29,6 +29,7 @@ main_screen_shift_x(0),
 main_screen_shift_y(0),
 mruby_screen_shift_x(0),
 mruby_screen_shift_y(0),
+mruby_double_buffer(1),
 m_storage(nullptr)
 {
   memset(main_mode_line,0,FMRB_MODE_LINE_MAX);
@@ -63,6 +64,9 @@ FMRB_RCODE FmrbConfig::load()
     if(rcode!=FMRB_RCODE::OK){ set_default_value();return FMRB_RCODE::OK; }
 
     rcode = read_value_int(config_txt,"mruby_screen_shift_y",&mruby_screen_shift_y);
+    if(rcode!=FMRB_RCODE::OK){ set_default_value();return FMRB_RCODE::OK; }
+
+    rcode = read_value_int(config_txt,"mruby_double_buffer",&mruby_double_buffer);
     if(rcode!=FMRB_RCODE::OK){ set_default_value();return FMRB_RCODE::OK; }
 
   }else{
@@ -101,6 +105,8 @@ FMRB_RCODE FmrbConfig::save()
   sprintf(out_buff+pos,"%s:%d\n","mruby_screen_shift_x",mruby_screen_shift_x);
   check_buffsize(&out_buff,&buff_size,&pos);
   sprintf(out_buff+pos,"%s:%d\n","mruby_screen_shift_y",mruby_screen_shift_y);
+  check_buffsize(&out_buff,&buff_size,&pos);
+  sprintf(out_buff+pos,"%s:%d\n","mruby_double_buffer",mruby_double_buffer);
   check_buffsize(&out_buff,&buff_size,&pos);
 
   FMRB_DEBUG(FMRB_LOG::MSG,"Save Config\n%s\n",out_buff);  
@@ -176,4 +182,5 @@ void FmrbConfig::set_default_value(void)
   main_screen_shift_y = 0;
   mruby_screen_shift_x = 0;
   mruby_screen_shift_y = 0;
+  mruby_double_buffer = 1;
 }
