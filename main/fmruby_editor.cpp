@@ -50,6 +50,7 @@ const char* sample_script2 =
  ***********************************/
 FmrbEditor::FmrbEditor(fabgl::VGAController *vga,fabgl::Canvas* canvas,fabgl::Terminal* terminal,  FmrbFileService *storage):
   FmrbTerminalInput(terminal),
+  m_code_hightlight(true),
   m_vga(vga),
   m_canvas(canvas),
   m_term(terminal),
@@ -64,8 +65,7 @@ FmrbEditor::FmrbEditor(fabgl::VGAController *vga,fabgl::Canvas* canvas,fabgl::Te
   m_y(0),
   m_disp_head_line(1),
   m_total_line(0),
-  m_line_lexer_p(nullptr),
-  m_error(EDIT_STATUS::EDIT_NO_ERROR)
+  m_line_lexer_p(nullptr)
 {
   m_canvas_config = new FmrbCanvasConfig(RGB888(255,255,255),RGB888(0,0,0),true,8,14);
 }
@@ -78,20 +78,33 @@ FMRB_RCODE FmrbEditor::begin(FmrbMrubyEngine* mruby_engine)
   m_line_lexer_p = nullptr;
   m_mruby_engine = mruby_engine;
   m_canvas_config->set(m_canvas);
-#if 0
   m_line_lexer_p = (FmrbSimpleLineLexer*)fmrb_spi_malloc(sizeof(FmrbSimpleLineLexer));
   if(m_line_lexer_p) m_line_lexer_p->init();
-#endif
 
   return FMRB_RCODE::OK;
 }
 
-FMRB_RCODE FmrbEditor::release()
+void FmrbEditor::reset(void)
+{
+  release_buffer();
+  m_buff_head=nullptr;
+  m_height=0;
+  m_disp_height=0;
+  m_width=0;
+  m_disp_width=0;
+  m_lineno_shift=6;
+  m_x=0;
+  m_y=0;
+  m_disp_head_line=1;
+  m_total_line=0;
+  m_line_lexer_p=nullptr;
+}
+
+void FmrbEditor::release_buffer(void)
 {
   if(m_line_lexer_p) fmrb_free( m_line_lexer_p );
   clear_buffer();
   m_buff_head = nullptr;
-  return FMRB_RCODE::OK;
 }
 
 void FmrbEditor::clear_screen(void)
@@ -183,6 +196,7 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
         break;
 
         case FmrbVkey::VK_F1:
+          open_menu();
         break;
         case FmrbVkey::VK_F2:
           save_file();
@@ -192,13 +206,14 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
         break;
         case FmrbVkey::VK_F4:
           FMRB_DEBUG(FMRB_LOG::INFO,"Editor Run Script\n");
-          return FMRB_RCODE::OK;
+          return FMRB_RCODE::OK_CONTINUE;
         break;
         case FmrbVkey::VK_F5:
-          load_demo_file(0);
+          if(quit()){
+            return FMRB_RCODE::OK_DONE;
+          }
         break;
         case FmrbVkey::VK_F6:
-          load_demo_file(1);
         break;
 
         default:
@@ -208,6 +223,15 @@ FMRB_RCODE FmrbEditor::run(char* input_script){
   }
   return FMRB_RCODE::ERROR;
 }
+
+bool FmrbEditor::quit(void)
+{
+  FmrbDialog* dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+  bool check = dialog->open_confirmation_dialog("Quit editor?");
+  delete dialog;
+  return check;
+}
+
 
 EditLine* FmrbEditor::load_line(const char* in)
 {
@@ -240,7 +264,6 @@ EditLine* FmrbEditor::load_line(const char* in)
 
 void FmrbEditor::load(const char* buf)
 {
-  m_error = EDIT_NO_ERROR;
   int csr=0;
   m_total_line = 0;
   EditLine* fist_line = new EditLine();
@@ -250,7 +273,6 @@ void FmrbEditor::load(const char* buf)
   {
     EditLine* line = load_line(&buf[csr]);
     if(nullptr==line){
-      m_error = EDIT_MEM_ERROR;
       return;
     }
     //FMRB_DEBUG(FMRB_LOG::DEBUG,"load size=%04d : %s\n",line->length,line->text);
@@ -401,7 +423,7 @@ void FmrbEditor::draw_line(int disp_y,EditLine* line)
   if(!line) return;
   m_term->printf("\e[34m%04d: \e[0m",line->lineno);// line number
 
-  if(m_line_lexer_p){
+  if(m_code_hightlight){
     m_line_lexer_p->set_line(line->text);
     while(true){
       const char* buff;
@@ -438,7 +460,7 @@ void FmrbEditor::update()
   //Draw Functions
   int bottom = m_height;
   move(1,bottom);
-  m_term->write("\e[30m\e[46m UPDATE \e[0m");
+  m_term->write("\e[30m\e[46m  MENU  \e[0m");
   move(11,bottom);
   m_term->write("\e[30m\e[46m  SAVE  \e[0m");
   move(21,bottom);
@@ -446,12 +468,10 @@ void FmrbEditor::update()
   move(31,bottom);
   m_term->write("\e[30m\e[46m  RUN   \e[0m");
   move(41,bottom);
-  m_term->write("\e[30m\e[46m  DEMO  \e[0m");
-  move(51,bottom);
-  m_term->write("\e[30m\e[46m  DEMO2 \e[0m");
+  m_term->write("\e[30m\e[46m  QUIT  \e[0m");
   move(61,bottom);
   size_t ramsize = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
-  m_term->printf("%d",ramsize);
+  m_term->printf("FreeMem:%d",ramsize);
 
   move(m_x,m_y);
 
@@ -626,6 +646,13 @@ void FmrbEditor::clear_buffer(){
   m_buff_head = NULL;
 }
 
+void FmrbEditor::show_message(const char* msg)
+{
+  FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
+  dialog->open_message_dialog(msg);
+  delete dialog;
+}
+
 void FmrbEditor::load_file(){
   FMRB_DEBUG(FMRB_LOG::DEBUG,"load_file\n");
 
@@ -685,7 +712,6 @@ void FmrbEditor::save_file(){
   FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
   FMRB_RCODE ret = dialog->open_text_input_dialog("Write the file name",&save_file_path);
   delete dialog;
-  m_terminal->enableCursor(true);
   clear_screen();
 
   if(ret==FMRB_RCODE::OK){
@@ -706,24 +732,75 @@ void FmrbEditor::save_file(){
         fmrb_free(buff);
         if(ret!=FMRB_RCODE::OK){
           FMRB_DEBUG(FMRB_LOG::ERR,"save file error\n");
-          FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
-          dialog->open_message_dialog("Write file Error");
-          delete dialog;
+          show_message("Save file Error");
         }else{
           FMRB_DEBUG(FMRB_LOG::DEBUG,"save_file done\n");
-          FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
-          dialog->open_message_dialog("Write file completed");
-          delete dialog;
+          show_message("Save file completed");
         }
       }else{
         FMRB_DEBUG(FMRB_LOG::ERR,"dump_script error\n");
-        FmrbDialog *dialog = new FmrbDialog(m_vga,m_canvas,m_term,m_canvas_config);
-        dialog->open_message_dialog("Dump script Error");
-        delete dialog;
+        show_message("Save script Error");
       }
     }
   }
+  m_terminal->enableCursor(true);
   update();
+}
+
+static FMRB_RCODE editor_menu_cb(uint32_t fid,FmrbMenuModule* menu)
+{
+  FmrbEditor* editor = (FmrbEditor*)menu->m_param;
+  switch(fid)
+  {
+    case 1:
+      return FMRB_RCODE::OK_DONE;
+    case 2:
+      editor->load_demo_file(0);
+      editor->show_message("DEMO0 is loaded");
+      break;
+    case 3:
+      editor->load_demo_file(1);
+      editor->show_message("DEMO0 is loaded");
+      break;
+    case 4:
+      editor->toggle_highlight();
+      if(editor->m_code_hightlight){
+        editor->show_message("Code Highlight is enabled");
+      }else{
+        editor->show_message("Code Highlight is disabled");
+      }
+      break;
+    default:
+    break;
+  }
+  return FMRB_RCODE::OK;
+}
+
+void FmrbEditor::open_menu(void)
+{
+  FMRB_DEBUG(FMRB_LOG::DEBUG,"Open Menu\n");
+  FmrbMenuItem *top = new FmrbMenuItem(alloc_text_mem("<Select an item>"),0,nullptr,FmrbMenuItemType::TITLE);
+
+  //Main
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Cancel           "),1 ,editor_menu_cb,FmrbMenuItemType::SELECTABLE);
+
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Load demo1       "),2 ,editor_menu_cb,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Load demo2       "),3 ,editor_menu_cb,FmrbMenuItemType::SELECTABLE);
+  FmrbMenuItem::add_item_tail(top,alloc_text_mem(" Toggle Highlight "),4 ,editor_menu_cb,FmrbMenuItemType::SELECTABLE);
+
+  m_terminal->enableCursor(false);
+  FmrbMenuModule *localMenu = new FmrbMenuModule(m_vga,m_canvas,m_terminal,top);
+  localMenu->begin(this);
+  delete localMenu;
+
+  m_terminal->enableCursor(true);
+  clear_screen();
+  update();
+}
+
+void FmrbEditor::toggle_highlight(void)
+{
+  m_code_hightlight = m_code_hightlight ? false : true;
 }
 
 /**

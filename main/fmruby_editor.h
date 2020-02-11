@@ -88,8 +88,15 @@ public:
   ~FmrbEditor();
   FMRB_RCODE begin(FmrbMrubyEngine*);
   FMRB_RCODE run(char* input_script);
-  FMRB_RCODE release(void);
+  void reset(void);
+  void release_buffer(void);
   char* dump_script(void);
+
+  //for callback
+  bool m_code_hightlight;
+  void toggle_highlight(void);
+  void load_demo_file(int);
+  void show_message(const char*);
 
 private:
   fabgl::VGAController *m_vga;
@@ -107,7 +114,7 @@ private:
   int m_disp_head_line;
   int m_total_line;
   FmrbSimpleLineLexer* m_line_lexer_p;
-  enum EDIT_STATUS m_error;
+  //enum EDIT_STATUS m_error;
   FmrbMrubyEngine *m_mruby_engine;
   FmrbCanvasConfig *m_canvas_config;
 
@@ -115,7 +122,6 @@ private:
   void wait_key(char);
   void load_file();
   void save_file();
-  void load_demo_file(int);
   void clear_buffer();
 
   void load(const char* buf);
@@ -141,5 +147,8 @@ private:
   void print_csr_info(void);
 
   void clear_screen(void);
+
+  bool quit(void);
+  void open_menu(void);
 };
 

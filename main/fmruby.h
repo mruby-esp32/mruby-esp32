@@ -55,13 +55,14 @@ enum class FMRB_LOG{
   RAW,
 };
 
-enum class FMRB_RCODE{
+enum class FMRB_RCODE:int{
   DEVICE_ERROR=-100,
   NOTREADY_ERROR,
   MEMALLOC_ERROR,
   ERROR=-1,
   OK=0,
   OK_DONE,
+  OK_CONTINUE,
   OK_EMPTY,
 };
 

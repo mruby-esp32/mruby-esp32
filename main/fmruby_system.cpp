@@ -247,15 +247,17 @@ FMRB_RCODE FmrbSystemApp::run_editor(){
 
     m_editor->begin(&m_mruby_engine);
     fmrb_dump_mem_stat();
-    FMRB_RCODE err = m_editor->run(m_script);
+    FMRB_RCODE result = m_editor->run(m_script);
 
     m_terminal.enableCursor(false);
     m_script = NULL;
-    if(err == FMRB_RCODE::OK){
+    if(result == FMRB_RCODE::OK_CONTINUE){
       m_script = m_editor->dump_script();
+    }else if(result == FMRB_RCODE::OK_DONE){
+      m_editor->reset();
     }
-    m_editor->release();
-  return err;
+  m_editor->release_buffer();
+  return result;
 }
 
 FMRB_RCODE FmrbSystemApp::run_mruby(){
@@ -329,11 +331,13 @@ FMRB_RCODE FmrbSystemApp::run()
           init_terminal();
         }
         FMRB_RCODE err = run_editor();
-        if(err==FMRB_RCODE::OK)
-        {
+        if(err==FMRB_RCODE::OK_CONTINUE){
           m_state = FMRB_SYS_STATE::EXEC_FROM_EDIT;
-        }else{
+        }else if(err==FMRB_RCODE::OK_DONE){
+          m_state = FMRB_SYS_STATE::SHOW_MENU;
+        }else if((int)err<0){
           FMRB_DEBUG(FMRB_LOG::ERR,"Editor error!\n");
+          m_state = FMRB_SYS_STATE::SHOW_MENU;
         }
         break;
       }
