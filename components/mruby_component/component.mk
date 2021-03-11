@@ -2,7 +2,7 @@
 COMPONENT_OWNBUILDTARGET := true
 COMPONENT_OWNCLEANTARGET := true
 
-COMPONENT_ADD_INCLUDEDIRS := mruby/include/
+COMPONENT_ADD_INCLUDEDIRS := mruby/include/ mruby/build/esp32/include/
 
 CFLAGS += -Wno-char-subscripts -Wno-pointer-sign
 
