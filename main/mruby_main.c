@@ -36,6 +36,7 @@ void mruby_task(void *pvParameter)
   // This task should never end, even if the
   // script ends.
   while (1) {
+    vTaskDelay(1);
   }
 }
 
