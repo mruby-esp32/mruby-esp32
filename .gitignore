@@ -1,2 +1,4 @@
 build/
 sdkconfig.old
+main/example_mrb.h
+components/mruby_component/esp32_build_config.rb.lock

@@ -5,7 +5,7 @@ the [esp-idf](https://github.com/espressif/esp-idf/tree/master/docs) project
 for your specific operating system.
 
 I have only tested this on macOS and using a certain version of
-[esp-idf](https://github.com/espressif/esp-idf/tree/abecab7525e7edb1fde16ab5d8cf7b368b1d332c).
+[esp-idf](https://github.com/espressif/esp-idf/tree/release/v5.0).
 You should try to use [more recent version](https://github.com/espressif/esp-idf#setting-up-esp-idf) if you have failed.
 
 You will need to recursively clone this project with the recursive flag
@@ -26,9 +26,8 @@ are at least somewhat familiar with the building steps. With that in mind you
 can do something like the following and see the example running:
 
 ```
-make menuconfig
-make MRUBY_EXAMPLE=simplest_mrb.rb
-make MRUBY_EXAMPLE=simplest_mrb.rb flash monitor
+idf.py build -D MRUBY_EXAMPLE=simplest_mrb.rb
+idf.py -p $(YOUR_SERIAL_PORT) flash monitor
 ```
 
 The flag `MRUBY_EXAMPLE` can be replaced with one of the following:
@@ -38,38 +37,10 @@ The flag `MRUBY_EXAMPLE` can be replaced with one of the following:
     modify this file to include your SSID and password
   * _system_mrb.rb_ - Examples of most of the system APIs
 
-## wifi\_example\_mrb.rb stack overflow
-
-If you experience a stack overflow during execution of the WiFi example, please
-adjust the stack size on file `main/mruby_main.c` from 8192 to 32768.
-
-```
-void app_main()
-{
-  nvs_flash_init();
-  xTaskCreate(&mruby_task, "mruby_task", 32768, NULL, 5, NULL);
-}
-
-```
-
-Also adjust the configured stack size using `make menuconfig` from the default
-one (which may be either 2048 or 4096) to 32768.
-
-```
-make menuconfig
-Component config ---> ESP32-specific ---> Event loop task stack size
-```
-
-References: Issue [#11](https://github.com/mruby-esp32/mruby-esp32/issues/11)
-and
-[mruby-esp32\/mruby-socket](https://github.com/mruby-esp32/mruby-socket)
-
----
-
 The clean command will clean both the ESP32 build and the mruby build:
 
 ```
-make clean
+idf.py fullclean
 ```
 
 There are multiple GEMS that can be turned on and off via the mruby
