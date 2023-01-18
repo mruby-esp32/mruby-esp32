@@ -1,4 +1,9 @@
 build/
 sdkconfig.old
-main/main_mrb.h
 components/mruby_component/esp32_build_config.rb.lock
+
+*.pem.crt
+*.pem.key
+*.pem
+
+.vscode

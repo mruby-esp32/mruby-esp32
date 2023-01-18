@@ -62,7 +62,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
   conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
   conf.gem :github => "mruby-esp32/mruby-esp32-system"
-  conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
+  conf.gem :github => "yuuu/mruby-esp32-wifi", :branch => 'follow_esp-idf_v5.0'
   conf.gem :github => 'mruby-esp32/mruby-io', :branch => 'esp32'
   conf.gem :github => "yuuu/mruby-esp32-mqtt"
 end
