@@ -29,9 +29,11 @@ MRuby::CrossBuild.new('esp32') do |conf|
   toolchain :gcc
 
   conf.cc do |cc|
-    cc.include_paths << ENV["COMPONENT_INCLUDES"].split(' ')
+    cc.include_paths << ENV["COMPONENT_INCLUDES"].split(';')
 
     cc.flags << '-Wno-maybe-uninitialized'
+    cc.flags << '-mlongcalls'
+    cc.flags << '-std=gnu17'
     cc.flags = cc.flags.flatten.collect { |x| x.gsub('-MP', '') }
 
     cc.defines << %w(MRB_HEAP_PAGE_SIZE=64)

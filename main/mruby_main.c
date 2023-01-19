@@ -43,5 +43,5 @@ void mruby_task(void *pvParameter)
 void app_main()
 {
   nvs_flash_init();
-  xTaskCreate(&mruby_task, "mruby_task", 8192, NULL, 5, NULL);
+  xTaskCreate(&mruby_task, "mruby_task", 16384, NULL, 5, NULL);
 }
