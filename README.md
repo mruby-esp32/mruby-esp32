@@ -26,11 +26,12 @@ are at least somewhat familiar with the building steps. With that in mind you
 can do something like the following and see the example running:
 
 ```
-idf.py build -D MRUBY_EXAMPLE=simplest_mrb.rb
+cp main/examples/$(YOU_WISH_TO_TRY_FILE) main/spiffs/main.rb
+idf.py build
 idf.py -p $(YOUR_SERIAL_PORT) flash monitor
 ```
 
-The flag `MRUBY_EXAMPLE` can be replaced with one of the following:
+The valiable `YOU_WISH_TO_TRY_FILE` can be replaced with one of the following:
 
   * _simplest_mrb.rb_ - Simply prints two strings
   * _wifi_example_mrb.rb_ - An example of connecting to WiFi, you will need to
