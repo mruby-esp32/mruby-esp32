@@ -37,7 +37,8 @@ void mruby_task(void *pvParameter)
   }
   load(mrb, fp, context);
   if (mrb->exc) {
-    ESP_LOGE(TAG, "Exception occurred: %s", mrb_str_to_cstr(mrb, mrb_inspect(mrb, mrb_obj_value(mrb->exc))));
+    ESP_LOGE(TAG, "Exception occurred");
+    mrb_print_error(mrb);
     mrb->exc = 0;
   } else {
     ESP_LOGI(TAG, "%s", "Success");
