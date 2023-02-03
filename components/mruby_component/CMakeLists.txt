@@ -4,7 +4,7 @@ set(MRUBY_CONFIG ${COMPONENT_DIR}/esp32_build_config.rb)
 
 idf_component_register(
   INCLUDE_DIRS mruby/include
-  REQUIRES esp_wifi esp_hw_support esp_rom
+  REQUIRES esp_wifi esp_hw_support esp_rom mqtt
 )
 
 add_custom_command(
@@ -17,7 +17,7 @@ add_custom_command(
 
 add_prebuilt_library(
   libmruby ${LIBMRUBY_FILE}
-  PRIV_REQUIRES esp_wifi esp_hw_support esp_rom
+  PRIV_REQUIRES esp_wifi esp_hw_support esp_rom mqtt
 )
 target_link_libraries(${COMPONENT_LIB} INTERFACE libmruby)
 

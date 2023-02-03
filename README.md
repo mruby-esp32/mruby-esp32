@@ -36,6 +36,7 @@ The valiable `YOU_WISH_TO_TRY_FILE` can be replaced with one of the following:
   * _simplest_mrb.rb_ - Simply prints two strings
   * _wifi_example_mrb.rb_ - An example of connecting to WiFi, you will need to
     modify this file to include your SSID and password
+  * _mqtt_publish.rb_ - An sample of publishing to MQTT broker
   * _system_mrb.rb_ - Examples of most of the system APIs
 
 The clean command will clean both the ESP32 build and the mruby build:
@@ -50,5 +51,6 @@ configuration file found in
 
 * _mruby-esp32-system_ - ESP32 system calls
 * _mruby-esp32-wifi_ - ESP32 WiFi
+* _mruby-esp32-mqtt_ - ESP32 MQTT library
 
 
