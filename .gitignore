@@ -1,4 +1,11 @@
 build/
 sdkconfig.old
+
 main/main_mrb.h
+main/spiffs/*.pem
+main/spiffs/*.pem.key
+main/spiffs/*.pem.crt
+
 components/mruby_component/esp32_build_config.rb.lock
+
+.vscode
