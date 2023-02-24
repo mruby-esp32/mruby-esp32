@@ -1,0 +1,51 @@
+name: mruby-esp32-build
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: build
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.0
+          path: '.'
+      - name: merge bin
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.0
+          path: '.'
+          command: |
+            esptool.py --chip esp32 merge_bin \
+              -o mruby-esp32-flash.bin --flash_mode dio --flash_size keep \
+              0x1000 build/bootloader/bootloader.bin \
+              0x8000 build/partition_table/partition-table.bin \
+              0x10000 build/mruby-esp32.bin \
+              0x190000 build/storage.bin
+      - name: set variables
+        id: set_variables
+        run: echo "suffix=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+      - name: create release
+        id: create_release
+        uses: elgohr/Github-Release-Action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: ${{ steps.set_variables.outputs.suffix }}
+      - name: upload release asset
+        id: upload-release-asset
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: ./mruby-esp32-flash.bin
+          tags: false
+          draft: false
+          update_latest_release: true
