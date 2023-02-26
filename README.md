@@ -34,6 +34,7 @@ idf.py -p $(YOUR_SERIAL_PORT) flash monitor
 The valiable `YOU_WISH_TO_TRY_FILE` can be replaced with one of the following:
 
   * _simplest_mrb.rb_ - Simply prints two strings
+  * _gpio.rb_ - An example of using GPIO
   * _wifi_example_mrb.rb_ - An example of connecting to WiFi, you will need to
     modify this file to include your SSID and password
   * _mqtt_publish.rb_ - An sample of publishing to MQTT broker
