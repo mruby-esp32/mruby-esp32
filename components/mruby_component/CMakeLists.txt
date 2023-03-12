@@ -4,7 +4,7 @@ set(MRUBY_CONFIG ${COMPONENT_DIR}/esp32_build_config.rb)
 
 idf_component_register(
   INCLUDE_DIRS mruby/include
-  REQUIRES esp_wifi esp_hw_support esp_rom mqtt driver
+  REQUIRES esp_wifi esp_hw_support esp_rom mqtt driver esp_timer
 )
 
 add_custom_command(
