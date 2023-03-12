@@ -11,8 +11,13 @@ ver = ESP32::System.sdk_version
 puts "ESP32 SDK Version: #{ver}"
 mem = ESP32::System.available_memory / 1000
 puts "Available Memory: #{mem}K"
+sec = ESP32::Timer.get_time / 10000000
+puts "Uptime: #{sec}s"
 puts
 puts "Delaying 10 seconds..."
 ESP32::System.delay(10 * 1000)
+sec = ESP32::Timer.get_time / 10000000
+puts "Uptime: #{sec}s"
+puts
 puts "Deep sleeping for 10 seconds..."
 ESP32::System.deep_sleep_for(10 * 1000000)
