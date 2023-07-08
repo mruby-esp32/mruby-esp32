@@ -1,15 +1,18 @@
 # Example of mruby on the ESP32
 
-Before you get started you will need to follow the setup documentation from
-the [esp-idf](https://github.com/espressif/esp-idf/tree/master/docs) project
+Before you get started, you will need to follow the setup documentation from
+the [esp-idf](https://docs.espressif.com/projects/esp-idf/en/release-v4.4/esp32/index.html) project,
 for your specific operating system.
 
-I have only tested this on macOS and using a certain version of
-[esp-idf](https://github.com/espressif/esp-idf/tree/release/v5.0).
-You should try to use [more recent version](https://github.com/espressif/esp-idf#setting-up-esp-idf) if you have failed.
+This has been tested on macOS and Ubuntu Linux, using [esp-idf](https://github.com/espressif/esp-idf/tree/release/v4.4) version 4.4.
+It will not work on newer IDF versions, and this branch is intended as a legacy release.
 
-You will need to recursively clone this project with the recursive flag
-because it includes mruby as a submodule:
+This example includes mruby 3.2.0. You may be able to update that to a newer version, but it isn't guaranteed.
+If you want a more up-to-date version of this example, which works with IDF version 5+, please see the 0.5 branch/release.
+
+## Installation
+
+Recursively clone this repo to ensure the mruby submodule is downloaded:
 
 ```
 git clone --recursive https://github.com/mruby-esp32/mruby-esp32.git
@@ -31,13 +34,12 @@ idf.py build
 idf.py -p $(YOUR_SERIAL_PORT) flash monitor
 ```
 
-The valiable `YOU_WISH_TO_TRY_FILE` can be replaced with one of the following:
+The variable `YOU_WISH_TO_TRY_FILE` can be replaced with one of the following:
 
   * _simplest_mrb.rb_ - Simply prints two strings
   * _gpio.rb_ - An example of using GPIO
   * _wifi_example_mrb.rb_ - An example of connecting to WiFi, you will need to
     modify this file to include your SSID and password
-  * _mqtt_publish.rb_ - An sample of publishing to MQTT broker
   * _system_mrb.rb_ - Examples of most of the system APIs
 
 The clean command will clean both the ESP32 build and the mruby build:
@@ -52,6 +54,5 @@ configuration file found in
 
 * _mruby-esp32-system_ - ESP32 system calls
 * _mruby-esp32-wifi_ - ESP32 WiFi
-* _mruby-esp32-mqtt_ - ESP32 MQTT library
-
-
+* _mruby-socket_ - BSD sockets, `TCPSocket` class
+* _mruby-esp32-gpio_ - ESP32 GPIO access
