@@ -13,22 +13,30 @@ File.open('/storage/boot_count.txt', 'w') { |f| f.puts(boot_count) }
 # Display it.
 puts "Boot count: #{boot_count}"
 
-# If first boot, write then append to /storage/test.txt.
+# PERSISTENCE DEMO
+persistence_file = "/storage/test.txt"
+
+# If first boot, write then append to the test file.
 if boot_count == 1
   string1 = "testing "
   string2 = "1,2,3..."
-  puts "Writing to /storage/test.txt: \"#{string1}#{string2}\""
   
-  File.open('/storage/test.txt', 'w') { |f| f.write(string1) }
+  puts "Writing to #{persistence_file}: \"#{string1}#{string2}\""
   
-  # WARNING: littlefs append mode starts with the file pointer at 0 (start of file).
-  File.open('/storage/test.txt', 'a') do |f|
-    # Move file pointer to the end with #seek.
-    f.seek(0, File::SEEK_END)
-    f.write(string2)
-  end
+  File.open(persistence_file, 'w') { |f| f.write(string1) }
+  File.open(persistence_file, 'a') { |f| f.write(string2) }
 end
 
-# Read from /storage/test.txt on every boot.
-print "Read from /storage/test.txt: "
-File.open('/storage/test.txt', 'r') { |f| f.each_line { |l| puts l } }
+# Read the file back on every boot.
+print "Read from #{persistence_file}: "
+File.open(persistence_file, 'r') { |f| f.each_line { |l| puts l } }
+
+# OVERWRITE DEMO
+overwrite_file = '/storage/overwrite.txt'
+
+File.open(overwrite_file, 'w') { |f| f.puts "12345678" }
+File.open(overwrite_file, 'w') { |f| f.puts "1234" }
+
+puts "#{overwrite_file} should contain: 1234"
+print "#{overwrite_file} contains: "
+File.open(overwrite_file, 'r') { |f| f.each_line { |l| puts l } }
