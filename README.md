@@ -70,7 +70,7 @@ configuration file found in
 * [_mruby-esp32-gpio_](https://github.com/mruby-esp32/mruby-esp32-gpio/tree/0.5) - ESP32 GPIO library
 * [_mruby-esp32-ledc_](https://github.com/mruby-esp32/mruby-esp32-ledc/tree/0.5) - ESP32 LEDC (PWM) library
 
-To get gem changes to update update, you need to `fullclean` the previous build, then build again: 
+To get gem changes to reflect in the build, `fullclean` the previous build, then build again: 
 ```
 idf.py fullclean
 idf.py build
