@@ -1,60 +1,90 @@
-# Example of mruby on the ESP32
+# mruby on the ESP32
 
-Before you get started you will need to follow the setup documentation from
-the [esp-idf](https://github.com/espressif/esp-idf/tree/master/docs) project
-for your specific operating system.
+This is an ESP-IDF project template running mruby on the ESP32 microcontroller.
 
-I have only tested this on macOS and using a certain version of
-[esp-idf](https://github.com/espressif/esp-idf/tree/release/v5.0).
-You should try to use [more recent version](https://github.com/espressif/esp-idf#setting-up-esp-idf) if you have failed.
+To get started, you need to install the ESP-IDF, by following the instructions
+[here](https://docs.espressif.com/projects/esp-idf/en/release-v5.1/esp32/get-started/index.html),
+for your operating system.
 
-You will need to recursively clone this project with the recursive flag
-because it includes mruby as a submodule:
+This has been tested on macOS and Ubuntu Linux, using 
+[ESP-IDF 5.1](https://github.com/espressif/esp-idf/tree/release/v5.1).
+
+## Usage
+
+Recursively clone this repo to ensure the mruby (3.2.0) submodule gets downloaded:
 
 ```
 git clone --recursive https://github.com/mruby-esp32/mruby-esp32.git
 ```
 
-The main ruby program can be found in the `main/simplest_mrb.rb` file. The
-makefile configuration in `main/component.mk` and the main entry point source
-file `mruby_main.c` will also be of interest if you want to change the name of
-the ruby script. The examples included are very simple scripts that only print
-to the ESP32's debug console.
+The makefile configuration is in `main/component.mk`. The entry point source
+file is `mruby_main.c`. Once that starts, it looks for `storage/main.rb` and runs it in mruby.
+You can change the expected filename `mruby_main.c`, or simply save your scripts as `main.rb`
+inside the `storage` subfolder.
 
-I'm assuming you have followed all the steps in the install documentation and
-are at least somewhat familiar with the building steps. With that in mind you
-can do something like the following and see the example running:
+### First Build
 
 ```
-cp main/examples/$(YOU_WISH_TO_TRY_FILE) main/spiffs/main.rb
+idf.py build
+idf.py -p $(YOUR_SERIAL_PORT) flash monitor
+```
+Your ESP32 should write 2 lines of numbers to the console.
+
+### Examples
+
+The folder `main/examples` includes simple scripts demonstrating functionality.
+
+Once you are familiar with the build process, try them with:
+
+```
+cp main/examples/$(EXAMPLE_FILENAME) main/storage/main.rb
 idf.py build
 idf.py -p $(YOUR_SERIAL_PORT) flash monitor
 ```
 
-The valiable `YOU_WISH_TO_TRY_FILE` can be replaced with one of the following:
+Replace `EXAMPLE_FILENAME` with one of the following:
 
-  * _simplest.rb_ - Prints two strings
-  * _system.rb_ - Demonstrates most system APIs
-  * _gpio.rb_ - GPIO blink example
-  * _wifi_connect.rb_ - Connects to WiFi. You need to replace your SSID and password in this file.
-  * _mqtt_publish.rb_ - Publishes to MQTT broker
-  * _filesystem.rb_ - Write/Append/Read example on the virtual filesystem
-  * _ledc_breathe.rb_ - Gradually fades the brightness of an LED up and down
-  * _ledc_buzzer.rb_ - Plays a melody on a pizeo-electric buzzer
-  * _ledc_servo.rb_ - Controls position of a 180 degree hobby servo motor
+  * `simplest.rb` - Prints two strings
+  * `system.rb` - Demonstrates most system APIs
+  * `gpio.rb` - GPIO blink example
+  * `wifi_connect.rb` - Connects to WiFi
+  * `wifi_socket.rb` - Connects to WiFi and makes a TCPSocket connection
+  * `mqtt_publish.rb` - Connects to WiFi and publishes to MQTT broker
+  * `filesystem.rb` - Write/append/read a file on the virtual filesystem
+  * `ledc_breathe.rb` - Gradually fades the brightness of an LED up and down
+  * `ledc_buzzer.rb` - Plays a melody on a piezo-electric buzzer
+  * `ledc_servo.rb` - Controls position of a 180 degree hobby servo motor
+  
+**Note**: Edit GPIO numbers to match ones you are connected to, insert your WiFI credentials, customize MQTT settings etc.
 
-The clean command will clean both the ESP32 build and the mruby build:
+### Build Customization
 
-```
-idf.py fullclean
-```
-
-There are multiple GEMS that can be turned on and off via the mruby
+There are multiple gems that can be turned on and off via the mruby
 configuration file found in
 `components/mruby_component/esp32_build_config.rb`:
 
-* _mruby-esp32-system_ - ESP32 system calls
-* _mruby-esp32-wifi_ - ESP32 WiFi
-* _mruby-esp32-mqtt_ - ESP32 MQTT library
+* [_mruby-socket_](https://github.com/mruby-esp32/mruby-socket/tree/0.5) - ESP32 Socket library (modified from mruby)
+* [_mruby-esp32-system_](https://github.com/mruby-esp32/mruby-esp32-system/tree/0.5) - ESP32 system calls
+* [_mruby-esp32-wifi_](https://github.com/mruby-esp32/mruby-esp32-wifi/tree/0.5) - ESP32 WiFi
+* [_mruby-esp32-mqtt_](https://github.com/mruby-esp32/mruby-esp32-mqtt/tree/0.5) - ESP32 MQTT library
+* [_mruby-esp32-gpio_](https://github.com/mruby-esp32/mruby-esp32-gpio/tree/0.5) - ESP32 GPIO library
+* [_mruby-esp32-ledc_](https://github.com/mruby-esp32/mruby-esp32-ledc/tree/0.5) - ESP32 LEDC (PWM) library
 
+To get gem changes to update update, you need to `fullclean` the previous build, then build again: 
+```
+idf.py fullclean
+idf.py build
+```
 
+All gems are enabled by default, so you can try out the examples, but it's a good idea to disable ones you don't need.
+
+## Hardware
+
+This has been tested on:
+- Original ESP32: `idf.py set-target esp32`
+- ESP32-S2: `idf.py set-target esp32s2`
+- ESP32-S3: `idf.py set-target esp32s3`
+
+If you followed the IDF installation instructions correctly for your chip,
+you can switch the project to target it with the corresponding command above.
+Make sure to `fullclean` and `build` after switching.
