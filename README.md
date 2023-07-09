@@ -39,6 +39,9 @@ The valiable `YOU_WISH_TO_TRY_FILE` can be replaced with one of the following:
   * _wifi_connect.rb_ - Connects to WiFi. You need to replace your SSID and password in this file.
   * _mqtt_publish.rb_ - Publishes to MQTT broker
   * _filesystem.rb_ - Write/Append/Read example on the virtual filesystem
+  * _ledc_breathe.rb_ - Gradually fades the brightness of an LED up and down
+  * _ledc_buzzer.rb_ - Plays a melody on a pizeo-electric buzzer
+  * _ledc_servo.rb_ - Controls position of a 180 degree hobby servo motor
 
 The clean command will clean both the ESP32 build and the mruby build:
 
