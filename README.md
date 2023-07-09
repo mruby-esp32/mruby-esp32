@@ -19,7 +19,7 @@ git clone --recursive https://github.com/mruby-esp32/mruby-esp32.git
 
 The makefile configuration is in `main/component.mk`. The entry point source
 file is `mruby_main.c`. Once that starts, it looks for `storage/main.rb` and runs it in mruby.
-You can change the expected filename `mruby_main.c`, or simply save your scripts as `main.rb`
+You can change the expected filename in `mruby_main.c`, or simply save your scripts as `main.rb`
 inside the `storage` subfolder.
 
 ### First Build
@@ -80,11 +80,33 @@ All gems are enabled by default, so you can try out the examples, but it's a goo
 
 ## Hardware
 
-This has been tested on:
+Everything works on:
 - Original ESP32: `idf.py set-target esp32`
+
+Everything except gpio gem works on:
 - ESP32-S2: `idf.py set-target esp32s2`
 - ESP32-S3: `idf.py set-target esp32s3`
 
 If you followed the IDF installation instructions correctly for your chip,
-you can switch the project to target it with the corresponding command above.
-Make sure to `fullclean` and `build` after switching.
+you can switch the project target with the corresponding command above.
+
+You will probably not be able to build again, until the project partition table is reset to `partitions.csv`. To do this:
+
+```
+idf.py menuconfig
+# Partition Table -> Partition Table (1st option) -> Custom partition Table CSV (Last options)
+# Enter to select. Q to exit. Y to save
+```
+
+## Troubleshooting
+
+The following files and folders are safe to delete when trying to solve build issues:
+- `build`
+- `components/mruby_component/build`
+- `components/mruby_component/esp32_build_config.rb.lock`
+- `managed_components`
+- `dependencies.lock`
+
+This project uses [littlefs](https://github.com/littlefs-project/littlefs) through IDF component
+manager. If you see errors about files on disk changing, try deleting the last 2 items on this list.
+
