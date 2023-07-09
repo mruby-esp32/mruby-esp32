@@ -7,5 +7,6 @@ main/spiffs/*.pem.key
 main/spiffs/*.pem.crt
 
 components/mruby_component/esp32_build_config.rb.lock
+managed_components
 
 .vscode
