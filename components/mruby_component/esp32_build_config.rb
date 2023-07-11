@@ -61,9 +61,14 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
-  conf.gem :github => "mruby-esp32/mruby-esp32-system"
-  conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
-  conf.gem :github => "mruby-esp32/mruby-esp32-mqtt"
-  conf.gem :github => "mruby-esp32/mruby-io", :branch => 'esp32'
-  conf.gem :github => "mruby-esp32/mruby-esp32-gpio"
+  conf.gem :github => "mruby-esp32/mruby-io",           :branch => '0.5'
+  conf.gem :github => "mruby-esp32/mruby-fileio",       :branch => '0.5'
+  conf.gem :github => "mruby-esp32/mruby-socket",       :branch => '0.5'
+  
+  conf.gem :github => "mruby-esp32/mruby-esp32-system", :branch => '0.5'
+  conf.gem :github => "mruby-esp32/mruby-esp32-wifi",   :branch => '0.5'
+  conf.gem :github => "mruby-esp32/mruby-esp32-mqtt",   :branch => '0.5'
+  
+  conf.gem :github => "mruby-esp32/mruby-esp32-gpio",   :branch => '0.5'
+  conf.gem :github => "mruby-esp32/mruby-esp32-ledc",   :branch => '0.5'
 end

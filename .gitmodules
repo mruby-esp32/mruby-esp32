@@ -1,3 +1,6 @@
 [submodule "mruby"]
 	path = components/mruby_component/mruby
 	url = https://github.com/mruby/mruby.git
+[submodule "components/esp_littlefs"]
+	path = components/esp_littlefs
+	url = https://github.com/joltwallet/esp_littlefs.git
