@@ -15,12 +15,12 @@ jobs:
       - name: build
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.0
+          esp_idf_version: v5.1
           path: '.'
       - name: merge bin
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.0
+          esp_idf_version: v5.1
           path: '.'
           command: |
             esptool.py --chip esp32 merge_bin \
@@ -28,7 +28,7 @@ jobs:
               0x1000 build/bootloader/bootloader.bin \
               0x8000 build/partition_table/partition-table.bin \
               0x10000 build/mruby-esp32.bin \
-              0x190000 build/storage.bin
+              0x1c0000 build/storage.bin
       - name: set variables
         id: set_variables
         run: echo "suffix=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
