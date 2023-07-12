@@ -63,14 +63,16 @@ There are multiple gems that can be turned on and off via the mruby
 configuration file found in
 `components/mruby_component/esp32_build_config.rb`:
 
-* [_mruby-socket_](https://github.com/mruby-esp32/mruby-socket/tree/0.5) - ESP32 Socket library (modified from mruby)
+* [_mruby-fileio_](https://github.com/mruby-esp32/mruby-fileio/tree/0.5) - ESP32 File class (Not much space, but good for config data)
+* [_mruby-socket_](https://github.com/mruby-esp32/mruby-socket/tree/0.5) - ESP32 Socket library (Modified from mruby. IDF 5.1 minimum)
 * [_mruby-esp32-system_](https://github.com/mruby-esp32/mruby-esp32-system/tree/0.5) - ESP32 system calls
 * [_mruby-esp32-wifi_](https://github.com/mruby-esp32/mruby-esp32-wifi/tree/0.5) - ESP32 WiFi
 * [_mruby-esp32-mqtt_](https://github.com/mruby-esp32/mruby-esp32-mqtt/tree/0.5) - ESP32 MQTT library
 * [_mruby-esp32-gpio_](https://github.com/mruby-esp32/mruby-esp32-gpio/tree/0.5) - ESP32 GPIO library
 * [_mruby-esp32-ledc_](https://github.com/mruby-esp32/mruby-esp32-ledc/tree/0.5) - ESP32 LEDC (PWM) library
 
-To get gem changes to reflect in the build, `fullclean` the previous build, then build again: 
+To get gem changes to reflect in the build, `fullclean` the previous build, then build again:
+
 ```
 idf.py fullclean
 idf.py build
@@ -90,13 +92,15 @@ Everything except gpio gem works on:
 If you followed the IDF installation instructions correctly for your chip,
 you can switch the project target with the corresponding command above.
 
-You will probably not be able to build again, until the project partition table is reset to `partitions.csv`. To do this:
+You will not be able to build again until the partition table is reset to `partitions.csv`. To do this:
 
 ```
 idf.py menuconfig
 # Partition Table -> Partition Table (1st option) -> Custom partition Table CSV (Last options)
 # Enter to select. Q to exit. Y to save
 ```
+
+You may also want to manually change other settings like CPU clock speed, watchdog timers, stack sizes etc. Changing the target resets everything to default.
 
 ## Troubleshooting
 
@@ -106,7 +110,3 @@ The following files and folders are safe to delete when trying to solve build is
 - `components/mruby_component/esp32_build_config.rb.lock`
 - `managed_components`
 - `dependencies.lock`
-
-This project uses [littlefs](https://github.com/littlefs-project/littlefs) through IDF component
-manager. If you see errors about files on disk changing, try deleting the last 2 items on this list.
-
