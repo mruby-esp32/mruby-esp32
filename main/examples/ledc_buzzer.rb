@@ -2,7 +2,7 @@ group = ESP32::LEDC_LOW_SPEED_MODE
 channel = ESP32::LEDC_CHANNEL_0
 timer = ESP32::LEDC_TIMER_0
 resolution = ESP32::LEDC_TIMER_8_BIT
-pin = ESP32::GPIO::GPIO_NUM_4
+pin = ESP32::GPIO_NUM_4
 
 # Configure the channel once.
 ESP32::LEDC.channel_config(pin, group, timer, channel)
