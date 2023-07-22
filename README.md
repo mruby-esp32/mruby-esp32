@@ -50,6 +50,8 @@ Replace `EXAMPLE_FILENAME` with one of the following:
   * `wifi_connect.rb` - Connects to WiFi
   * `wifi_socket.rb` - Connects to WiFi and makes a TCPSocket connection
   * `mqtt_publish.rb` - Connects to WiFi and publishes to MQTT broker
+  * `mqtt_subscribe.rb` - Connects to WiFi, subscribes to MQTT broker, and prints received messages
+  * `mqtt_led_servo.rb` - Receives microsecond values over MQTT and writes them to a servo, while blinking LED in main loop
   * `filesystem.rb` - Write/append/read a file on the virtual filesystem
   * `ledc_breathe.rb` - Gradually fades the brightness of an LED up and down
   * `ledc_buzzer.rb` - Plays a melody on a piezo-electric buzzer
