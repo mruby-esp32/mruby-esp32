@@ -71,4 +71,5 @@ MRuby::CrossBuild.new('esp32') do |conf|
   
   conf.gem :github => "mruby-esp32/mruby-esp32-gpio"
   conf.gem :github => "mruby-esp32/mruby-esp32-ledc"
+  conf.gem :github => "mruby-esp32/mruby-esp32-mcpwm"
 end
