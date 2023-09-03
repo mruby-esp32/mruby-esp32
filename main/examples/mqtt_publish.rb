@@ -1,8 +1,6 @@
+print 'Connecting to wifi...'
 wifi = ESP32::WiFi.new
-
-puts 'Connecting to wifi'
 wifi.connect('SSID', 'password')
-
 puts "Connected"
 
 mqtt = ESP32::MQTT::Client.new('test.mosquitto.org', 1883)
